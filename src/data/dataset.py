@@ -40,11 +40,3 @@ with open(file_path, newline="", encoding="utf-8") as file:
         ids=ids,
         metadatas=metadatas
     )
-
-
-results = guide.query(
-    query_texts=["Air Potato"],  # a plant from your CSV
-    n_results=5
-)
-
-print("Query results:", results)
