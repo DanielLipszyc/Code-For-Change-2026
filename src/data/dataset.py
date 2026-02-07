@@ -1,5 +1,9 @@
 import chromadb
 import csv
+import os
+base_dir = os.path.dirname(__file__)  
+
+file_path = os.path.join(base_dir, "Plants.csv")
 
 from chromadb.config import Settings
 
@@ -10,22 +14,37 @@ client = chromadb.Client(
 guide = client.get_or_create_collection("Plant_Guide")
 reports = client.get_or_create_collection("Reported_Plants")
 
-with open("Plants - Sheet1-2.csv", newline="") as file:
-    next(file)
-    reader = csv.DictReader(file)
+headers = ["ID", "Common Name", "Scientific Name", "Image URL", "Risk Level"]
 
-    name = []
+
+with open(file_path, newline="", encoding="utf-8") as file:
+    next(file)  # skip first line (the top categories)
+    reader = csv.DictReader(file, fieldnames=headers)
+
+    documents = []
     ids = []
-    scientificName = []
-    pictureLink = []
-    threatLevel = []
+    metadatas = []
 
     for row in reader:
-        name.append(row["Name"])
-        ids.append(row["Id"])
-        scientificName.append(["Scientific Name"])
-        pictureLink.append(["Link to Pic"])
-        threatLevel.append(["Threat Level"])
-    
-    guide.add(ids = ids, name = name, scientificName = scientificName, pictureLink = pictureLink, threatLevel = threatLevel)
+        documents.append(row["Common Name"])
+        ids.append(row["Common Name"].lower().replace(" ", "_"))
+        metadatas.append({
+            "common_name": row["Common Name"],
+            "scientific_name": row["Scientific Name"],
+            "image_url": row["Image URL"],
+            "risk_level": row["Risk Level"]
+        })
 
+    guide.add(
+        documents=documents,
+        ids=ids,
+        metadatas=metadatas
+    )
+
+
+results = guide.query(
+    query_texts=["Air Potato"],  # a plant from your CSV
+    n_results=5
+)
+
+print("Query results:", results)
