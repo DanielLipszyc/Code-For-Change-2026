@@ -21,7 +21,7 @@ A mobile-friendly web application built with Next.js, TypeScript, and Tailwind C
 
 1. **Home** (`/`) - Landing page with hero and features
 2. **About** (`/about`) - Mission, values, and team info
-3. **Services** (`/services`) - Service offerings grid
+3. **Map** (`/Map`) - Service offerings grid
 4. **Dashboard** (`/dashboard`) - Interactive dashboard with stats
 5. **Contact** (`/contact`) - Contact form and info
 
@@ -60,8 +60,8 @@ src/
 │   ├── globals.css       # Global styles
 │   ├── about/
 │   │   └── page.tsx      # About page
-│   ├── services/
-│   │   └── page.tsx      # Services page
+│   ├── map/
+│   │   └── page.tsx      # map page
 │   ├── dashboard/
 │   │   └── page.tsx      # Dashboard page
 │   └── contact/

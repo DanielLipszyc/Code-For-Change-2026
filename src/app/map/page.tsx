@@ -1,5 +1,5 @@
-export default function Services() {
-  const services = [
+export default function Map() {
+  const map = [
     {
       title: "Web Development",
       description:
@@ -67,7 +67,7 @@ export default function Services() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => (
+          {map.map((service, index) => (
             <div
               key={index}
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
