@@ -22,8 +22,10 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-xl font-bold text-primary-600">
-                Code For Change
+              <span className="text-xl font-bold">
+                <span className="bg-gradient-to-r from-orange-500 to-sky-500 bg-clip-text text-transparent">Swamp</span>
+                <span className="text-teal-600 dark:text-teal-400"> Spotter</span>
+                <span className="ml-1">🌿</span>
               </span>
             </Link>
           </div>

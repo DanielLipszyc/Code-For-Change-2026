@@ -2,20 +2,23 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-500 to-primary-700 text-white py-16 px-4 sm:px-6 lg:px-8">
+      <section className="bg-gradient-to-br from-green-600 via-teal-600 to-cyan-700 text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-            Welcome to Code For Change
+            Welcome to <span className="bg-gradient-to-r from-orange-400 to-sky-400 bg-clip-text text-transparent">Swamp</span> Spotter 🌿
           </h1>
-          <p className="text-lg sm:text-xl lg:text-2xl mb-8 text-primary-100 max-w-3xl mx-auto">
-            Building innovative solutions for a better tomorrow
+          <p className="text-lg sm:text-xl lg:text-2xl mb-8 text-green-100 max-w-3xl mx-auto">
+            Discover and document plants in swamps and wetlands
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/map"
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 transition-colors"
+              href="/submit"
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-green-700 bg-white hover:bg-green-50 transition-colors"
             >
               Explore Map
+              🌱 Submit Plant
             </a>
             <a
               href="/contact"
@@ -31,25 +34,25 @@ export default function Home() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">
-            What We Offer
+            How It Works
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                title: "Innovation",
+                title: "Spot Plants",
                 description:
-                  "Cutting-edge solutions using the latest technologies",
-                icon: "💡",
+                  "Find and photograph plants in swamps, wetlands, and marshes",
+                icon: "🔍",
               },
               {
-                title: "Reliability",
-                description: "Dependable services you can count on 24/7",
-                icon: "🛡️",
+                title: "Submit Sightings",
+                description: "Upload your discoveries with location and details",
+                icon: "📸",
               },
               {
-                title: "Community",
-                description: "Building together for positive social impact",
-                icon: "🤝",
+                title: "Track & Learn",
+                description: "Build your collection and learn about wetland ecosystems",
+                icon: "🌿",
               },
             ].map((feature, index) => (
               <div
@@ -73,16 +76,16 @@ export default function Home() {
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-            Ready to Make a Difference?
+            Ready to Explore the Swamp?
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-            Join us in creating meaningful change through technology
+            Join our community of plant enthusiasts and help document wetland biodiversity
           </p>
           <a
             href="/dashboard"
-            className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
           >
-            Get Started
+            🐊 Get Started
           </a>
         </div>
       </section>

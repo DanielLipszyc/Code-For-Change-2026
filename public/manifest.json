@@ -1,11 +1,11 @@
 {
-  "name": "Code For Change 2026",
-  "short_name": "CodeForChange",
-  "description": "A mobile-friendly web application",
+  "name": "Swamp Spotter",
+  "short_name": "SwampSpotter",
+  "description": "Spot and submit plants in swamps and wetlands",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0ea5e9",
+  "background_color": "#f0fdf4",
+  "theme_color": "#16a34a",
   "orientation": "portrait-primary",
   "icons": [
     {
