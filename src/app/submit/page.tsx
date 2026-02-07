@@ -9,6 +9,37 @@ interface AIPrediction {
   confidence: string;
 }
 
+// Compress image to reduce payload size for Vercel (max ~500KB output)
+const compressImage = (dataUrl: string, maxSize = 512, quality = 0.5): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      // Scale down to fit within maxSize x maxSize
+      if (width > height && width > maxSize) {
+        height = (height * maxSize) / width;
+        width = maxSize;
+      } else if (height > maxSize) {
+        width = (width * maxSize) / height;
+        height = maxSize;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      // Convert to JPEG with lower quality for smaller size
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = dataUrl;
+  });
+};
+
 export default function Submit() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
@@ -27,10 +58,13 @@ export default function Submit() {
     setAiPrediction(null);
     
     try {
+      // Compress image before sending to API
+      const compressedImage = await compressImage(imageData);
+      
       const response = await fetch("/api/identify-plant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageData }),
+        body: JSON.stringify({ image: compressedImage }),
       });
 
       if (response.ok) {
