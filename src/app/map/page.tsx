@@ -3,6 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 
+
+let alachuaJson = require('./alachua.json');
+var mapStyle = {
+  "color": "#000000",
+  "fillOpacity": 0
+}
+
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
@@ -56,16 +63,7 @@ export default function Map() {
           .bindPopup('<b>Gainesville</b><br>Center of Alachua County')
           .openPopup();
 
-        // Add a circle to roughly show Alachua County boundaries
-        L.default.circle(alachuaCountyCenter, {
-          color: '#3b82f6',
-          fillColor: '#93c5fd',
-          fillOpacity: 0.1,
-          weight: 2,
-          radius: 25000, // approximately 25km radius
-        })
-          .addTo(map.current)
-          .bindPopup('<b>Alachua County</b><br>Area: ~1,400 sq mi');
+        L.geoJSON(alachuaJson, {style: mapStyle}).addTo(map.current);
 
         setIsLoading(false);
       } catch (error) {
@@ -165,3 +163,5 @@ function getLocation(): Promise<[number, number]> {
     }
   });
 }
+
+
