@@ -5,8 +5,8 @@ import { plants } from "@/data/plants";
 
 interface AIPrediction {
   prediction: string;
+  scientificName: string | null;
   isKnownPlant: boolean;
-  confidence: string;
 }
 
 // Compress image to reduce payload size for Vercel (max ~500KB output)
@@ -256,18 +256,15 @@ export default function Submit() {
                 </div>
               ) : aiPrediction ? (
                 <div className="space-y-3">
-                  <div className={`p-4 rounded-lg ${
-                    aiPrediction.isKnownPlant 
-                      ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" 
-                      : "bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
-                  }`}>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      AI Prediction: <span className={aiPrediction.isKnownPlant ? "text-green-600 dark:text-green-400" : "text-yellow-600 dark:text-yellow-400"}>{aiPrediction.prediction}</span>
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {aiPrediction.isKnownPlant 
-                        ? "✓ Matches known invasive species" 
-                        : "⚠ Not in our invasive species database"}
+                  <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">AI Identification</span>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                      {aiPrediction.prediction}
+                      {aiPrediction.scientificName && (
+                        <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                          ({aiPrediction.scientificName})
+                        </span>
+                      )}
                     </p>
                   </div>
 
