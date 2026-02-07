@@ -32,11 +32,15 @@ export default function Map() {
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
         });
 
+        var lat, lon;
+        [lat, lon] = await getLocation() as [number, number];
+        console.log(lat, lon);
+        const startLocation: [number, number] = [lat, lon];
         // Alachua County, Florida coordinates (approximate center)
         const alachuaCountyCenter: [number, number] = [29.6520, -82.3250];
 
         // Initialize map
-        map.current = L.default.map(mapContainer.current as HTMLElement).setView(alachuaCountyCenter, 10);
+        map.current = L.default.map(mapContainer.current as HTMLElement).setView(startLocation, 10);
 
         // Add OpenStreetMap tiles
         L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -143,4 +147,18 @@ export default function Map() {
       </div>
     </div>
   );
+}
+
+async function getLocation() {
+      let lat;
+      let lon;
+  if (navigator.geolocation) { 
+    navigator.geolocation.getCurrentPosition( async (position) => {
+      lat = position.coords.latitude;
+      lon = position.coords.longitude;
+      return [lat, lon];
+    })
+  } else  {
+    return [29.6520, -82.3250];
+  }
 }
