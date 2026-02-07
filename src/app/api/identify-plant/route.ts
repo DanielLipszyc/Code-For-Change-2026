@@ -1,5 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
-import { plantNames } from "@/data/plants";
+import { plantNames, plants } from "@/data/plants";
+
+// Helper function to call Gemini once
+async function callGemini(apiKey: string, mimeType: string, base64Data: string, plantList: string) {
+  const prompt = `You are an invasive plant identifier. Look at this image and classify it as ONE of these 17 invasive species:
+
+${plantList}
+
+You MUST respond with EXACTLY one name from this list - no other options allowed.
+If unsure, pick the closest match from the list.
+
+Reply with ONLY the plant name, nothing else.`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: mimeType, data: base64Data } },
+            ],
+          }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 100 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Gemini API error:", JSON.stringify(errorData, null, 2));
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("Gemini response:", JSON.stringify(data, null, 2));
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+
+    // Clean up the response - remove any extra text
+    const prediction = rawText.split("\n")[0].trim();
+
+    return { prediction };
+  } catch (error) {
+    console.error("Gemini fetch error:", error);
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   console.log("=== Plant identification API called ===");
@@ -9,98 +58,51 @@ export async function POST(request: NextRequest) {
     console.log("Image received, length:", image?.length || 0);
 
     if (!image) {
-      console.log("No image provided");
-      return NextResponse.json(
-        { error: "No image provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
-    console.log("API Key exists:", !!apiKey);
-    
+    console.log("API Key exists:", !!apiKey, "Length:", apiKey?.length);
     if (!apiKey) {
-      console.log("Gemini API key not configured");
-      return NextResponse.json(
-        { error: "Gemini API key not configured" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
     }
 
-    // Extract base64 data from data URL
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
     const mimeType = image.match(/^data:(image\/\w+);base64,/)?.[1] || "image/jpeg";
-
-    // Create the prompt with the list of known plants
-    const plantList = plantNames.join(", ");
-    const prompt = `You are a plant identification expert specializing in invasive wetland and swamp plants. 
-    
-Analyze this image and identify the plant. Compare it against these known invasive species: ${plantList}.
-
-If the plant matches one of these species, respond with ONLY the exact name from the list.
-If the plant does not match any of these species, respond with "Unknown" followed by your best guess of what the plant might be.
-
-Important: Only respond with the plant name, nothing else.`;
+    const plantList = plantNames.map((name, i) => `${i + 1}. ${name}`).join("\n");
+    console.log("Base64 length:", base64Data.length, "Mime:", mimeType);
 
     // Call Gemini API
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data,
-                  },
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 100,
-          },
-        }),
-      }
-    );
+    const result = await callGemini(apiKey, mimeType, base64Data, plantList);
+    
+    if (!result) {
+      return NextResponse.json({ error: "Failed to analyze image" }, { status: 500 });
+    }
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Gemini API error:", JSON.stringify(errorData, null, 2));
-      return NextResponse.json(
-        { error: "Failed to analyze image", details: errorData },
-        { status: 500 }
+    // Try exact match first, then partial match
+    const predictionLower = result.prediction.toLowerCase().trim();
+    let matchedPlant = plants.find(
+      (p) => p.name.toLowerCase() === predictionLower
+    );
+    
+    // If no exact match, try partial match (plant name contains or is contained in prediction)
+    if (!matchedPlant) {
+      matchedPlant = plants.find(
+        (p) => predictionLower.includes(p.name.toLowerCase()) || 
+               p.name.toLowerCase().includes(predictionLower)
       );
     }
 
-    const data = await response.json();
-    console.log("Gemini response:", JSON.stringify(data, null, 2));
-    const prediction =
-      data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Unknown";
-
-    // Check if the prediction matches a known plant
-    const isKnownPlant = plantNames.some(
-      (name) => name.toLowerCase() === prediction.toLowerCase()
-    );
+    // Use the matched plant name if found, otherwise use AI's response
+    const finalPrediction = matchedPlant ? matchedPlant.name : result.prediction;
 
     return NextResponse.json({
-      prediction,
-      isKnownPlant,
-      confidence: isKnownPlant ? "high" : "low",
+      prediction: finalPrediction,
+      scientificName: matchedPlant?.scientificName || null,
+      isKnownPlant: !!matchedPlant,
     });
   } catch (error) {
     console.error("Error identifying plant:", error);
-    return NextResponse.json(
-      { error: "Failed to process image" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to process image" }, { status: 500 });
   }
 }

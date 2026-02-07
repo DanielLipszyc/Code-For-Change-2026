@@ -2,11 +2,25 @@
 
 import { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
+import { getSubmissions, PlantSubmission } from '@/types/submissions';
+
+
+let alachuaJson = require('./alachua.json');
+var mapStyle = {
+  "color": "#000000",
+  "fillOpacity": 0
+}
 
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<PlantSubmission[]>([]);
+
+  useEffect(() => {
+    // Load submissions from localStorage
+    setSubmissions(getSubmissions());
+  }, []);
 
   useEffect(() => {
     // Only run on client side
@@ -32,11 +46,25 @@ export default function Map() {
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
         });
 
+        // Create custom green icon for plant submissions
+        const plantIcon = L.default.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+
+        var lat, lon;
+        [lat, lon] = await getLocation() as [number, number];
+        console.log(lat, lon);
+        const startLocation: [number, number] = [lat, lon];
         // Alachua County, Florida coordinates (approximate center)
         const alachuaCountyCenter: [number, number] = [29.6520, -82.3250];
 
         // Initialize map
-        map.current = L.default.map(mapContainer.current as HTMLElement).setView(alachuaCountyCenter, 10);
+        map.current = L.default.map(mapContainer.current as HTMLElement).setView(startLocation, 10);
 
         // Add OpenStreetMap tiles
         L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -52,16 +80,27 @@ export default function Map() {
           .bindPopup('<b>Gainesville</b><br>Center of Alachua County')
           .openPopup();
 
-        // Add a circle to roughly show Alachua County boundaries
-        L.default.circle(alachuaCountyCenter, {
-          color: '#3b82f6',
-          fillColor: '#93c5fd',
-          fillOpacity: 0.1,
-          weight: 2,
-          radius: 25000, // approximately 25km radius
-        })
-          .addTo(map.current)
-          .bindPopup('<b>Alachua County</b><br>Area: ~1,400 sq mi');
+        L.geoJSON(alachuaJson, {style: mapStyle}).addTo(map.current);
+
+        // Add markers for all submitted plants
+        const currentSubmissions = getSubmissions();
+        currentSubmissions.forEach((submission) => {
+          const popupContent = `
+            <div style="min-width: 150px;">
+              <b style="font-size: 14px; color: #136207;">🌿 ${submission.plantName}</b>
+              ${submission.scientificName ? `<br><i style="color: #666; font-size: 12px;">${submission.scientificName}</i>` : ''}
+              ${submission.notes ? `<br><span style="font-size: 12px;">${submission.notes}</span>` : ''}
+              <br><span style="font-size: 11px; color: #888;">Spotted: ${new Date(submission.timestamp).toLocaleDateString()}</span>
+            </div>
+          `;
+          
+          L.default.marker([submission.lat, submission.lng], {
+            icon: plantIcon,
+            title: submission.plantName,
+          })
+            .addTo(map.current)
+            .bindPopup(popupContent);
+        });
 
         setIsLoading(false);
       } catch (error) {
@@ -79,7 +118,7 @@ export default function Map() {
         map.current = null;
       }
     };
-  }, []);
+  }, [submissions]);
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -144,3 +183,22 @@ export default function Map() {
     </div>
   );
 }
+
+function getLocation(): Promise<[number, number]> {
+  return new Promise((resolve) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve([position.coords.latitude, position.coords.longitude]);
+        },
+        () => {
+          resolve([29.6520, -82.3250]);
+        }
+      );
+    } else {
+      resolve([29.6520, -82.3250]);
+    }
+  });
+}
+
+
