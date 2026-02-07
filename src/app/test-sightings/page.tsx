@@ -33,7 +33,7 @@ export default function TestSightingsPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/identify-plant/sightings");
+      const res = await fetch("/api/sightings");
       const data = await res.json();
       setSightings(data);
     } catch (err) {
@@ -48,7 +48,7 @@ export default function TestSightingsPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/identify-plant/sightings", {
+      const res = await fetch("/api/sightings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
