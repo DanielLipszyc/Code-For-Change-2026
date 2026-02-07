@@ -87,10 +87,10 @@ export default function Map() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Alachua County Map
+            County Invasive Plant Map
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Explore plant sightings across Alachua County, Florida
+            Invasive plant sightings across Alachua County, Florida
           </p>
         </div>
 

@@ -10,6 +10,7 @@ const navItems = [
   { href: "/submit", label: "Submit" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/contact", label: "Contact" },
+  { href: "/map", label: "Map"},
 ];
 
 export default function Navigation() {
