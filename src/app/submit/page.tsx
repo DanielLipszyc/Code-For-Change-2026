@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { plants } from "@/data/plants";
+import { addSubmission, PlantSubmission } from "@/types/submissions";
 
 interface AIPrediction {
   prediction: string;
@@ -44,7 +45,6 @@ export default function Submit() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [plantName, setPlantName] = useState("");
-  const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -117,18 +117,47 @@ export default function Submit() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Get user's current location
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation not supported'));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+      });
 
-    setIsSubmitting(false);
-    setSubmitted(true);
+      // Create submission with location
+      const submission: PlantSubmission = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        plantName: aiPrediction?.prediction || plantName || 'Unknown Plant',
+        scientificName: aiPrediction?.scientificName || undefined,
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        timestamp: Date.now(),
+        notes: notes || undefined,
+      };
+
+      // Save to localStorage
+      addSubmission(submission);
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Error getting location:', error);
+      alert('Unable to get your location. Please enable location services and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setSelectedImage(null);
     setFileName("");
     setPlantName("");
-    setLocation("");
     setNotes("");
     setSubmitted(false);
     setAiPrediction(null);
@@ -328,24 +357,6 @@ export default function Submit() {
                   💡 AI suggests: {aiPrediction.prediction}
                 </p>
               )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="location"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Location *
-              </label>
-              <input
-                type="text"
-                id="location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors"
-                placeholder="e.g., Everglades National Park, FL"
-              />
             </div>
 
             <div>

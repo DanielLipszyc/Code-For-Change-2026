@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
+import { getSubmissions, PlantSubmission } from '@/types/submissions';
 
 
 let alachuaJson = require('./alachua.json');
@@ -14,6 +15,12 @@ export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<PlantSubmission[]>([]);
+
+  useEffect(() => {
+    // Load submissions from localStorage
+    setSubmissions(getSubmissions());
+  }, []);
 
   useEffect(() => {
     // Only run on client side
@@ -37,6 +44,16 @@ export default function Map() {
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
+
+        // Create custom green icon for plant submissions
+        const plantIcon = L.default.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
         });
 
         var lat, lon;
@@ -65,6 +82,26 @@ export default function Map() {
 
         L.geoJSON(alachuaJson, {style: mapStyle}).addTo(map.current);
 
+        // Add markers for all submitted plants
+        const currentSubmissions = getSubmissions();
+        currentSubmissions.forEach((submission) => {
+          const popupContent = `
+            <div style="min-width: 150px;">
+              <b style="font-size: 14px; color: #136207;">🌿 ${submission.plantName}</b>
+              ${submission.scientificName ? `<br><i style="color: #666; font-size: 12px;">${submission.scientificName}</i>` : ''}
+              ${submission.notes ? `<br><span style="font-size: 12px;">${submission.notes}</span>` : ''}
+              <br><span style="font-size: 11px; color: #888;">Spotted: ${new Date(submission.timestamp).toLocaleDateString()}</span>
+            </div>
+          `;
+          
+          L.default.marker([submission.lat, submission.lng], {
+            icon: plantIcon,
+            title: submission.plantName,
+          })
+            .addTo(map.current)
+            .bindPopup(popupContent);
+        });
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error initializing map:', error);
@@ -81,7 +118,7 @@ export default function Map() {
         map.current = null;
       }
     };
-  }, []);
+  }, [submissions]);
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
