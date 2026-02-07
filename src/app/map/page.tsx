@@ -2,8 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
-import { getSubmissions, PlantSubmission } from '@/types/submissions';
 
+interface Submission {
+  _id?: string;
+  plantName: string;
+  scientificName?: string;
+  lat: number;
+  lng: number;
+  timestamp: number;
+  notes?: string;
+}
 
 let alachuaJson = require('./alachua.json');
 var mapStyle = {
@@ -15,11 +23,22 @@ export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [submissions, setSubmissions] = useState<PlantSubmission[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
 
   useEffect(() => {
-    // Load submissions from localStorage
-    setSubmissions(getSubmissions());
+    // Fetch submissions from MongoDB API
+    const fetchSubmissions = async () => {
+      try {
+        const response = await fetch('/api/submissions');
+        if (response.ok) {
+          const data = await response.json();
+          setSubmissions(data);
+        }
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+      }
+    };
+    fetchSubmissions();
   }, []);
 
   useEffect(() => {
@@ -82,9 +101,8 @@ export default function Map() {
 
         L.geoJSON(alachuaJson, {style: mapStyle}).addTo(map.current);
 
-        // Add markers for all submitted plants
-        const currentSubmissions = getSubmissions();
-        currentSubmissions.forEach((submission) => {
+        // Add markers for all submitted plants from MongoDB
+        submissions.forEach((submission) => {
           const popupContent = `
             <div style="min-width: 150px;">
               <b style="font-size: 14px; color: #136207;">🌿 ${submission.plantName}</b>

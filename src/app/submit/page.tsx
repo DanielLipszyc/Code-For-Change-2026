@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { plants } from "@/data/plants";
-import { addSubmission, PlantSubmission } from "@/types/submissions";
 
 interface AIPrediction {
   prediction: string;
@@ -132,8 +131,7 @@ export default function Submit() {
       });
 
       // Create submission with location
-      const submission: PlantSubmission = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      const submission = {
         plantName: aiPrediction?.prediction || plantName || 'Unknown Plant',
         scientificName: aiPrediction?.scientificName || undefined,
         lat: position.coords.latitude,
@@ -142,13 +140,21 @@ export default function Submit() {
         notes: notes || undefined,
       };
 
-      // Save to localStorage
-      addSubmission(submission);
+      // Save to MongoDB via API
+      const response = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submission),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save submission');
+      }
 
       setSubmitted(true);
     } catch (error) {
-      console.error('Error getting location:', error);
-      alert('Unable to get your location. Please enable location services and try again.');
+      console.error('Error submitting plant:', error);
+      alert('Unable to submit. Please check your location services and try again.');
     } finally {
       setIsSubmitting(false);
     }

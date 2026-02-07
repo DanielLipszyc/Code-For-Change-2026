@@ -30,8 +30,3 @@ export function clearSubmissions(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(SUBMISSIONS_KEY);
 }
-
-// Clear submissions on load (remove this line after clearing)
-if (typeof window !== 'undefined') {
-  localStorage.removeItem(SUBMISSIONS_KEY);
-}
