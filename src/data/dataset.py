@@ -10,7 +10,7 @@ client = chromadb.Client(
 guide = client.get_or_create_collection("Plant_Guide")
 reports = client.get_or_create_collection("Reported_Plants")
 
-with open("Plants - Sheet1.csv", newline="") as file:
+with open("Plants - Sheet1-2.csv", newline="") as file:
     next(file)
     reader = csv.DictReader(file)
 
