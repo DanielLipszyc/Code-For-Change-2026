@@ -79,12 +79,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to analyze image" }, { status: 500 });
     }
 
-    const matchedPlant = plants.find(
-      (p) => p.name.toLowerCase() === result.prediction.toLowerCase()
+    // Try exact match first, then partial match
+    const predictionLower = result.prediction.toLowerCase().trim();
+    let matchedPlant = plants.find(
+      (p) => p.name.toLowerCase() === predictionLower
     );
+    
+    // If no exact match, try partial match (plant name contains or is contained in prediction)
+    if (!matchedPlant) {
+      matchedPlant = plants.find(
+        (p) => predictionLower.includes(p.name.toLowerCase()) || 
+               p.name.toLowerCase().includes(predictionLower)
+      );
+    }
+
+    // Use the matched plant name if found, otherwise use AI's response
+    const finalPrediction = matchedPlant ? matchedPlant.name : result.prediction;
 
     return NextResponse.json({
-      prediction: result.prediction,
+      prediction: finalPrediction,
       scientificName: matchedPlant?.scientificName || null,
       isKnownPlant: !!matchedPlant,
     });
