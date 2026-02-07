@@ -149,16 +149,19 @@ export default function Map() {
   );
 }
 
-async function getLocation() {
-      let lat;
-      let lon;
-  if (navigator.geolocation) { 
-    navigator.geolocation.getCurrentPosition( async (position) => {
-      lat = position.coords.latitude;
-      lon = position.coords.longitude;
-      return [lat, lon];
-    })
-  } else  {
-    return [29.6520, -82.3250];
-  }
+function getLocation(): Promise<[number, number]> {
+  return new Promise((resolve) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve([position.coords.latitude, position.coords.longitude]);
+        },
+        () => {
+          resolve([29.6520, -82.3250]);
+        }
+      );
+    } else {
+      resolve([29.6520, -82.3250]);
+    }
+  });
 }
