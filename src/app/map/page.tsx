@@ -91,14 +91,6 @@ export default function Map() {
           maxZoom: 19,
         }).addTo(map.current);
 
-        // Add marker for Gainesville (main city in Alachua County)
-        L.default.marker([29.6436, -82.1585], {
-          title: 'Gainesville',
-        })
-          .addTo(map.current)
-          .bindPopup('<b>Gainesville</b><br>Center of Alachua County')
-          .openPopup();
-
         L.geoJSON(alachuaJson, {style: mapStyle}).addTo(map.current);
 
         // Add markers for all submitted plants from MongoDB
