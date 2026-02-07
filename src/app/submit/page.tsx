@@ -126,6 +126,7 @@ export default function Submit() {
               
               {selectedImage ? (
                 <div className="space-y-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedImage}
                     alt="Preview"
