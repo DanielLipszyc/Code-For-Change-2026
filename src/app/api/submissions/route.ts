@@ -9,6 +9,7 @@ export interface Submission {
   lng: number;
   timestamp: number;
   notes?: string;
+  imageData?: string; // Base64 encoded image
 }
 
 // GET - Fetch all submissions from MongoDB
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
       lng: data.lng,
       timestamp: data.timestamp || Date.now(),
       notes: data.notes || null,
+      imageData: data.imageData || null,
       createdAt: new Date(),
     });
 

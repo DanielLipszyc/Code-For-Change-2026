@@ -11,6 +11,7 @@ interface Submission {
   lng: number;
   timestamp: number;
   notes?: string;
+  imageData?: string;
 }
 
 let alachuaJson = require('./alachua.json');
@@ -24,6 +25,20 @@ export default function Map() {
   const map = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+  // Expose setSelectedPhoto to window for popup button clicks
+  useEffect(() => {
+    (window as any).showPlantPhoto = (submissionId: string) => {
+      const submission = submissions.find(s => s._id === submissionId);
+      if (submission?.imageData) {
+        setSelectedPhoto(submission.imageData);
+      }
+    };
+    return () => {
+      delete (window as any).showPlantPhoto;
+    };
+  }, [submissions]);
 
   useEffect(() => {
     // Fetch submissions from MongoDB API
@@ -95,12 +110,17 @@ export default function Map() {
 
         // Add markers for all submitted plants from MongoDB
         submissions.forEach((submission) => {
+          const photoButton = submission.imageData 
+            ? `<button onclick="window.showPlantPhoto('${submission._id}')" style="margin-top: 8px; padding: 6px 12px; background: #136207; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">📷 View Photo</button>`
+            : '';
+          
           const popupContent = `
             <div style="min-width: 150px;">
               <b style="font-size: 14px; color: #136207;">🌿 ${submission.plantName}</b>
               ${submission.scientificName ? `<br><i style="color: #666; font-size: 12px;">${submission.scientificName}</i>` : ''}
               ${submission.notes ? `<br><span style="font-size: 12px;">${submission.notes}</span>` : ''}
               <br><span style="font-size: 11px; color: #888;">Spotted: ${new Date(submission.timestamp).toLocaleDateString()}</span>
+              ${photoButton}
             </div>
           `;
           
@@ -190,6 +210,30 @@ export default function Map() {
           </div>
         </div>
       </div>
+
+      {/* Photo Modal */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[9999] p-4"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full">
+            <button
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute -top-10 right-0 text-white text-xl font-bold hover:text-gray-300"
+            >
+              ✕ Close
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedPhoto}
+              alt="Plant submission"
+              className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -130,7 +130,13 @@ export default function Submit() {
         });
       });
 
-      // Create submission with location
+      // Create submission with location and image
+      // Compress image for storage (smaller size for MongoDB)
+      let storedImage: string | undefined;
+      if (selectedImage) {
+        storedImage = await compressImage(selectedImage, 800, 0.7);
+      }
+
       const submission = {
         plantName: aiPrediction?.prediction || plantName || 'Unknown Plant',
         scientificName: aiPrediction?.scientificName || undefined,
@@ -138,6 +144,7 @@ export default function Submit() {
         lng: position.coords.longitude,
         timestamp: Date.now(),
         notes: notes || undefined,
+        imageData: storedImage,
       };
 
       // Save to MongoDB via API
