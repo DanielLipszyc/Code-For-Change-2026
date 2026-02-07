@@ -2,7 +2,7 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-green-600 via-teal-600 to-cyan-700 text-white py-16 px-4 sm:px-6 lg:px-8">
+      <section className="bg-gradient-to-b from-[#136207] to-[#1B3FAB] text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
             Welcome to <span className="bg-gradient-to-r from-orange-400 to-sky-400 bg-clip-text text-transparent">Swamp</span> Spotter 🌿

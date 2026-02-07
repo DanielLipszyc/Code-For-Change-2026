@@ -33,8 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} antialiased min-h-screen`}>
+    <html lang="en" className="light">
+      <body className={`${inter.className} antialiased min-h-screen bg-white`}>
         <Navigation />
         <main className="safe-top safe-bottom">{children}</main>
       </body>
