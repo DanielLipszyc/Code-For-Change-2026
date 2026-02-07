@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { plantNames } from "@/data/plants";
 
 export async function POST(request: NextRequest) {
+  console.log("=== Plant identification API called ===");
+  
   try {
     const { image } = await request.json();
+    console.log("Image received, length:", image?.length || 0);
 
     if (!image) {
+      console.log("No image provided");
       return NextResponse.json(
         { error: "No image provided" },
         { status: 400 }
@@ -13,7 +17,10 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
+    console.log("API Key exists:", !!apiKey);
+    
     if (!apiKey) {
+      console.log("Gemini API key not configured");
       return NextResponse.json(
         { error: "Gemini API key not configured" },
         { status: 500 }
@@ -37,7 +44,7 @@ Important: Only respond with the plant name, nothing else.`;
 
     // Call Gemini API
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
@@ -67,14 +74,15 @@ Important: Only respond with the plant name, nothing else.`;
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("Gemini API error:", errorData);
+      console.error("Gemini API error:", JSON.stringify(errorData, null, 2));
       return NextResponse.json(
-        { error: "Failed to analyze image" },
+        { error: "Failed to analyze image", details: errorData },
         { status: 500 }
       );
     }
 
     const data = await response.json();
+    console.log("Gemini response:", JSON.stringify(data, null, 2));
     const prediction =
       data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Unknown";
 
