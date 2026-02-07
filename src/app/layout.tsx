@@ -6,13 +6,13 @@ import Navigation from "@/components/Navigation";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Code For Change 2026",
-  description: "A mobile-friendly web application",
+  title: "Swamp Spotter",
+  description: "Spot and submit plants in swamps and wetlands",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Code For Change",
+    title: "Swamp Spotter",
   },
 };
 
@@ -22,8 +22,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#f0fdf4" },
+    { media: "(prefers-color-scheme: dark)", color: "#14532d" },
   ],
 };
 
