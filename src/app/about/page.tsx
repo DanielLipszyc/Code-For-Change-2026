@@ -38,7 +38,7 @@ const TEAM: TeamMember[] = [
   {
     name: "Jonathan Kissil",
     role: "Design / Product",
-    bio: "Created the visual system, page layouts, mapping system, and UI components to keep the experience approachable.",
+    bio: "Created the visual system, page layouts, mapping system, and UI components to assure approachability.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
       { label: "GitHub", href: "https://github.com/JonKissil" },
@@ -48,7 +48,7 @@ const TEAM: TeamMember[] = [
   {
     name: "Rawan Hussain",
     role: "Design / Product",
-    bio: "Created the visual system, page layouts, and UI components to keep the experience approachable.",
+    bio: "Created the graphics, page layouts, and UI components to enhance visuals and streamline user experience.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
       { label: "GitHub", href: "https://github.com/Rawanh04" },
