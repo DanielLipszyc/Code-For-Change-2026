@@ -65,7 +65,8 @@ export default function Home() {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            objectPosition: "center"
+            objectPosition: "center",
+            filter: "brightness(.5)"
           }} src="/forest.jpg" alt="forest"/>
           <div className="absolute inset-0 bg-black/30" />
         </div>
@@ -85,10 +86,7 @@ export default function Home() {
               Spotter 🌿
             </h1>
 
-            <p style = {{
-              backgroundColor: "transparent"
-            }}
-              className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
               Discover, identify, and document plants in swamps and wetlands—then submit sightings
               that help teams and communities understand what’s spreading and what’s thriving.
             </p>
