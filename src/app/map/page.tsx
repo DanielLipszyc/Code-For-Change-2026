@@ -412,37 +412,12 @@ export default function Map() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            County Invasive Plant Map
+            Alachua County Invasive Plant Map
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Invasive plant sightings across Alachua County, Florida
-          </p>
         </div>
 
         {/* Map Container */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-          {/* Card header */}
-          <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                Sightings map
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Export includes {userRole === "admin" ? "all submissions" : "approved submissions only"}.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              disabled={!dataLoaded || submissions.length === 0}
-              className="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-black/10 dark:ring-white/10 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Download sightings as CSV"
-            >
-              ⬇️ Export CSV
-            </button>
-          </div>
-
           {/* Map */}
           <div ref={mapContainer} className="w-full h-[500px] sm:h-[600px] relative">
             {isLoading && (
@@ -450,6 +425,22 @@ export default function Map() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
               </div>
             )}
+          </div>
+
+          {/* Export CSV Button */}
+          <div className="flex justify-center px-4 py-4 sm:px-6 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={!dataLoaded || submissions.length === 0}
+              className="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-gray-900 px-6 py-3 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-black/10 dark:ring-white/10 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              title="Download sightings as CSV"
+            >
+              ⬇️ Export CSV
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                ({userRole === "admin" ? "all submissions" : "approved only"})
+              </span>
+            </button>
           </div>
         </div>
 
