@@ -443,7 +443,7 @@ export default function Map() {
           </div>
 
           {/* Filter Section */}
-          <div className="px-6 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+          <div className="px-8 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             {/* Plant Species Filter */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
