@@ -171,7 +171,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setActive((i) => (i - 1 + slides.length) % slides.length)}
-                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15 hover:scale-[1.03]"
                         aria-label="Previous slide"
                       >
                         ←
@@ -179,7 +179,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setActive((i) => (i + 1) % slides.length)}
-                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15 hover:scale-[1.03]"
                         aria-label="Next slide"
                       >
                         →
@@ -189,7 +189,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => setPaused((p) => !p)}
-                      className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                      className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15 hover:scale-[1.03]"
                       aria-label={paused ? "Resume slideshow" : "Pause slideshow"}
                       title={paused ? "Resume" : "Pause"}
                     >
@@ -237,7 +237,7 @@ export default function Home() {
           {/* ✅ MOBILE: Image above each step */}
           <div className="mt-10 grid gap-8 lg:hidden">
             <div className="space-y-4">
-              <ImagePlaceholder label="Placeholder: 'Spotting' photo" />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
               <StepCard
                 n="01"
                 title="Spot"
@@ -246,7 +246,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              <ImagePlaceholder label="Placeholder: 'Guide' screenshot" />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
               <StepCard
                 n="02"
                 title="Identify"
@@ -255,7 +255,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              <ImagePlaceholder label="Placeholder: 'Submission' screenshot" />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
               <StepCard
                 n="03"
                 title="Submit"
@@ -311,14 +311,14 @@ export default function Home() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/sign-in"
-                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-white/90"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-white/90 hover:scale-[1.03]"
                 >
                   Log in
                 </Link>
 
                 <Link
                   href="/sign-up"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 hover:scale-[1.03]"
                 >
                   Sign up
                 </Link>
@@ -356,36 +356,6 @@ function StepCard({ n, title, body }: { n: string; title: string; body: string }
         <p className="text-lg font-bold text-slate-900">{title}</p>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">{body}</p>
-    </div>
-  );
-}
-
-function FeatureCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-      <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-sky-100 ring-1 ring-slate-200" />
-      <p className="mt-4 text-base font-semibold text-slate-900">{title}</p>
-      <p className="mt-2 text-sm leading-relaxed text-slate-600">{body}</p>
-      <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-      <p className="mt-4 text-xs text-slate-500">
-        Replace placeholders with real screenshots for an instant “product” feel.
-      </p>
-    </div>
-  );
-}
-
-function ImagePlaceholder({ label }: { label: string }) {
-  return (
-    <div className="overflow-hidden rounded-3xl border border-dashed border-slate-300 bg-white">
-      <div className="flex h-44 items-center justify-center bg-slate-50">
-        <p className="text-sm font-semibold text-slate-500">{label}</p>
-      </div>
-      <div className="border-t border-slate-200 px-5 py-4">
-        <p className="text-sm font-semibold text-slate-900">Drop-in image slot</p>
-        <p className="mt-1 text-sm text-slate-600">
-          Put a real photo or screenshot here to elevate the page instantly.
-        </p>
-      </div>
     </div>
   );
 }
