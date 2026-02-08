@@ -79,6 +79,7 @@ export default function Map() {
   const [selectedPlants, setSelectedPlants] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Get unique plant names for filter
   const uniquePlants = Array.from(
@@ -442,93 +443,6 @@ export default function Map() {
             </button>
           </div>
 
-          {/* Filter Section */}
-          <div className="px-8 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-            {/* Plant Species Filter */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-sm font-semibold text-gray-900 dark:text-white">
-                  🌿 Filter by Plant Species
-                </label>
-                {uniquePlants.length > 0 && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSelectAllPlants}
-                      className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                    >
-                      Select All
-                    </button>
-                    <button
-                      onClick={handleClearAllPlants}
-                      className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                )}
-              </div>
-              {uniquePlants.length > 0 ? (
-                <div className="flex flex-wrap gap-3">
-                  {uniquePlants.map((plant) => (
-                    <label key={plant} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedPlants.includes(plant)}
-                        onChange={() => handlePlantToggle(plant)}
-                        className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{plant}</span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No plants to filter</p>
-              )}
-            </div>
-
-            {/* Date Range Filter */}
-            <div className="mb-4">
-              <label className="text-sm font-semibold text-gray-900 dark:text-white block mb-3">
-                📅 Filter by Date Range
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">From</label>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">To</label>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Clear Filters Button and Results Count */}
-            <div className="flex items-center justify-between">
-              {(selectedPlants.length > 0 || dateFrom || dateTo) && (
-                <button
-                  onClick={handleClearFilters}
-                  className="px-4 py-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-sm font-medium transition-colors"
-                >
-                  ✕ Clear All Filters
-                </button>
-              )}
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                Showing {filteredSubmissions.length} of {submissions.length} sightings
-              </span>
-            </div>
-          </div>
-
           {/* Map */}
           <div ref={mapContainer} className="w-full h-[500px] sm:h-[600px] relative">
             {isLoading && (
@@ -539,6 +453,115 @@ export default function Map() {
           </div>
         </div>
 
+        {/* Collapsible Filters Section */}
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Filter Sightings
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {filtersExpanded ? 'Click to collapse' : 'Click to expand filters'}
+                </p>
+              </div>
+            </div>
+            <div className={`text-2xl text-gray-500 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`}>
+              ▼
+            </div>
+          </button>
+
+          {filtersExpanded && (
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+              {/* Plant Species Filter */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-gray-900 dark:text-white">
+                    🌿 Filter by Plant Species
+                  </label>
+                  {uniquePlants.length > 0 && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSelectAllPlants}
+                        className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        onClick={handleClearAllPlants}
+                        className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {uniquePlants.length > 0 ? (
+                  <div className="flex flex-wrap gap-3">
+                    {uniquePlants.map((plant) => (
+                      <label key={plant} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlants.includes(plant)}
+                          onChange={() => handlePlantToggle(plant)}
+                          className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{plant}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No plants to filter</p>
+                )}
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-semibold text-gray-900 dark:text-white block mb-3">
+                  📅 Filter by Date Range
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">From</label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">To</label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Clear Filters Button and Results Count */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                {(selectedPlants.length > 0 || dateFrom || dateTo) && (
+                  <button
+                    onClick={handleClearFilters}
+                    className="px-4 py-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-sm font-medium transition-colors"
+                  >
+                    ✕ Clear All Filters
+                  </button>
+                )}
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
+                  Showing {filteredSubmissions.length} of {submissions.length} sightings
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Admin Pending Submissions Section */}
         {userRole === 'admin' && submissions.filter(s => s.status === 'pending').length > 0 && (
