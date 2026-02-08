@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
 
@@ -10,8 +10,12 @@ interface AIPrediction {
   isKnownPlant: boolean;
 }
 
-// Compress image to reduce payload size for Vercel (max ~500KB output)
-const compressImage = (dataUrl: string, maxSize = 512, quality = 0.5): Promise<string> => {
+// Compress image to reduce payload size
+const compressImage = (
+  dataUrl: string,
+  maxSize = 512,
+  quality = 0.5
+): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -19,7 +23,6 @@ const compressImage = (dataUrl: string, maxSize = 512, quality = 0.5): Promise<s
       let width = img.width;
       let height = img.height;
 
-      // Scale down to fit within maxSize x maxSize
       if (width > height && width > maxSize) {
         height = (height * maxSize) / width;
         width = maxSize;
@@ -34,15 +37,27 @@ const compressImage = (dataUrl: string, maxSize = 512, quality = 0.5): Promise<s
       const ctx = canvas.getContext("2d");
       ctx?.drawImage(img, 0, 0, width, height);
 
-      // Convert to JPEG with lower quality for smaller size
       resolve(canvas.toDataURL("image/jpeg", quality));
     };
     img.src = dataUrl;
   });
 };
 
+function toSpeciesId(commonName: string): string | null {
+  const name = commonName.trim();
+  if (!name || name.toLowerCase() === "unknown" || name.toLowerCase() === "unknown plant") {
+    return null;
+  }
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+}
+
 export default function SubmitClient() {
   const searchParams = useSearchParams();
+  const plantParam = searchParams.get("plant");
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [plantName, setPlantName] = useState("");
@@ -52,27 +67,26 @@ export default function SubmitClient() {
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
   const [showComparison, setShowComparison] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Prefill from /submit?plant=...
   useEffect(() => {
-    const plantParam = searchParams.get("plant");
     if (!plantParam) return;
+
     const exists = plants.some((p) => p.name === plantParam);
     const value = exists ? plantParam : "Unknown";
 
-    // Only prefill if the user hasn't chosen something yet
-    setPlantName((current) => (current ? current : plantParam));
-  }, [searchParams]);
+    setPlantName((current) => (current ? current : value));
+  }, [plantParam]);
 
   const identifyPlant = async (imageData: string) => {
     setIsIdentifying(true);
     setAiPrediction(null);
-    
+
     try {
-      // Compress image before sending to API
-      const compressedImage = await compressImage(imageData);
-      
+      const compressedImage = await compressImage(imageData, 512, 0.5);
+
       const response = await fetch("/api/identify-plant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,31 +108,31 @@ export default function SubmitClient() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageData = reader.result as string;
-        setSelectedImage(imageData);
-        identifyPlant(imageData);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const imageData = reader.result as string;
+      setSelectedImage(imageData);
+      identifyPlant(imageData);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageData = reader.result as string;
-        setSelectedImage(imageData);
-        identifyPlant(imageData);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file || !file.type.startsWith("image/")) return;
+
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const imageData = reader.result as string;
+      setSelectedImage(imageData);
+      identifyPlant(imageData);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -130,44 +144,69 @@ export default function SubmitClient() {
     setIsSubmitting(true);
 
     try {
-      // Get user's current location
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         if (!navigator.geolocation) {
-          reject(new Error('Geolocation not supported'));
+          reject(new Error("Geolocation not supported"));
           return;
         }
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 0
+          maximumAge: 0,
         });
       });
 
-      // Create submission with location
+      if (!selectedImage) {
+        alert("Please upload an image.");
+        return;
+      }
+
+      // Compress image again specifically for storage in Mongo
+      // (bigger than AI compression is ok, but keep it reasonable)
+      const imageData = await compressImage(selectedImage, 800, 0.7);
+
+      const chosenPlantName = aiPrediction?.prediction || plantName || "Unknown Plant";
+
       const submission = {
-        plantName: aiPrediction?.prediction || plantName || 'Unknown Plant',
+        // Your app fields
+        plantName: chosenPlantName,
         scientificName: aiPrediction?.scientificName || undefined,
+
+        // Optional stable id field (handy for filtering later)
+        speciesId: toSpeciesId(chosenPlantName),
+
+        // Location
         lat: position.coords.latitude,
         lng: position.coords.longitude,
-        timestamp: Date.now(),
+        locationAccuracyM: position.coords.accuracy,
+
+        // Times
+        observedAt: new Date().toISOString(),
+        reportedAt: new Date().toISOString(),
+
+        // Notes + image
         notes: notes || undefined,
+        imageData, // ✅ stored in Mongo as a base64 data URL
+
+        // Moderation default (if you want it)
+        status: "pending",
       };
 
-      // Save to MongoDB via API
-      const response = await fetch('/api/submissions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submission),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save submission');
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error || "Failed to save submission");
       }
 
       setSubmitted(true);
     } catch (error) {
-      console.error('Error submitting plant:', error);
-      alert('Unable to submit. Please check your location services and try again.');
+      console.error("Error submitting plant:", error);
+      alert("Unable to submit. Please check your location services and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -189,12 +228,10 @@ export default function SubmitClient() {
         <div className="max-w-2xl mx-auto text-center">
           <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
             <div className="text-6xl mb-6">🌿</div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Plant Submitted!
-            </h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Plant Submitted!</h2>
             <p className="text-gray-600 mb-8">
-              Thank you for your contribution to documenting wetland plants.
-              Your submission is being reviewed.
+              Thank you for your contribution to documenting wetland plants. Your submission is
+              being reviewed.
             </p>
             <button
               onClick={resetForm}
@@ -211,7 +248,6 @@ export default function SubmitClient() {
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-primary-50">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
             Submit a Plant 🌱
@@ -222,12 +258,12 @@ export default function SubmitClient() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload Area */}
+          {/* Image Upload */}
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
             <label className="block text-lg font-semibold text-gray-900 mb-4">
               Plant Photo *
             </label>
-            
+
             <div
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
@@ -245,7 +281,7 @@ export default function SubmitClient() {
                 onChange={handleImageChange}
                 className="hidden"
               />
-              
+
               {selectedImage ? (
                 <div className="space-y-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -254,9 +290,7 @@ export default function SubmitClient() {
                     alt="Preview"
                     className="max-h-64 mx-auto rounded-lg shadow-md"
                   />
-                  <p className="text-sm text-gray-600">
-                    {fileName}
-                  </p>
+                  <p className="text-sm text-gray-600">{fileName}</p>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -278,22 +312,20 @@ export default function SubmitClient() {
                     <p className="text-lg font-medium text-gray-700">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      PNG, JPG, HEIC up to 10MB
-                    </p>
+                    <p className="text-sm text-gray-500 mt-1">PNG, JPG, HEIC up to 10MB</p>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* AI Identification Status */}
+          {/* AI Identification */}
           {selectedImage && (
             <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 🤖 AI Plant Identification
               </h3>
-              
+
               {isIdentifying ? (
                 <div className="flex items-center space-x-3 text-gray-600">
                   <svg className="animate-spin h-5 w-5 text-[#136207]" fill="none" viewBox="0 0 24 24">
@@ -305,7 +337,9 @@ export default function SubmitClient() {
               ) : aiPrediction ? (
                 <div className="space-y-3">
                   <div className="p-4 rounded-xl bg-primary-50 border border-primary-200">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-[#136207]">AI Identification</span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-[#136207]">
+                      AI Identification
+                    </span>
                     <p className="text-xl font-bold text-gray-900 mt-1">
                       {aiPrediction.prediction}
                       {aiPrediction.scientificName && (
@@ -317,27 +351,28 @@ export default function SubmitClient() {
                   </div>
 
                   {showComparison && plantName && (
-                    <div className={`p-4 rounded-lg ${
-                      plantName.toLowerCase() === aiPrediction.prediction.toLowerCase()
-                        ? "bg-primary-100 border border-primary-300"
-                        : "bg-orange-100 border border-orange-300"
-                    }`}>
+                    <div
+                      className={`p-4 rounded-lg ${
+                        plantName.toLowerCase() === aiPrediction.prediction.toLowerCase()
+                          ? "bg-primary-100 border border-primary-300"
+                          : "bg-orange-100 border border-orange-300"
+                      }`}
+                    >
                       {plantName.toLowerCase() === aiPrediction.prediction.toLowerCase() ? (
                         <p className="text-[#136207] font-medium">
                           ✅ Your selection matches the AI prediction!
                         </p>
                       ) : (
                         <p className="text-orange-700 font-medium">
-                          ⚠️ Your selection ({plantName}) differs from AI prediction ({aiPrediction.prediction})
+                          ⚠️ Your selection ({plantName}) differs from AI prediction (
+                          {aiPrediction.prediction})
                         </p>
                       )}
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">
-                  Unable to identify plant. Please select manually below.
-                </p>
+                <p className="text-gray-500">Unable to identify plant. Please select manually below.</p>
               )}
             </div>
           )}
@@ -345,25 +380,22 @@ export default function SubmitClient() {
           {/* Plant Details */}
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
             <div>
-              <label
-                htmlFor="plantName"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="plantName" className="block text-sm font-medium text-gray-700 mb-2">
                 Select Plant Species *
               </label>
-              {searchParams.get("plant") && (
-                <p className="text-sm text-emerald-700 mt-2">
-                  Prefilled from guide: <b>{searchParams.get("plant")}</b>
+
+              {plantParam && (
+                <p className="text-sm text-emerald-700 mb-2">
+                  Prefilled from guide: <b>{plantParam}</b>
                 </p>
               )}
+
               <select
                 id="plantName"
                 value={plantName}
                 onChange={(e) => {
                   setPlantName(e.target.value);
-                  if (aiPrediction && e.target.value) {
-                    setShowComparison(true);
-                  }
+                  if (aiPrediction && e.target.value) setShowComparison(true);
                 }}
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors"
@@ -376,6 +408,7 @@ export default function SubmitClient() {
                 ))}
                 <option value="Unknown">Unknown / Other</option>
               </select>
+
               {aiPrediction?.isKnownPlant && !plantName && (
                 <p className="text-sm text-[#136207] mt-2">
                   💡 AI suggests: {aiPrediction.prediction}
@@ -384,10 +417,7 @@ export default function SubmitClient() {
             </div>
 
             <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
                 Additional Notes
               </label>
               <textarea
@@ -401,7 +431,7 @@ export default function SubmitClient() {
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <button
             type="submit"
             disabled={!selectedImage || !plantName || isSubmitting}
@@ -409,19 +439,8 @@ export default function SubmitClient() {
           >
             {isSubmitting ? (
               <>
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path
                     className="opacity-75"
                     fill="currentColor"
