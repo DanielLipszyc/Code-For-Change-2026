@@ -75,7 +75,7 @@ export default function Home() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-              Community-powered wetland observations
+              Community-powered invasive plant observations
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
