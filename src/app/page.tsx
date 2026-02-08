@@ -99,9 +99,14 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-b from-[#136207] to-[#1B3FAB] text-white">
         {/* background blobs */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute left-1/2 top-10 h-64 w-64 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
+          <img style = {{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center"
+          }} src="/forest.jpg" alt="forest"/>
+          <div className="absolute inset-0 bg-black/30" />
         </div>
 
         <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8 lg:py-20">
@@ -128,13 +133,13 @@ export default function Home() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/submit"
-                className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-lg shadow-black/10 hover:bg-green-50"
+                className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-lg shadow-black/10 hover:bg-green-50 hover:scale-[1.03]"
               >
                 🌱 Submit a Sighting
               </Link>
               <Link
                 href="/guide"
-                className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/15"
+                className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/15 hover:scale-[1.03]"
               >
                 Browse the ID Guide
               </Link>
