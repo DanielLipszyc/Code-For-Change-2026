@@ -235,20 +235,66 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <StepCard n="01" title="Spot" body="Find a plant and take clear photos of leaves, stem, and fruit/flowers." />
-            <StepCard n="02" title="Identify" body="Use the guide to compare key traits and confirm your best match." />
-            <StepCard n="03" title="Submit" body="Upload the sighting with location and notes—then it’s ready for review." />
+          {/* ✅ MOBILE: Image above each step */}
+          <div className="mt-10 grid gap-8 lg:hidden">
+            <div className="space-y-4">
+              <ImagePlaceholder label="Placeholder: 'Spotting' photo" />
+              <StepCard
+                n="01"
+                title="Spot"
+                body="Find a plant and take clear photos of leaves, stem, and fruit/flowers."
+              />
+            </div>
+
+            <div className="space-y-4">
+              <ImagePlaceholder label="Placeholder: 'Guide' screenshot" />
+              <StepCard
+                n="02"
+                title="Identify"
+                body="Use the guide to compare key traits and confirm your best match."
+              />
+            </div>
+
+            <div className="space-y-4">
+              <ImagePlaceholder label="Placeholder: 'Submission' screenshot" />
+              <StepCard
+                n="03"
+                title="Submit"
+                body="Upload the sighting with location and notes—then it’s ready for review."
+              />
+            </div>
           </div>
 
-          {/* Image placeholders row */}
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            <ImagePlaceholder label="Placeholder: 'Spotting' photo" />
-            <ImagePlaceholder label="Placeholder: 'Guide' screenshot" />
-            <ImagePlaceholder label="Placeholder: 'Submission' screenshot" />
+          {/* ✅ DESKTOP: original layout unchanged */}
+          <div className="mt-10 hidden lg:block">
+            <div className="grid gap-6 md:grid-cols-3">
+              <StepCard
+                n="01"
+                title="Spot"
+                body="Find a plant and take clear photos of leaves, stem, and fruit/flowers."
+              />
+              <StepCard
+                n="02"
+                title="Identify"
+                body="Use the guide to compare key traits and confirm your best match."
+              />
+              <StepCard
+                n="03"
+                title="Submit"
+                body="Upload the sighting with location and notes—then it’s ready for review."
+              />
+            </div>
+
+            <div className="mt-10 grid gap-6 lg:grid-cols-3">
+              <ImagePlaceholder label="Placeholder: 'Spotting' photo" />
+              <ImagePlaceholder label="Placeholder: 'Guide' screenshot" />
+              <ImagePlaceholder label="Placeholder: 'Submission' screenshot" />
+            </div>
           </div>
         </div>
       </section>
+
+
 
 
       {/* CTA */}
