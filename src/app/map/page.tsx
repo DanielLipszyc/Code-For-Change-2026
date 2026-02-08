@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import 'leaflet/dist/leaflet.css';
 import { UserRole } from '@/types/auth';
@@ -126,7 +126,7 @@ export default function Map() {
   };
 
   // Handle approve submission (admin only)
-  const handleApprove = async (submissionId: string) => {
+  const handleApprove = useCallback(async (submissionId: string) => {
     try {
       const response = await fetch(`/api/submissions/${submissionId}/approve`, {
         method: 'POST',
@@ -150,7 +150,7 @@ export default function Map() {
       console.error('Error approving submission:', error);
       alert('Failed to approve submission');
     }
-  };
+  }, [selectedSubmission]);
 
   // Check if user can edit submission
   const canEdit = (submission: Submission): boolean => {
