@@ -65,7 +65,8 @@ export default function Home() {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            objectPosition: "center"
+            objectPosition: "center",
+            filter: "brightness(.5)"
           }} src="/forest.jpg" alt="forest"/>
           <div className="absolute inset-0 bg-black/30" />
         </div>
@@ -79,7 +80,6 @@ export default function Home() {
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              Welcome to{" "}
               <span className="bg-gradient-to-r from-orange-300 to-sky-300 bg-clip-text text-transparent">
                 Swamp
               </span>{" "}

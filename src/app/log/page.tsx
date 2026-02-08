@@ -4,6 +4,29 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 
+const handleDelete = async (submissionId: string) => {
+    if (!confirm('Are you sure you want to delete this submission?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('Submission deleted successfully');
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to delete submission');
+      }
+    } catch (error) {
+      console.error('Error deleting submission:', error);
+      alert('Failed to delete submission');
+    }
+  };
+
 interface Submission {
   _id: string;
   plantName: string;
@@ -93,11 +116,19 @@ function SubmissionCard({ submission }: { submission: Submission }) {
 
           <Link
             href={`/submit/edit/${submission._id}`}
-            className="shrink-0 rounded-lg bg-[#136207] px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0f5006]"
+            style={{textAlign: "center"}}
+            className="flex-grow rounded-lg bg-[#136207] px-1.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0f5006]"
             title="Edit submission"
           >
             Edit
           </Link>
+          <button
+            onClick={() => handleDelete(submission._id!)}
+            className="flex-grow rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-700"
+            title="Delete submission"
+          >
+            Delete
+          </button>
         </div>
 
         {submission.notes && (
