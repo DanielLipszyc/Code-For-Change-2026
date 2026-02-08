@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { translations } from "@/lib/translation";
 
 type ThreatLevel = "Low" | "Moderate" | "Significant";
 type Language = "en" | "es";
@@ -11,7 +12,7 @@ type Plant = {
   name: Record<Language, string>;
   scientificName: string;
   picUrl: string;
-  threatLevel: Record<Language, ThreatLevel | string>;
+  threatLevel: Record<"en", ThreatLevel> & Record<"es", string>; 
   tip: Record<Language, string>;
 };
 
@@ -203,6 +204,7 @@ function InfoModal({
   lang: Language;
 }) {
   const [src, setSrc] = useState(plant.picUrl);
+  const levelEn = plant.threatLevel.en as ThreatLevel || "Low";
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -252,38 +254,46 @@ function InfoModal({
                 )}`}
               >
                 <span className={`h-2 w-2 rounded-full ${threatDotClasses(plant.threatLevel.en as ThreatLevel)}`} />
-                {plant.threatLevel[lang]} threat
+              {plant.threatLevel[lang as keyof typeof plant.threatLevel]} {translations[lang as Language]?.guide?.threatLevel ?? "Threat level"}
               </span>
             </div>
           </div>
 
           <div className="p-5 sm:p-6">
             <h4 className="text-base font-bold text-slate-900">
-              {lang === "en" ? "Quick ID" : "Identificación rápida"}
+              {translations[lang]?.guide?.quickId ?? (lang === "en" ? "Quick ID" : "Identificación rápida")}
             </h4>
             <p className="mt-2 text-sm leading-relaxed text-slate-700">
-              <span className="font-semibold text-slate-900">Look for:</span> {plant.tip[lang]}
+              <span className="font-semibold text-slate-900">
+              {translations[lang]?.guide?.tip ?? (lang === "en" ? "Look for:" : "Identificar por:")}
+              </span>{" "}
+              {plant.tip[lang]}
             </p>
 
             <div className="mt-5 grid gap-3">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Why it matters
+                  {translations[lang]?.guide?.whyItMattersTitle ?? (lang === "en" ? "Why it matters" : "Por qué importa")}
                 </p>
                 <p className="mt-1 text-sm text-slate-700">
-                  Invasive plants can spread quickly, outcompete native species, and impact local
-                  ecosystems. Reporting helps prioritize removals and protect habitats.
+                  {translations[lang]?.guide?.whyItMattersBody ?? (lang === "en" ? "Invasive plants can spread quickly, outcompete native species, and impact local ecosystems. Reporting helps prioritize removals and protect habitats." : "Las plantas invasoras pueden propagarse rápidamente, superar a las especies nativas y afectar los ecosistemas locales. Reportar ayuda a priorizar la eliminación y proteger los hábitats.")}
                 </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  What to do if you find it
+                  {translations[lang]?.guide?.whatToDoTitle ?? (lang === "en" ? "What to do if you find it" : "Qué hacer si la encuentra")}
                 </p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                  <li>Take a clear photo (leaves + stem/flowers/fruit if possible).</li>
-                  <li>Note the location (trail name, nearest landmark, or address).</li>
-                  <li>Avoid spreading seeds/fragments on shoes or tools.</li>
+                  <li>
+                    {translations[lang]?.guide?.photoTip ?? (lang === "en" ? "Take a clear photo (leaves + stem/flowers/fruit if possible)." : "Tome una foto clara (hojas + tallo/flores/fruta si es posible).")}
+                  </li>
+                  <li>
+                      {translations[lang]?.guide?.locationTip ?? (lang === "en" ? "Note the location (trail name, nearest landmark, or address)." : "Anote la ubicación (nombre del sendero, punto de referencia más cercano o dirección).")}
+                  </li>
+                  <li>
+                     {translations[lang]?.guide?.avoidSpreading ?? (lang === "en" ? "Avoid spreading seeds/fragments on shoes or tools." : "Evite propagar semillas o fragmentos en zapatos o herramientas.")}
+                  </li>
                 </ul>
               </div>
 
@@ -293,7 +303,7 @@ function InfoModal({
                   className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
                   onClick={onClose}
                 >
-                  Report this plant
+                  {translations[lang]?.guide?.reportButton ?? (lang === "en" ? "Report this plant" : "Reportar esta planta")}
                 </Link>
               </div>
             </div>
@@ -314,6 +324,9 @@ function PlantCard({
   lang: Language;
 }) {
   const [src, setSrc] = useState(plant.picUrl);
+  console.log("lang:", lang);
+  console.log("translations[lang]:", translations[lang]);
+
 
   return (
     <div
@@ -338,7 +351,7 @@ function PlantCard({
               plant.threatLevel.en as ThreatLevel
             )}`}
           >
-            {plant.threatLevel[lang]} threat
+            {plant.threatLevel[lang]} {translations[lang as Language]?.guide?.threatLevel ?? "Threat level"}
           </span>
         </div>
       </div>
