@@ -27,8 +27,8 @@ const TEAM: TeamMember[] = [
   },
   {
     name: "Daniel Lipszyc",
-    role: "Backend / Data",
-    bio: "Designed data models and API routes to store sightings, images, and user submissions reliably.",
+    role: "Full-Stack Developer",
+    bio: "Implemented user authentication and roles with Clerk, Gemini AI plant identification, interactive mapping, and MongoDB database integration.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
       { label: "GitHub", href: "https://github.com/DanielLipszyc" },
