@@ -21,8 +21,8 @@ const TEAM: TeamMember[] = [
     bio: "Focused on building a clean reporting flow, improving UX, and keeping the app lightweight and deploy-ready.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
-      { label: "GitHub", href: "https://github.com/" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/" },
+      { label: "GitHub", href: "https://github.com/camachom26" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/mia-camacho-27a2b3255/" },
     ],
   },
   {
@@ -31,8 +31,8 @@ const TEAM: TeamMember[] = [
     bio: "Designed data models and API routes to store sightings, images, and user submissions reliably.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
-      { label: "GitHub", href: "https://github.com/" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/" },
+      { label: "GitHub", href: "https://github.com/DanielLipszyc" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/daniellipszyc" },
     ],
   },
   {
@@ -41,8 +41,8 @@ const TEAM: TeamMember[] = [
     bio: "Created the visual system, page layouts, mapping system, and UI components to keep the experience approachable.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
-      { label: "GitHub", href: "https://github.com/" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/" },
+      { label: "GitHub", href: "https://github.com/JonKissil" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/jkissil" },
     ],
   },
   {
@@ -51,8 +51,8 @@ const TEAM: TeamMember[] = [
     bio: "Created the visual system, page layouts, and UI components to keep the experience approachable.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
-      { label: "GitHub", href: "https://github.com/" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/" },
+      { label: "GitHub", href: "https://github.com/Rawanh04" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/rawan-hussain/" },
     ],
   }
 ];
