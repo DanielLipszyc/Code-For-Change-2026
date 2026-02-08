@@ -36,14 +36,24 @@ export default function Map() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const { user } = useUser();
   const [userRole, setUserRole] = useState<UserRole>('user');
+  const [roleLoaded, setRoleLoaded] = useState(false);
 
   // Fetch user role when user is authenticated
   useEffect(() => {
     if (user) {
       fetch('/api/users/me')
         .then(res => res.json())
-        .then(data => setUserRole(data.role))
-        .catch(err => console.error('Error fetching user role:', err));
+        .then(data => {
+          setUserRole(data.role);
+          setRoleLoaded(true);
+        })
+        .catch(err => {
+          console.error('Error fetching user role:', err);
+          setRoleLoaded(true); // Still mark as loaded even on error
+        });
+    } else {
+      // No user, so role is effectively loaded (as guest)
+      setRoleLoaded(true);
     }
   }, [user]);
 
@@ -165,8 +175,14 @@ export default function Map() {
     // Wait for data to be loaded before initializing map
     if (!dataLoaded) return;
 
-    // Prevent multiple initializations
-    if (map.current) return;
+    // Wait for user role to be loaded before initializing map
+    if (!roleLoaded) return;
+
+    // Clean up existing map if it exists (to allow re-render when userRole changes)
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
 
     if (!mapContainer.current) return;
 
@@ -266,7 +282,7 @@ export default function Map() {
         map.current = null;
       }
     };
-  }, [dataLoaded, submissions, userRole]);
+  }, [dataLoaded, submissions, userRole, roleLoaded]);
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -294,6 +310,65 @@ export default function Map() {
             )}
           </div>
         </div>
+
+        {/* Admin Pending Submissions Section */}
+        {userRole === 'admin' && submissions.filter(s => s.status === 'pending').length > 0 && (
+          <div className="mt-8 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-2xl">⏳</span>
+              <h2 className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                Pending Submissions ({submissions.filter(s => s.status === 'pending').length})
+              </h2>
+            </div>
+            <p className="text-amber-800 dark:text-amber-200 mb-4">
+              Click on any submission below to view details and approve
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {submissions
+                .filter(s => s.status === 'pending')
+                .map((submission) => (
+                  <button
+                    key={submission._id}
+                    onClick={() => setSelectedSubmission(submission)}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow text-left border-2 border-amber-200 dark:border-amber-700 hover:border-amber-400 dark:hover:border-amber-500"
+                  >
+                    <div className="flex items-start gap-3">
+                      {submission.imageData ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={submission.imageData}
+                          alt={submission.plantName}
+                          className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <span className="text-2xl">🌿</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 dark:text-white truncate">
+                          {submission.plantName}
+                        </h3>
+                        {submission.scientificName && (
+                          <p className="text-xs italic text-gray-600 dark:text-gray-400 truncate">
+                            {submission.scientificName}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {new Date(submission.timestamp).toLocaleDateString()}
+                        </p>
+                        {submission.createdBy && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            By: {submission.createdBy}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* Info Section */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
