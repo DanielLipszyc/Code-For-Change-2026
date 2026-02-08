@@ -26,8 +26,8 @@ const PLANTS: Plant[] = [
   },
   {
     id: 2,
-    name: "Coral Adicea",
-    scientificName: "Ardisia Crenata",
+    name: "Coral Adisia",
+    scientificName: "Ardisia crenata",
     picUrl:
       "https://www.floridamuseum.ufl.edu/wp-content/uploads/sites/23/2017/03/Ardisia-crenata-mature-fruit.jpg",
     threatLevel: "Significant",
@@ -36,8 +36,14 @@ const PLANTS: Plant[] = [
   {
     id: 3,
     name: "Spanish Gold",
+<<<<<<< HEAD
     scientificName: "Sesbania Punicea",
     picUrl: "https://www.picturethisai.com/wiki-image/1080/215992612534845440.jpeg",
+=======
+    scientificName: "Sesbania punicea",
+    picUrl:
+      "https://www.picturethisai.com/wiki-image/1080/215992612534845440.jpeg",
+>>>>>>> 075a27b (fix names and links in the guide page)
     threatLevel: "Low",
     tip: "dangling red-orange flowers. Their seed pods may make a rattling sound.",
   },
@@ -52,7 +58,7 @@ const PLANTS: Plant[] = [
   {
     id: 5,
     name: "Wedelia",
-    scientificName: "Wedelia Trilobata",
+    scientificName: "Wedelia trilobata",
     picUrl:
       "https://apps.lucidcentral.org/pppw_v10/images/entities/wedelia_447/ronggy_sphagneticola_trilobata_in_singapore2017.jpg",
     threatLevel: "Moderate",
@@ -60,12 +66,18 @@ const PLANTS: Plant[] = [
   },
   {
     id: 6,
-    name: "Caeser's Weed",
-    scientificName: "Urena Lobata",
+    name: "Caesar's Weed",
+    scientificName: "Urena lobata",
     picUrl:
+<<<<<<< HEAD
       "https://plant-directory.ifas.ufl.edu/site/assets/files/1163/urena_lobata_at_kadavoor.0x1800.jpg",
     threatLevel: "Low",
     tip: "pink-purple flowers and small burs covered in hooked bristles.",
+=======
+      "https://static.inaturalist.org/photos/163617275/large.jpeg",
+    threatLevel: "Significant",
+    tip: "pink-purple flowers and small burs covered in hooked bristles."
+>>>>>>> 075a27b (fix names and links in the guide page)
   },
   {
     id: 7,
@@ -97,7 +109,7 @@ const PLANTS: Plant[] = [
     name: "Chinese Tallow",
     scientificName: "Sapium sebiferum",
     picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/1/13/UC_Davis_arboretum_-_Sapium_sebiferum.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/6/66/ChineseTallowSeedpods.jpg",
     threatLevel: "Significant",
     tip: "wide heart shaped leaves with quickly tapering tips.",
   },
@@ -106,7 +118,7 @@ const PLANTS: Plant[] = [
     name: "Camphor",
     scientificName: "Cinnamomum camphora",
     picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/a/ae/Cinnamomum_camphora20050314.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a2/Cinnamomum_camphora_Turramurra_railway.jpg",
     threatLevel: "Significant",
     tip: "a distinct camphor smell from the twigs when crushed.",
   },
