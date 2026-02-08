@@ -27,8 +27,8 @@ const TEAM: TeamMember[] = [
   },
   {
     name: "Daniel Lipszyc",
-    role: "Backend / Data",
-    bio: "Designed data models and API routes to store sightings, images, and user submissions reliably.",
+    role: "Full-Stack Developer",
+    bio: "Implemented user authentication and roles with Clerk, Gemini AI plant identification, interactive mapping, and MongoDB database integration.",
     avatarSrc: "/team/team.jpg", // optional
     links: [
       { label: "GitHub", href: "https://github.com/DanielLipszyc" },
@@ -188,7 +188,7 @@ export default function About() {
             <div className="space-y-4 text-gray-600 leading-relaxed">
               <p>
                 Swamp Spotter is designed to make environmental reporting accessible to the general public. Anyone in the
-                county can submit plant observations; no scientific or technical background required.
+                county can submit plant observations; no scientific or technical background is required.
               </p>
               <p>
                 By focusing on a small group of high-impact invasive species within a local area, the app stays simple,
