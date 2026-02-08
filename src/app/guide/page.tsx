@@ -201,16 +201,9 @@ const FALLBACK_IMG =
   </svg>
 `);
 
-function InfoModal({
-  plant,
-  onClose,
-}: {
-  plant: Plant;
-  onClose: () => void;
-}) {
+function InfoModal({ plant, onClose }: { plant: Plant; onClose: () => void }) {
   const [src, setSrc] = useState(plant.picUrl);
 
-  // Escape key closes
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -226,23 +219,18 @@ function InfoModal({
       aria-modal="true"
       aria-label={`${plant.name} information`}
     >
-      {/* Backdrop */}
+      {/* Backdrop (click outside closes) */}
       <button
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Close"
       />
 
-      {/* Panel */}
       <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900">
-              {plant.name}
-            </p>
-            <p className="truncate text-xs italic text-slate-600">
-              {plant.scientificName}
-            </p>
+            <p className="truncate text-sm font-semibold text-slate-900">{plant.name}</p>
+            <p className="truncate text-xs italic text-slate-600">{plant.scientificName}</p>
           </div>
 
           <button
@@ -255,8 +243,8 @@ function InfoModal({
           </button>
         </div>
 
-        <div className="grid gap-0 sm:grid-cols-2">
-          {/* Left: image */}
+        <div className="grid sm:grid-cols-2">
+          {/* Left: Image */}
           <div className="relative bg-slate-100">
             <div className="relative aspect-[16/11] sm:aspect-auto sm:h-full">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -280,12 +268,11 @@ function InfoModal({
             </div>
           </div>
 
-          {/* Right: info */}
+          {/* Right: Info */}
           <div className="p-5 sm:p-6">
             <h4 className="text-base font-bold text-slate-900">Quick ID</h4>
             <p className="mt-2 text-sm leading-relaxed text-slate-700">
-              <span className="font-semibold text-slate-900">Look for:</span>{" "}
-              {plant.tip}
+              <span className="font-semibold text-slate-900">Look for:</span> {plant.tip}
             </p>
 
             <div className="mt-5 grid gap-3">
@@ -294,9 +281,8 @@ function InfoModal({
                   Why it matters
                 </p>
                 <p className="mt-1 text-sm text-slate-700">
-                  Invasive plants can spread quickly, outcompete native species, and
-                  impact local ecosystems. Reporting helps prioritize removals and
-                  protect habitats.
+                  Invasive plants can spread quickly, outcompete native species, and impact local
+                  ecosystems. Reporting helps prioritize removals and protect habitats.
                 </p>
               </div>
 
@@ -317,7 +303,6 @@ function InfoModal({
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  title="Open image source in a new tab"
                 >
                   Open image source
                 </a>
@@ -325,7 +310,6 @@ function InfoModal({
                 <Link
                   href={`/submit?plant=${encodeURIComponent(plant.name)}`}
                   className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
-                  title={`Report a ${plant.name} sighting`}
                   onClick={onClose}
                 >
                   Report this plant
@@ -343,17 +327,31 @@ function InfoModal({
   );
 }
 
+/**
+ * ✅ Entire card is clickable (opens modal)
+ * ✅ Buttons/links inside the card still work (Report link, etc.)
+ *    because we stop click propagation on them.
+ */
 function PlantCard({
   plant,
-  onInfo,
+  onOpenInfo,
 }: {
   plant: Plant;
-  onInfo: (plant: Plant) => void;
+  onOpenInfo: (plant: Plant) => void;
 }) {
   const [src, setSrc] = useState(plant.picUrl);
 
   return (
-    <div className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 hover:shadow-md transition">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenInfo(plant)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpenInfo(plant);
+      }}
+      className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-emerald-400"
+      title={`View info about ${plant.name}`}
+    >
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -377,26 +375,32 @@ function PlantCard({
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 leading-snug">
-              {plant.name}
-            </h3>
+            <h3 className="text-lg font-bold text-slate-900 leading-snug">{plant.name}</h3>
             <p className="text-sm italic text-slate-600">{plant.scientificName}</p>
           </div>
 
           <div className="flex gap-2">
-            {/* NEW: Info button opens modal */}
+            {/* Optional: keep a small "Info" button for affordance.
+                Stop propagation so it doesn't double-trigger anything weird. */}
             <button
               type="button"
-              onClick={() => onInfo(plant)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onOpenInfo(plant);
+              }}
               className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
               title="View plant info"
-              aria-label={`More info about ${plant.name}`}
             >
               Info
             </button>
 
             <Link
               href={`/submit?plant=${encodeURIComponent(plant.name)}`}
+              onClick={(e) => {
+                // Let the link work; just prevent the card click from also opening modal.
+                e.stopPropagation();
+              }}
               className="shrink-0 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
               title={`Report a ${plant.name} sighting`}
             >
@@ -415,8 +419,6 @@ export default function GuidePage() {
   const [query, setQuery] = useState("");
   const [threat, setThreat] = useState<"All" | ThreatLevel>("All");
   const [sort, setSort] = useState<"Threat" | "Name">("Threat");
-
-  // NEW: modal state
   const [activePlant, setActivePlant] = useState<Plant | null>(null);
 
   const filtered = useMemo(() => {
@@ -436,8 +438,7 @@ export default function GuidePage() {
       return matchesThreat && matchesQuery;
     }).sort((a, b) => {
       if (sort === "Name") return a.name.localeCompare(b.name);
-      const d =
-        (threatRank[b.threatLevel] ?? 0) - (threatRank[a.threatLevel] ?? 0);
+      const d = (threatRank[b.threatLevel] ?? 0) - (threatRank[a.threatLevel] ?? 0);
       return d !== 0 ? d : a.name.localeCompare(b.name);
     });
   }, [query, threat, sort]);
@@ -451,8 +452,7 @@ export default function GuidePage() {
               Alachua County Invasive Plant ID Guide
             </h1>
             <p className="mt-2 text-slate-600">
-              Search by common or scientific name. Use the threat level to prioritize
-              reporting.
+              Search by common or scientific name. Use the threat level to prioritize reporting.
             </p>
           </div>
 
@@ -500,7 +500,7 @@ export default function GuidePage() {
 
           <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (
-              <PlantCard key={p.id} plant={p} onInfo={setActivePlant} />
+              <PlantCard key={p.id} plant={p} onOpenInfo={setActivePlant} />
             ))}
           </div>
 
@@ -512,10 +512,7 @@ export default function GuidePage() {
         </div>
       </div>
 
-      {/* NEW: modal */}
-      {activePlant && (
-        <InfoModal plant={activePlant} onClose={() => setActivePlant(null)} />
-      )}
+      {activePlant && <InfoModal plant={activePlant} onClose={() => setActivePlant(null)} />}
     </div>
   );
 }
