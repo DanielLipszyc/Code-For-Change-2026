@@ -11,6 +11,7 @@ type Plant = {
   scientificName: string;
   picUrl: string;
   threatLevel: ThreatLevel;
+  tip: string
 };
 
 const PLANTS: Plant[] = [
@@ -21,14 +22,16 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/9/9b/Chinese_yam_-_air-potato_-_dioscorea_polystachya_IMG_8134.jpg",
     threatLevel: "Significant",
+    tip: "pointed, heart-shaped leaves and bulbs growing on the vine."
   },
   {
     id: 2,
     name: "Coral Adicea",
-    scientificName: "Ardicia Crenata",
+    scientificName: "Ardisia Crenata",
     picUrl:
       "https://www.floridamuseum.ufl.edu/wp-content/uploads/sites/23/2017/03/Ardisia-crenata-mature-fruit.jpg",
     threatLevel: "Significant",
+    tip: "wavy (crenate) leaves and small red berries."
   },
   {
     id: 3,
@@ -37,6 +40,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://www.picturethisai.com/wiki-image/1080/215992612534845440.jpeg",
     threatLevel: "Low",
+    tip: "dangling red-orange flowers. Their seed pods may make a rattling sound."
   },
   {
     id: 4,
@@ -44,6 +48,7 @@ const PLANTS: Plant[] = [
     scientificName: "Panicum repens",
     picUrl: "https://fsus.ncbg.unc.edu/img/orig/jho/jho_01342f.jpg",
     threatLevel: "Significant",
+    tip: "silver-green leaves with defined points."
   },
   {
     id: 5,
@@ -52,6 +57,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://apps.lucidcentral.org/pppw_v10/images/entities/wedelia_447/ronggy_sphagneticola_trilobata_in_singapore2017.jpg",
     threatLevel: "Moderate",
+    tip: "flower heads resembling daisies and waxy, jagged leaves."
   },
   {
     id: 6,
@@ -60,6 +66,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://plant-directory.ifas.ufl.edu/site/assets/files/1163/urena_lobata_at_kadavoor.0x1800.jpg",
     threatLevel: "Low",
+    tip: "pink-purple flowers and small burs covered in hooked bristles."
   },
   {
     id: 7,
@@ -68,6 +75,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://plant-directory.ifas.ufl.edu/site/assets/files/1157/tradescantia_fluminensis_flowers.0x1800.jpg",
     threatLevel: "Significant",
+    tip: "white flowers with three petals on hairless green stems."
   },
   {
     id: 8,
@@ -76,6 +84,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/a/a5/Taimo_Okinawa.jpg",
     threatLevel: "Moderate",
+    tip: "leaves attached at the underside rather than the edge. Stalks can be several feet tall."
   },
   {
     id: 9,
@@ -83,6 +92,7 @@ const PLANTS: Plant[] = [
     scientificName: "Lygodium japonicum",
     picUrl: "https://fsus.ncbg.unc.edu/img/orig/amc/amc_04402.jpg",
     threatLevel: "Significant",
+    tip: "symmetrical, triangular leaflets."
   },
   {
     id: 10,
@@ -91,6 +101,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/1/13/UC_Davis_arboretum_-_Sapium_sebiferum.jpg",
     threatLevel: "Significant",
+    tip: "wide heart shaped leaves with quickly tapering tips."
   },
   {
     id: 11,
@@ -99,6 +110,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/a/ae/Cinnamomum_camphora20050314.jpg",
     threatLevel: "Significant",
+    tip: "a distinct camphor smell from the twigs when crushed."
   },
   {
     id: 12,
@@ -107,6 +119,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/c/c5/2018-07-08_11_10_27_Rosea_Mimosa_blossoms_along_the_ramp_from_southbound_Interstate_95_(New_Jersey_Turnpike_Eastern_Spur)_to_westbound_Interstate_280_(Essex_Freeway)_in_the_New_Jersey_Meadowlands%2C_within_Kearny%2C_Hudson_County%2C_New_Jersey.jpg",
     threatLevel: "Significant",
+    tip: "tree with prominent pink-white flowers over a canopy shaped like an umbrella."
   },
   {
     id: 13,
@@ -115,6 +128,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/a/ae/Starr_070221-4728_Lantana_montevidensis.jpg",
     threatLevel: "Significant",
+    tip: "red, orange, pink, or white densely packed flower clusters."
   },
   {
     id: 14,
@@ -123,6 +137,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/3/30/Boston_Fern_(2873392811).png",
     threatLevel: "Significant",
+    tip: "potato-like growths on roots."
   },
   {
     id: 15,
@@ -131,6 +146,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/9/96/Dioscorea_balcanica_BotGardBln310505.jpg",
     threatLevel: "Significant",
+    tip: "rough brown growths growing along the leaves and stem."
   },
   {
     id: 16,
@@ -139,6 +155,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/a/ac/Solanum_viarum_fruit.jpg",
     threatLevel: "Significant",
+    tip: "spines growing along stem and fruits resembling miniature yellow or green watermelons."
   },
   {
     id: 17,
@@ -147,6 +164,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/5/51/Imperata_cylindrica_tigaya_colony.jpg",
     threatLevel: "Significant",
+    tip: "large white cylindrical plumes appearing during the spring season."
   },
 ];
 
@@ -234,7 +252,7 @@ function PlantCard({ plant }: { plant: Plant }) {
         </div>
 
         <p className="mt-3 text-sm text-slate-600">
-          Tip: Photograph leaves, stems, and any flowers/fruits for easier ID.
+          Look for: {plant.tip}
         </p>
       </div>
     </div>

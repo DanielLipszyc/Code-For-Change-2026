@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import 'leaflet/dist/leaflet.css';
+import { UserRole } from '@/types/auth';
 
 interface Submission {
   _id?: string;
@@ -12,6 +14,10 @@ interface Submission {
   timestamp: number;
   notes?: string;
   imageData?: string;
+  userId?: string;
+  createdBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 let alachuaJson = require('./alachua.json');
@@ -27,8 +33,20 @@ export default function Map() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const { user } = useUser();
+  const [userRole, setUserRole] = useState<UserRole>('user');
 
-  // Expose detail opener to window for popup button clicks
+  // Fetch user role when user is authenticated
+  useEffect(() => {
+    if (user) {
+      fetch('/api/users/me')
+        .then(res => res.json())
+        .then(data => setUserRole(data.role))
+        .catch(err => console.error('Error fetching user role:', err));
+    }
+  }, [user]);
+
+  // Expose handlers to window for popup button clicks
   useEffect(() => {
     (window as any).showSubmissionDetails = (submissionId: string) => {
       const submission = submissions.find(s => s._id === submissionId);
@@ -36,8 +54,12 @@ export default function Map() {
         setSelectedSubmission(submission);
       }
     };
+    (window as any).handleDeleteSubmission = handleDelete;
+    (window as any).handleEditSubmission = handleEdit;
     return () => {
       delete (window as any).showSubmissionDetails;
+      delete (window as any).handleDeleteSubmission;
+      delete (window as any).handleEditSubmission;
     };
   }, [submissions]);
 
@@ -58,6 +80,53 @@ export default function Map() {
     };
     fetchSubmissions();
   }, []);
+
+  // Handle delete submission
+  const handleDelete = async (submissionId: string) => {
+    if (!confirm('Are you sure you want to delete this submission?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove from state
+        setSubmissions(prev => prev.filter(s => s._id !== submissionId));
+        setSelectedSubmission(null);
+        alert('Submission deleted successfully');
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to delete submission');
+      }
+    } catch (error) {
+      console.error('Error deleting submission:', error);
+      alert('Failed to delete submission');
+    }
+  };
+
+  // Handle edit submission (navigate to edit page)
+  const handleEdit = (submissionId: string) => {
+    window.location.href = `/submit/edit/${submissionId}`;
+  };
+
+  // Check if user can edit submission
+  const canEdit = (submission: Submission): boolean => {
+    if (!user || !submission.userId) return false;
+    return submission.userId === user.id;
+  };
+
+  // Check if user can delete submission
+  const canDelete = (submission: Submission): boolean => {
+    if (!user) return false;
+    // Admins can delete any submission
+    if (userRole === 'admin') return true;
+    // Users can delete their own submissions
+    if (!submission.userId) return false;
+    return submission.userId === user.id;
+  };
 
   useEffect(() => {
     // Only run on client side
@@ -273,7 +342,35 @@ export default function Map() {
                       <span className="text-gray-700 dark:text-gray-200">{selectedSubmission.notes}</span>
                     </div>
                   )}
+                  {selectedSubmission.createdBy && (
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold">Submitted by:</span>
+                      <span className="text-gray-700 dark:text-gray-200">{selectedSubmission.createdBy}</span>
+                    </div>
+                  )}
                 </div>
+
+                {/* Edit/Delete Buttons */}
+                {user && (canEdit(selectedSubmission) || canDelete(selectedSubmission)) && (
+                  <div className="pt-4 flex gap-3">
+                    {canEdit(selectedSubmission) && (
+                      <button
+                        onClick={() => handleEdit(selectedSubmission._id!)}
+                        className="flex-1 px-4 py-2 bg-[#136207] text-white rounded-md hover:bg-[#0d4705] transition-colors font-medium"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {canDelete(selectedSubmission) && (
+                      <button
+                        onClick={() => handleDelete(selectedSubmission._id!)}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

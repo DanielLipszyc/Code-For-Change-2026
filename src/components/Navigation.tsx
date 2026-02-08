@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -46,6 +47,25 @@ export default function Navigation() {
                 {item.label}
               </Link>
             ))}
+
+            {/* Authentication UI */}
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                className="px-4 py-2 rounded-md text-sm font-medium bg-[#136207] text-white hover:bg-[#0d4705] transition-colors"
+              >
+                Sign In
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-9 h-9",
+                  },
+                }}
+              />
+            </SignedIn>
           </div>
 
           {/* Mobile menu button */}
@@ -108,6 +128,30 @@ export default function Navigation() {
               {item.label}
             </Link>
           ))}
+
+          {/* Mobile Authentication UI */}
+          <div className="pt-4 pb-2 border-t border-gray-200 dark:border-gray-700">
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                onClick={() => setIsMenuOpen(false)}
+                className="block px-3 py-2 rounded-md text-base font-medium bg-[#136207] text-white hover:bg-[#0d4705] transition-colors text-center"
+              >
+                Sign In
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <div className="px-3 py-2">
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-10 h-10",
+                    },
+                  }}
+                />
+              </div>
+            </SignedIn>
+          </div>
         </div>
       </div>
     </nav>

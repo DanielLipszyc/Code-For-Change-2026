@@ -5,7 +5,7 @@ export interface Plant {
 
 export const plants: Plant[] = [
   { name: "Air Potato", scientificName: "Dioscorea bulbifera" },
-  { name: "Coral Adicea", scientificName: "Ardicia Crenata" },
+  { name: "Coral Adicea", scientificName: "Ardisia Crenata" },
   { name: "Spanish Gold", scientificName: "Sesbania Punicea" },
   { name: "Torpedo Grass", scientificName: "Panicum repens" },
   { name: "Wedelia", scientificName: "Wedelia Trilobata" },

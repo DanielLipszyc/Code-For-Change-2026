@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 const COLLECTION = "sightings";
 
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST /api/sightings
+ * POST /api/sightings (requires authentication)
  * Body:
  * {
  *   speciesId?: string | null,
@@ -48,12 +49,27 @@ export async function GET(req: NextRequest) {
  *   locationAccuracyM?: number,
  *   addressApprox?: string,
  *   observedAt?: string,
- *   notes?: string,
- *   reporterId?: string
+ *   notes?: string
  * }
  */
 export async function POST(req: NextRequest) {
   try {
+    // Check authentication
+    const authResult = await auth();
+    const userId = authResult.userId;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in to submit" },
+        { status: 401 }
+      );
+    }
+
+    // Get user info from Clerk
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
+
     const db = await getDb();
     const body = await req.json();
 
@@ -91,7 +107,8 @@ export async function POST(req: NextRequest) {
       reportedAt: new Date(),
       notes: body.notes || "",
       status: "pending", // moderation default
-      reporterId: body.reporterId || null
+      userId, // Add authenticated user ID
+      createdBy: displayName, // Add user's display name
     };
 
     const result = await db.collection(COLLECTION).insertOne(doc);
