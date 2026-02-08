@@ -27,6 +27,45 @@ var mapStyle = {
   "fillOpacity": 0
 }
 
+function escapeCsvValue(value: unknown) {
+  if (value === null || value === undefined) return "";
+  const s = String(value);
+  const needsQuotes = /[",\n\r]/.test(s);
+  const escaped = s.replace(/"/g, '""');
+  return needsQuotes ? `"${escaped}"` : escaped;
+}
+
+function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
+  const safeRows = rows ?? [];
+  if (safeRows.length === 0) return;
+
+  // stable columns = union of keys
+  const columns = Array.from(
+    safeRows.reduce((set, row) => {
+      Object.keys(row).forEach((k) => set.add(k));
+      return set;
+    }, new Set<string>())
+  );
+
+  const header = columns.map(escapeCsvValue).join(",");
+  const lines = safeRows.map((row) =>
+    columns.map((col) => escapeCsvValue(row[col])).join(",")
+  );
+
+  const csv = [header, ...lines].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
@@ -38,6 +77,36 @@ export default function Map() {
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [roleLoaded, setRoleLoaded] = useState(false);
 
+  const handleExportCsv = useCallback(() => {
+    // Non-admins: export approved only
+    const exportable =
+      userRole === "admin"
+        ? submissions
+        : submissions.filter((s) => s.status !== "pending");
+
+    const rows = exportable.map((s) => ({
+      id: s._id ?? "",
+      plantName: s.plantName ?? "",
+      scientificName: s.scientificName ?? "",
+      status: s.status ?? "",
+      latitude: s.lat ?? "",
+      longitude: s.lng ?? "",
+      spottedAtISO: s.timestamp ? new Date(s.timestamp).toISOString() : "",
+      spottedAtLocal: s.timestamp ? new Date(s.timestamp).toLocaleString() : "",
+      notes: s.notes ?? "",
+      createdBy: s.createdBy ?? "",
+      userId: s.userId ?? "",
+      createdAtISO: s.createdAt ? new Date(s.createdAt).toISOString() : "",
+      updatedAtISO: s.updatedAt ? new Date(s.updatedAt).toISOString() : "",
+      // Optional: include image presence rather than full base64 (keeps CSV light)
+      hasImage: s.imageData ? "yes" : "no",
+    }));
+
+    const stamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    downloadCsv(`swamp-spotter-map-export-${stamp}.csv`, rows);
+  }, [submissions, userRole]);
+
+  
   // Fetch user role when user is authenticated
   useEffect(() => {
     if (user) {
@@ -299,10 +368,30 @@ export default function Map() {
 
         {/* Map Container */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-          <div
-            ref={mapContainer}
-            className="w-full h-[500px] sm:h-[600px] relative"
-          >
+          {/* Card header */}
+          <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                Sightings map
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Export includes {userRole === "admin" ? "all submissions" : "approved submissions only"}.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={!dataLoaded || submissions.length === 0}
+              className="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-black/10 dark:ring-white/10 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Download sightings as CSV"
+            >
+              ⬇️ Export CSV
+            </button>
+          </div>
+
+          {/* Map */}
+          <div ref={mapContainer} className="w-full h-[500px] sm:h-[600px] relative">
             {isLoading && (
               <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center z-10">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -310,6 +399,7 @@ export default function Map() {
             )}
           </div>
         </div>
+
 
         {/* Admin Pending Submissions Section */}
         {userRole === 'admin' && submissions.filter(s => s.status === 'pending').length > 0 && (
