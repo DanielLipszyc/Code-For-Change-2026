@@ -248,6 +248,20 @@ export default function SubmitClient() {
             Upload a photo of a plant you spotted in a swamp or wetland
           </p>
         </div>
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl">📍</div>
+          <div>
+            <p className="font-semibold text-amber-900">
+              Location must be enabled to submit.
+            </p>
+            <p className="text-sm text-amber-800 mt-1">
+              We attach GPS coordinates to every report. Please allow location access in your browser
+              (and turn on Location Services on your device) before submitting.
+            </p>
+          </div>
+        </div>
+      </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload */}
