@@ -55,3 +55,22 @@ body {
   0%, 100% { opacity: 0.35; transform: scale(1); }
   50% { opacity: 0.65; transform: scale(1.06); }
 }
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  10%, 90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in-out {
+  animation: fadeInOut 2s ease-in-out;
+}
