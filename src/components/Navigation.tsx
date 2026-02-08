@@ -8,7 +8,7 @@ const navItems = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/submit", label: "Submit" },
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/guide", label: "Invasive Plant Guide" },
   { href: "/contact", label: "Contact" },
   { href: "/map", label: "Map"},
 ];
