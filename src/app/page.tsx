@@ -237,30 +237,30 @@ export default function Home() {
           {/* ✅ MOBILE: Image above each step */}
           <div className="mt-10 grid gap-8 lg:hidden">
             <div className="space-y-4">
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
               <StepCard
                 n="01"
                 title="Spot"
                 body="Find a plant and take clear photos of leaves, stem, and fruit/flowers."
               />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
             </div>
 
             <div className="space-y-4">
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
               <StepCard
                 n="02"
                 title="Identify"
                 body="Use the guide to compare key traits and confirm your best match."
               />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
             </div>
 
             <div className="space-y-4">
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
               <StepCard
                 n="03"
                 title="Submit"
                 body="Upload the sighting with location and notes—then it’s ready for review."
               />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
             </div>
           </div>
 
