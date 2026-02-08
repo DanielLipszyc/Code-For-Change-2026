@@ -285,9 +285,9 @@ export default function Home() {
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-3">
-              <ImagePlaceholder label="Placeholder: 'Spotting' photo" />
-              <ImagePlaceholder label="Placeholder: 'Guide' screenshot" />
-              <ImagePlaceholder label="Placeholder: 'Submission' screenshot" />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
             </div>
           </div>
         </div>
