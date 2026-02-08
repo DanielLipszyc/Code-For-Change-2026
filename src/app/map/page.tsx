@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import 'leaflet/dist/leaflet.css';
 import { UserRole } from '@/types/auth';
@@ -23,12 +23,12 @@ interface Submission {
 
 let alachuaJson = require('./alachua.json');
 var mapStyle = {
-  "color": "#000000",
-  "fillOpacity": 0
-}
+  color: '#000000',
+  fillOpacity: 0,
+};
 
 function escapeCsvValue(value: unknown) {
-  if (value === null || value === undefined) return "";
+  if (value === null || value === undefined) return '';
   const s = String(value);
   const needsQuotes = /[",\n\r]/.test(s);
   const escaped = s.replace(/"/g, '""');
@@ -47,16 +47,14 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
     }, new Set<string>())
   );
 
-  const header = columns.map(escapeCsvValue).join(",");
-  const lines = safeRows.map((row) =>
-    columns.map((col) => escapeCsvValue(row[col])).join(",")
-  );
+  const header = columns.map(escapeCsvValue).join(',');
+  const lines = safeRows.map((row) => columns.map((col) => escapeCsvValue(row[col])).join(','));
 
-  const csv = [header, ...lines].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const csv = [header, ...lines].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -69,44 +67,56 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+
   const { user } = useUser();
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [roleLoaded, setRoleLoaded] = useState(false);
+
   const [selectedPlants, setSelectedPlants] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
-  // Get unique plant names for filter
-  const uniquePlants = Array.from(
-    submissions.reduce((set, s) => {
-      if (s.plantName) set.add(s.plantName);
-      return set;
-    }, new Set<string>())
-  ).sort();
+  // Unique plant list for filter UI
+  const uniquePlants = useMemo(() => {
+    return Array.from(
+      submissions.reduce((set, s) => {
+        if (s.plantName) set.add(s.plantName);
+        return set;
+      }, new Set<string>())
+    ).sort();
+  }, [submissions]);
 
-  // Filter submissions based on selected filters
-  const filteredSubmissions = submissions.filter((s) => {
-    // Check plant filter
-    if (selectedPlants.length > 0 && !selectedPlants.includes(s.plantName)) {
-      return false;
-    }
-    // Check date range filter - compare date strings to avoid timezone issues
-    if (dateFrom || dateTo) {
-      const submissionDateStr = new Date(s.timestamp).toISOString().split('T')[0];
-      if (dateFrom && submissionDateStr < dateFrom) {
-        return false;
+  // Filter submissions based on selected filters (plant + date)
+  const filteredSubmissions = useMemo(() => {
+    return submissions.filter((s) => {
+      if (selectedPlants.length > 0 && !selectedPlants.includes(s.plantName)) return false;
+
+      if (dateFrom || dateTo) {
+        // compare date strings to avoid timezone issues
+        const submissionDateStr = new Date(s.timestamp).toISOString().split('T')[0];
+        if (dateFrom && submissionDateStr < dateFrom) return false;
+        if (dateTo && submissionDateStr > dateTo) return false;
       }
-      if (dateTo && submissionDateStr > dateTo) {
-        return false;
-      }
-    }
-    return true;
-  });
+
+      return true;
+    });
+  }, [submissions, selectedPlants, dateFrom, dateTo]);
+
+  /**
+   * ✅ This is the source of truth for "what is on display"
+   * - Applies the same filters used for the map
+   * - Also applies role visibility (non-admin: hide pending)
+   */
+  const displayedSubmissions = useMemo(() => {
+    if (userRole === 'admin') return filteredSubmissions;
+    return filteredSubmissions.filter((s) => s.status !== 'pending');
+  }, [filteredSubmissions, userRole]);
 
   const handleClearFilters = () => {
     setSelectedPlants([]);
@@ -114,92 +124,58 @@ export default function Map() {
     setDateTo('');
   };
 
-  const handleSelectAllPlants = () => {
-    setSelectedPlants(uniquePlants);
-  };
-
-  const handleClearAllPlants = () => {
-    setSelectedPlants([]);
-  };
+  const handleSelectAllPlants = () => setSelectedPlants(uniquePlants);
+  const handleClearAllPlants = () => setSelectedPlants([]);
 
   const handlePlantToggle = (plantName: string) => {
     setSelectedPlants((prev) =>
-      prev.includes(plantName)
-        ? prev.filter((p) => p !== plantName)
-        : [...prev, plantName]
+      prev.includes(plantName) ? prev.filter((p) => p !== plantName) : [...prev, plantName]
     );
   };
 
+  // ✅ Export ONLY what's on display (after filters + role visibility)
   const handleExportCsv = useCallback(() => {
-    // Non-admins: export approved only
-    const exportable =
-      userRole === "admin"
-        ? submissions
-        : submissions.filter((s) => s.status !== "pending");
-
-    const rows = exportable.map((s) => ({
-      id: s._id ?? "",
-      plantName: s.plantName ?? "",
-      scientificName: s.scientificName ?? "",
-      status: s.status ?? "",
-      latitude: s.lat ?? "",
-      longitude: s.lng ?? "",
-      spottedAtISO: s.timestamp ? new Date(s.timestamp).toISOString() : "",
-      spottedAtLocal: s.timestamp ? new Date(s.timestamp).toLocaleString() : "",
-      notes: s.notes ?? "",
-      createdBy: s.createdBy ?? "",
-      userId: s.userId ?? "",
-      createdAtISO: s.createdAt ? new Date(s.createdAt).toISOString() : "",
-      updatedAtISO: s.updatedAt ? new Date(s.updatedAt).toISOString() : "",
-      // Optional: include image presence rather than full base64 (keeps CSV light)
-      hasImage: s.imageData ? "yes" : "no",
+    const rows = displayedSubmissions.map((s) => ({
+      id: s._id ?? '',
+      plantName: s.plantName ?? '',
+      scientificName: s.scientificName ?? '',
+      status: s.status ?? '',
+      latitude: s.lat ?? '',
+      longitude: s.lng ?? '',
+      spottedAtISO: s.timestamp ? new Date(s.timestamp).toISOString() : '',
+      spottedAtLocal: s.timestamp ? new Date(s.timestamp).toLocaleString() : '',
+      notes: s.notes ?? '',
+      createdBy: s.createdBy ?? '',
+      userId: s.userId ?? '',
+      createdAtISO: s.createdAt ? new Date(s.createdAt).toISOString() : '',
+      updatedAtISO: s.updatedAt ? new Date(s.updatedAt).toISOString() : '',
+      hasImage: s.imageData ? 'yes' : 'no',
     }));
 
-    const stamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const stamp = new Date().toISOString().slice(0, 10);
     downloadCsv(`swamp-spotter-map-export-${stamp}.csv`, rows);
-  }, [submissions, userRole]);
+  }, [displayedSubmissions]);
 
-  
   // Fetch user role when user is authenticated
   useEffect(() => {
     if (user) {
       fetch('/api/users/me')
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           setUserRole(data.role);
           setRoleLoaded(true);
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('Error fetching user role:', err);
-          setRoleLoaded(true); // Still mark as loaded even on error
+          setRoleLoaded(true);
         });
     } else {
-      // No user, so role is effectively loaded (as guest)
       setRoleLoaded(true);
     }
   }, [user]);
 
-  // Expose handlers to window for popup button clicks
+  // Fetch submissions from MongoDB API
   useEffect(() => {
-    (window as any).showSubmissionDetails = (submissionId: string) => {
-      const submission = submissions.find(s => s._id === submissionId);
-      if (submission) {
-        setSelectedSubmission(submission);
-      }
-    };
-    (window as any).handleDeleteSubmission = handleDelete;
-    (window as any).handleEditSubmission = handleEdit;
-    (window as any).handleApproveSubmission = handleApprove;
-    return () => {
-      delete (window as any).showSubmissionDetails;
-      delete (window as any).handleDeleteSubmission;
-      delete (window as any).handleEditSubmission;
-      delete (window as any).handleApproveSubmission;
-    };
-  }, [submissions]);
-
-  useEffect(() => {
-    // Fetch submissions from MongoDB API
     const fetchSubmissions = async () => {
       try {
         const response = await fetch('/api/submissions');
@@ -218,18 +194,13 @@ export default function Map() {
 
   // Handle delete submission
   const handleDelete = async (submissionId: string) => {
-    if (!confirm('Are you sure you want to delete this submission?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this submission?')) return;
 
     try {
-      const response = await fetch(`/api/submissions/${submissionId}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(`/api/submissions/${submissionId}`, { method: 'DELETE' });
 
       if (response.ok) {
-        // Remove from state
-        setSubmissions(prev => prev.filter(s => s._id !== submissionId));
+        setSubmissions((prev) => prev.filter((s) => s._id !== submissionId));
         setSelectedSubmission(null);
         alert('Submission deleted successfully');
       } else {
@@ -242,37 +213,56 @@ export default function Map() {
     }
   };
 
-  // Handle edit submission (navigate to edit page)
+  // Handle edit submission
   const handleEdit = (submissionId: string) => {
     window.location.href = `/submit/edit/${submissionId}`;
   };
 
   // Handle approve submission (admin only)
-  const handleApprove = useCallback(async (submissionId: string) => {
-    try {
-      const response = await fetch(`/api/submissions/${submissionId}/approve`, {
-        method: 'POST',
-      });
+  const handleApprove = useCallback(
+    async (submissionId: string) => {
+      try {
+        const response = await fetch(`/api/submissions/${submissionId}/approve`, { method: 'POST' });
 
-      if (response.ok) {
-        // Update submission status in state
-        setSubmissions(prev => prev.map(s =>
-          s._id === submissionId ? { ...s, status: 'approved' as const } : s
-        ));
-        // Update selected submission if it's the one being approved
-        if (selectedSubmission?._id === submissionId) {
-          setSelectedSubmission({ ...selectedSubmission, status: 'approved' as const });
+        if (response.ok) {
+          setSubmissions((prev) =>
+            prev.map((s) => (s._id === submissionId ? { ...s, status: 'approved' as const } : s))
+          );
+
+          if (selectedSubmission?._id === submissionId) {
+            setSelectedSubmission({ ...selectedSubmission, status: 'approved' as const });
+          }
+
+          alert('Submission approved successfully');
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to approve submission');
         }
-        alert('Submission approved successfully');
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Failed to approve submission');
+      } catch (error) {
+        console.error('Error approving submission:', error);
+        alert('Failed to approve submission');
       }
-    } catch (error) {
-      console.error('Error approving submission:', error);
-      alert('Failed to approve submission');
-    }
-  }, [selectedSubmission]);
+    },
+    [selectedSubmission]
+  );
+
+  // Expose handlers to window for popup button clicks
+  useEffect(() => {
+    (window as any).showSubmissionDetails = (submissionId: string) => {
+      const submission = submissions.find((s) => s._id === submissionId);
+      if (submission) setSelectedSubmission(submission);
+    };
+    (window as any).handleDeleteSubmission = handleDelete;
+    (window as any).handleEditSubmission = handleEdit;
+    (window as any).handleApproveSubmission = handleApprove;
+
+    return () => {
+      delete (window as any).showSubmissionDetails;
+      delete (window as any).handleDeleteSubmission;
+      delete (window as any).handleEditSubmission;
+      delete (window as any).handleApproveSubmission;
+    };
+  }, [submissions, handleApprove]); // handleDelete/handleEdit are stable enough
 
   // Check if user can edit submission
   const canEdit = (submission: Submission): boolean => {
@@ -283,107 +273,109 @@ export default function Map() {
   // Check if user can delete submission
   const canDelete = (submission: Submission): boolean => {
     if (!user) return false;
-    // Admins can delete any submission
     if (userRole === 'admin') return true;
-    // Users can delete their own submissions
     if (!submission.userId) return false;
     return submission.userId === user.id;
   };
 
   useEffect(() => {
-    // Only run on client side
     if (typeof window === 'undefined') return;
-
-    // Wait for data to be loaded before initializing map
     if (!dataLoaded) return;
-
-    // Wait for user role to be loaded before initializing map
     if (!roleLoaded) return;
 
-    // Clean up existing map if it exists (to allow re-render when userRole changes)
+    // Clean up existing map (re-init when filters/data/role changes)
     if (map.current) {
       map.current.remove();
       map.current = null;
     }
-
     if (!mapContainer.current) return;
 
     const initializeMap = async () => {
       try {
-        // Dynamically import Leaflet only on client side
         const L = await import('leaflet');
-
         if (!mapContainer.current) return;
 
         // Fix leaflet default icon issue
         delete (L.default.Icon.Default.prototype as any)._getIconUrl;
         L.default.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconRetinaUrl:
+            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
         });
 
-        // Create custom green icon for approved plant submissions
         const approvedPlantIcon = L.default.icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+          iconUrl:
+            'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
-          shadowSize: [41, 41]
+          shadowSize: [41, 41],
         });
 
-        // Create custom red icon for pending plant submissions (admin only)
         const pendingPlantIcon = L.default.icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+          iconUrl:
+            'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
-          shadowSize: [41, 41]
+          shadowSize: [41, 41],
         });
 
-        var lat, lon;
-        [lat, lon] = await getLocation() as [number, number];
-        console.log(lat, lon);
+        const [lat, lon] = (await getLocation()) as [number, number];
         const startLocation: [number, number] = [lat, lon];
-        // Alachua County, Florida coordinates (approximate center)
-        const alachuaCountyCenter: [number, number] = [29.6520, -82.3250];
 
-        // Initialize map
         map.current = L.default.map(mapContainer.current as HTMLElement).setView(startLocation, 10);
 
-        // Add OpenStreetMap tiles
-        L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map.current);
+        L.default
+          .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+          })
+          .addTo(map.current);
 
-        L.geoJSON(alachuaJson, {style: mapStyle}).addTo(map.current);
+        L.geoJSON(alachuaJson, { style: mapStyle }).addTo(map.current);
 
-        // Add markers for filtered submitted plants from MongoDB
-        filteredSubmissions.forEach((submission) => {
-          // Determine icon color based on status and user role
-          // Admins see: pending (red) vs approved (green)
-          // Regular users see: all markers as green
+        // ✅ Add markers ONLY for displayed submissions
+        displayedSubmissions.forEach((submission) => {
           const isPending = submission.status === 'pending';
-          const markerIcon = (isPending && userRole === 'admin') ? pendingPlantIcon : approvedPlantIcon;
+          const markerIcon =
+            isPending && userRole === 'admin' ? pendingPlantIcon : approvedPlantIcon;
 
           const popupContent = `
             <div style="min-width: 150px;">
               <b style="font-size: 14px; color: #136207;">🌿 ${submission.plantName}</b>
-              ${submission.scientificName ? `<br><i style="color: #666; font-size: 12px;">${submission.scientificName}</i>` : ''}
-              ${submission.notes ? `<br><span style="font-size: 12px;">${submission.notes}</span>` : ''}
-              <br><span style="font-size: 11px; color: #888;">Spotted: ${new Date(submission.timestamp).toLocaleDateString()}</span>
-              ${(isPending && userRole === 'admin') ? `<br><span style="font-size: 11px; color: #dc2626; font-weight: 600;">⏳ Pending Approval</span>` : ''}
-              <button onclick="window.showSubmissionDetails('${submission._id}')" style="margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;">More details</button>
+              ${
+                submission.scientificName
+                  ? `<br><i style="color: #666; font-size: 12px;">${submission.scientificName}</i>`
+                  : ''
+              }
+              ${
+                submission.notes
+                  ? `<br><span style="font-size: 12px;">${submission.notes}</span>`
+                  : ''
+              }
+              <br><span style="font-size: 11px; color: #888;">Spotted: ${new Date(
+                submission.timestamp
+              ).toLocaleDateString()}</span>
+              ${
+                isPending && userRole === 'admin'
+                  ? `<br><span style="font-size: 11px; color: #dc2626; font-weight: 600;">⏳ Pending Approval</span>`
+                  : ''
+              }
+              <button onclick="window.showSubmissionDetails('${
+                submission._id
+              }')" style="margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;">More details</button>
             </div>
           `;
 
-          L.default.marker([submission.lat, submission.lng], {
-            icon: markerIcon,
-            title: submission.plantName,
-          })
+          L.default
+            .marker([submission.lat, submission.lng], {
+              icon: markerIcon,
+              title: submission.plantName,
+            })
             .addTo(map.current)
             .bindPopup(popupContent);
         });
@@ -397,14 +389,13 @@ export default function Map() {
 
     initializeMap();
 
-    // Cleanup on unmount
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, [dataLoaded, submissions, userRole, roleLoaded, selectedPlants, dateFrom, dateTo]);
+  }, [dataLoaded, roleLoaded, userRole, displayedSubmissions]);
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -432,13 +423,13 @@ export default function Map() {
             <button
               type="button"
               onClick={handleExportCsv}
-              disabled={!dataLoaded || submissions.length === 0}
+              disabled={!dataLoaded || displayedSubmissions.length === 0}
               className="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-gray-900 px-6 py-3 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-black/10 dark:ring-white/10 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               title="Download sightings as CSV"
             >
               ⬇️ Export CSV
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                ({userRole === "admin" ? "all submissions" : "approved only"})
+                ({displayedSubmissions.length} shown)
               </span>
             </button>
           </div>
@@ -452,15 +443,17 @@ export default function Map() {
           >
             <div className="flex items-center gap-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Filter Sightings
-                </h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Filter Sightings</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {filtersExpanded ? 'Click to collapse' : 'Click to expand filters'}
                 </p>
               </div>
             </div>
-            <div className={`text-2xl text-gray-500 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`}>
+            <div
+              className={`text-2xl text-gray-500 transition-transform ${
+                filtersExpanded ? 'rotate-180' : ''
+              }`}
+            >
               ▼
             </div>
           </button>
@@ -516,7 +509,9 @@ export default function Map() {
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">From</label>
+                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                      From
+                    </label>
                     <input
                       type="date"
                       value={dateFrom}
@@ -536,7 +531,7 @@ export default function Map() {
                 </div>
               </div>
 
-              {/* Clear Filters Button and Results Count */}
+              {/* Clear Filters + Count */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 {(selectedPlants.length > 0 || dateFrom || dateTo) && (
                   <button
@@ -547,7 +542,7 @@ export default function Map() {
                   </button>
                 )}
                 <span className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
-                  Showing {filteredSubmissions.length} of {submissions.length} sightings
+                  Showing {displayedSubmissions.length} of {submissions.length} sightings
                 </span>
               </div>
             </div>
@@ -555,12 +550,12 @@ export default function Map() {
         </div>
 
         {/* Admin Pending Submissions Section */}
-        {userRole === 'admin' && submissions.filter(s => s.status === 'pending').length > 0 && (
+        {userRole === 'admin' && submissions.filter((s) => s.status === 'pending').length > 0 && (
           <div className="mt-8 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">⏳</span>
               <h2 className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                Pending Submissions ({submissions.filter(s => s.status === 'pending').length})
+                Pending Submissions ({submissions.filter((s) => s.status === 'pending').length})
               </h2>
             </div>
             <p className="text-amber-800 dark:text-amber-200 mb-4">
@@ -568,7 +563,7 @@ export default function Map() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {submissions
-                .filter(s => s.status === 'pending')
+                .filter((s) => s.status === 'pending')
                 .map((submission) => (
                   <button
                     key={submission._id}
@@ -620,7 +615,9 @@ export default function Map() {
               About Alachua County
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Alachua County is located in north-central Florida and is home to diverse wetland ecosystems and plant species. The county encompasses approximately 1,400 square miles and includes the city of Gainesville.
+              Alachua County is located in north-central Florida and is home to diverse wetland
+              ecosystems and plant species. The county encompasses approximately 1,400 square miles
+              and includes the city of Gainesville.
             </p>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
               <li>• Area: ~1,400 square miles</li>
@@ -631,11 +628,10 @@ export default function Map() {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Native Plants
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Native Plants</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Alachua County is rich in native plant species adapted to its subtropical climate and wetland environments.
+              Alachua County is rich in native plant species adapted to its subtropical climate and
+              wetland environments.
             </p>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
               <li>• Sawgrass</li>
@@ -683,10 +679,16 @@ export default function Map() {
 
               <div className="p-8 space-y-4">
                 <div>
-                  <p className="text-sm uppercase tracking-wide text-green-700 font-semibold">Plant</p>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedSubmission.plantName}</h3>
+                  <p className="text-sm uppercase tracking-wide text-green-700 font-semibold">
+                    Plant
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {selectedSubmission.plantName}
+                  </h3>
                   {selectedSubmission.scientificName && (
-                    <p className="text-gray-600 dark:text-gray-300 italic">{selectedSubmission.scientificName}</p>
+                    <p className="text-gray-600 dark:text-gray-300 italic">
+                      {selectedSubmission.scientificName}
+                    </p>
                   )}
                 </div>
 
@@ -704,46 +706,53 @@ export default function Map() {
                   {selectedSubmission.notes && (
                     <div className="flex items-start gap-2">
                       <span className="font-semibold">Notes:</span>
-                      <span className="text-gray-700 dark:text-gray-200">{selectedSubmission.notes}</span>
+                      <span className="text-gray-700 dark:text-gray-200">
+                        {selectedSubmission.notes}
+                      </span>
                     </div>
                   )}
                   {selectedSubmission.createdBy && (
                     <div className="flex items-start gap-2">
                       <span className="font-semibold">Submitted by:</span>
-                      <span className="text-gray-700 dark:text-gray-200">{selectedSubmission.createdBy}</span>
+                      <span className="text-gray-700 dark:text-gray-200">
+                        {selectedSubmission.createdBy}
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Edit/Delete/Approve Buttons */}
-                {user && (canEdit(selectedSubmission) || canDelete(selectedSubmission) || (userRole === 'admin' && selectedSubmission.status === 'pending')) && (
-                  <div className="pt-4 flex gap-3">
-                    {canEdit(selectedSubmission) && (
-                      <button
-                        onClick={() => handleEdit(selectedSubmission._id!)}
-                        className="flex-1 px-4 py-2 bg-[#136207] text-white rounded-md hover:bg-[#0d4705] transition-colors font-medium"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {canDelete(selectedSubmission) && (
-                      <button
-                        onClick={() => handleDelete(selectedSubmission._id!)}
-                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
-                      >
-                        Delete
-                      </button>
-                    )}
-                    {userRole === 'admin' && selectedSubmission.status === 'pending' && (
-                      <button
-                        onClick={() => handleApprove(selectedSubmission._id!)}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
-                      >
-                        Approve
-                      </button>
-                    )}
-                  </div>
-                )}
+                {user &&
+                  (canEdit(selectedSubmission) ||
+                    canDelete(selectedSubmission) ||
+                    (userRole === 'admin' && selectedSubmission.status === 'pending')) && (
+                    <div className="pt-4 flex gap-3">
+                      {canEdit(selectedSubmission) && (
+                        <button
+                          onClick={() => handleEdit(selectedSubmission._id!)}
+                          className="flex-1 px-4 py-2 bg-[#136207] text-white rounded-md hover:bg-[#0d4705] transition-colors font-medium"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canDelete(selectedSubmission) && (
+                        <button
+                          onClick={() => handleDelete(selectedSubmission._id!)}
+                          className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                        >
+                          Delete
+                        </button>
+                      )}
+                      {userRole === 'admin' && selectedSubmission.status === 'pending' && (
+                        <button
+                          onClick={() => handleApprove(selectedSubmission._id!)}
+                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                        >
+                          Approve
+                        </button>
+                      )}
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -757,17 +766,12 @@ function getLocation(): Promise<[number, number]> {
   return new Promise((resolve) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve([position.coords.latitude, position.coords.longitude]);
-        },
-        () => {
-          resolve([29.6520, -82.3250]);
-        }
+        (position) => resolve([position.coords.latitude, position.coords.longitude]),
+        () => resolve([29.652, -82.325])
       );
     } else {
-      resolve([29.6520, -82.3250]);
+      resolve([29.652, -82.325]);
     }
   });
 }
-
 

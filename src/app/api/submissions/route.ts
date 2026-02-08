@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { getUserRole } from "@/lib/auth";
 
 export interface Submission {
   _id?: string;
@@ -59,6 +60,9 @@ export async function POST(request: NextRequest) {
     const user = await client.users.getUser(userId);
     const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
 
+    // Get user role to determine auto-approval
+    const userRole = await getUserRole(userId);
+
     const data: Submission = await request.json();
 
     // Validate required fields
@@ -81,7 +85,7 @@ export async function POST(request: NextRequest) {
       userId, // Add authenticated user ID
       createdBy: displayName, // Add user's display name
       createdAt: new Date(),
-      status: 'pending', // All submissions require admin approval
+      status: userRole === 'admin' ? 'approved' : 'pending', // Auto-approve admin submissions
     });
 
     return NextResponse.json({

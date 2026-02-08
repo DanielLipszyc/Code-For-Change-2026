@@ -403,31 +403,98 @@ export default function GuidePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-white">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="flex justify-end mb-4">
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as Language)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-          >
-            <option value="en">English</option>
-            <option value="es">Español</option>
-          </select>
+        {/* Header + Controls */}
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+              {lang === "en"
+                ? "Alachua County Invasive Plant ID Guide"
+                : "Guía de Identificación de Plantas Invasoras del Condado de Alachua"}
+            </h1>
+            <p className="mt-2 text-slate-600">
+              {lang === "en"
+                ? "Search by common or scientific name. Use the threat level to prioritize reporting."
+                : "Busca por nombre común o científico. Usa el nivel de amenaza para priorizar la notificación."}
+            </p>
+          </div>
+
+          {/* Controls */}
+          <div className="grid w-full gap-3 sm:w-auto sm:min-w-[420px]">
+            <div className="flex gap-3">
+              {/* Language selector on the left */}
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as Language)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              >
+                <option value="en">English</option>
+                <option value="es">Español</option>
+              </select>
+
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={
+                  lang === "en"
+                    ? "Search plants (e.g., air potato, Dioscorea)…"
+                    : "Buscar plantas (ej., air potato, Dioscorea)…"
+                }
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                ⌕
+              </span>
+            </div>
+
+            <div className="flex gap-3">
+              <select
+                value={threat}
+                onChange={(e) => setThreat(e.target.value as any)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              >
+                <option value="All">{lang === "en" ? "All threat levels" : "Todos los niveles"}</option>
+                <option value="Significant">{lang === "en" ? "Significant" : "Significativa"}</option>
+                <option value="Moderate">{lang === "en" ? "Moderate" : "Moderada"}</option>
+                <option value="Low">{lang === "en" ? "Low" : "Baja"}</option>
+              </select>
+
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as any)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              >
+                <option value="Threat">{lang === "en" ? "Sort: Threat" : "Orden: Amenaza"}</option>
+                <option value="Name">{lang === "en" ? "Sort: Name" : "Orden: Nombre"}</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-          {lang === "en"
-            ? "Alachua County Invasive Plant ID Guide"
-            : "Guía de Identificación de Plantas Invasoras del Condado de Alachua"}
-        </h1>
+        {/* Plant list */}
+        <div className="mt-8">
+          <p className="text-sm text-slate-600">
+            {lang === "en"
+              ? `Showing ${filtered.length} of ${PLANTS.length}`
+              : `Mostrando ${filtered.length} de ${PLANTS.length}`}
+          </p>
 
-        <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => (
-            <PlantCard key={p.id} plant={p} onOpenInfo={setActivePlant} lang={lang} />
-          ))}
+          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((p) => (
+              <PlantCard key={p.id} plant={p} onOpenInfo={setActivePlant} lang={lang} />
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-700">
+              {lang === "en"
+                ? "No matches. Try a different search term."
+                : "No hay resultados. Intenta otra búsqueda."}
+            </div>
+          )}
         </div>
-
-        {activePlant && <InfoModal plant={activePlant} onClose={() => setActivePlant(null)} lang={lang} />}
       </div>
+
+      {activePlant && <InfoModal plant={activePlant} onClose={() => setActivePlant(null)} lang={lang} />}
     </div>
   );
 }
