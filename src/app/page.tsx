@@ -27,7 +27,7 @@ export default function Home() {
         alt: "Close-up plant photo",
         kicker: "Document",
         headline: "Capture what you find",
-        body: "Upload a photo with notes and location—so sightings become useful data, not just memories.",
+        body: "Upload a photo with notes and location so sightings become useful data.",
       },
       {
         src: "/slides/slide-1.png",
@@ -86,7 +86,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
-              Discover, identify, and document plants in swamps and wetlands—then submit sightings
+              Discover, identify, and document plants in swamps and wetlands; then submit sightings
               that help teams and communities understand what&apos;s spreading and what&apos;s thriving.
             </p>
 
@@ -238,7 +238,7 @@ export default function Home() {
           <div className="mt-10 grid gap-8 lg:hidden">
             <div className="space-y-4">
               <StepCard
-                n="01"
+                n="1"
                 title="Spot"
                 body="Find a plant and take clear photos of leaves, stem, and fruit/flowers."
               />
@@ -247,7 +247,7 @@ export default function Home() {
 
             <div className="space-y-4">
               <StepCard
-                n="02"
+                n="2"
                 title="Identify"
                 body="Use the guide to compare key traits and confirm your best match."
               />
@@ -256,9 +256,9 @@ export default function Home() {
 
             <div className="space-y-4">
               <StepCard
-                n="03"
+                n="3"
                 title="Submit"
-                body="Upload the sighting with location and notes—then it’s ready for review."
+                body="Upload the sighting with location and notes; then it’s ready for review."
               />
               <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
             </div>
@@ -268,19 +268,19 @@ export default function Home() {
           <div className="mt-10 hidden lg:block">
             <div className="grid gap-6 md:grid-cols-3">
               <StepCard
-                n="01"
+                n="1"
                 title="Spot"
                 body="Find a plant and take clear photos of leaves, stem, and fruit/flowers."
               />
               <StepCard
-                n="02"
+                n="2"
                 title="Identify"
                 body="Use the guide to compare key traits and confirm your best match."
               />
               <StepCard
-                n="03"
+                n="3"
                 title="Submit"
-                body="Upload the sighting with location and notes—then it’s ready for review."
+                body="Upload the sighting with location and notes; then it’s ready for review."
               />
             </div>
 
