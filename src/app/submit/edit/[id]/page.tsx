@@ -37,7 +37,16 @@ export default async function EditSubmissionPage({ params }: PageProps) {
   const db = await getDb();
   const submission = await db.collection('submissions').findOne({
     _id: new ObjectId(id),
-  });
+  }) as {
+    _id: ObjectId;
+    plantName: string;
+    scientificName?: string;
+    lat: number;
+    lng: number;
+    timestamp: number;
+    notes?: string;
+    imageData?: string;
+  } | null;
 
   if (!submission) {
     redirect('/map');
