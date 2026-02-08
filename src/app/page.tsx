@@ -286,9 +286,9 @@ export default function Home() {
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-3">
-              <ImagePlaceholder label="Placeholder: 'Spotting' photo" />
-              <ImagePlaceholder label="Placeholder: 'Guide' screenshot" />
-              <ImagePlaceholder label="Placeholder: 'Submission' screenshot" />
+              <img src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
+              <img src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
+              <img src="/Upload.jpg" alt="Mouse clicking an upload button"/>
             </div>
           </div>
         </div>
