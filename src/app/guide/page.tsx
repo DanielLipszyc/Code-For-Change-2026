@@ -74,7 +74,7 @@ const PLANTS: Plant[] = [
     name: "Wild Taro",
     scientificName: "Colocasia esculenta",
     picUrl:
-      "https://en.wikipedia.org/wiki/Xanthosoma_sagittifolium#/media/File:Xanthosoma_sagittifolium_in_Bukidnon,_Philippines_01.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a5/Taimo_Okinawa.jpg",
     threatLevel: "Moderate",
   },
   {
@@ -89,7 +89,7 @@ const PLANTS: Plant[] = [
     name: "Chinese Tallow",
     scientificName: "Sapium sebiferum",
     picUrl:
-      "https://plantmaster.com/plants/eplant.php?plantnum=77741&project=12637#gallery-1",
+      "https://upload.wikimedia.org/wikipedia/commons/1/13/UC_Davis_arboretum_-_Sapium_sebiferum.jpg",
     threatLevel: "Significant",
   },
   {
@@ -97,7 +97,7 @@ const PLANTS: Plant[] = [
     name: "Camphor",
     scientificName: "Cinnamomum camphora",
     picUrl:
-      "https://plantmaster.com/plants/eplant.php?plantnum=150#gallery-1",
+      "https://upload.wikimedia.org/wikipedia/commons/a/ae/Cinnamomum_camphora20050314.jpg",
     threatLevel: "Significant",
   },
   {
@@ -105,7 +105,7 @@ const PLANTS: Plant[] = [
     name: "Mimosa",
     scientificName: "Albizia julibrissin",
     picUrl:
-      "https://en.wikipedia.org/wiki/Albizia_julibrissin#/media/File:2018-07-08_11_10_27_Rosea_Mimosa_blossoms_along_the_ramp_from_southbound_Interstate_95_(New_Jersey_Turnpike_Eastern_Spur)_to_westbound_Interstate_280_(Essex_Freeway)_in_the_New_Jersey_Meadowlands,_within_Kearny,_Hudson_County,_New_Jersey.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c5/2018-07-08_11_10_27_Rosea_Mimosa_blossoms_along_the_ramp_from_southbound_Interstate_95_(New_Jersey_Turnpike_Eastern_Spur)_to_westbound_Interstate_280_(Essex_Freeway)_in_the_New_Jersey_Meadowlands%2C_within_Kearny%2C_Hudson_County%2C_New_Jersey.jpg",
     threatLevel: "Significant",
   },
   {
@@ -113,7 +113,7 @@ const PLANTS: Plant[] = [
     name: "Shrub Lantana",
     scientificName: "Lantana camara",
     picUrl:
-      "https://en.wikipedia.org/wiki/Lantana_camara#/media/File:LantanaFlowerLeaves.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/ae/Starr_070221-4728_Lantana_montevidensis.jpg",
     threatLevel: "Significant",
   },
   {
@@ -121,7 +121,7 @@ const PLANTS: Plant[] = [
     name: "Boston Fern",
     scientificName: "Nephrolepis cordifolia",
     picUrl:
-      "https://en.wikipedia.org/wiki/Nephrolepis_exaltata#/media/File:Boston_Fern_(2873392811).png",
+      "https://upload.wikimedia.org/wikipedia/commons/3/30/Boston_Fern_(2873392811).png",
     threatLevel: "Significant",
   },
   {
@@ -129,7 +129,7 @@ const PLANTS: Plant[] = [
     name: "Winged Yam",
     scientificName: "Dioscorea alata",
     picUrl:
-      "https://en.wikipedia.org/wiki/Dioscorea#/media/File:Dioscorea_balcanica_BotGardBln310505.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/96/Dioscorea_balcanica_BotGardBln310505.jpg",
     threatLevel: "Significant",
   },
   {
@@ -137,7 +137,7 @@ const PLANTS: Plant[] = [
     name: "Tropical Soda Apple",
     scientificName: "Solanum viarum",
     picUrl:
-      "https://en.wikipedia.org/wiki/Solanum_viarum#/media/File:Solanum_viarum_fruit.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/ac/Solanum_viarum_fruit.jpg",
     threatLevel: "Significant",
   },
   {
@@ -145,7 +145,7 @@ const PLANTS: Plant[] = [
     name: "Cogon Grass",
     scientificName: "Imperata cylindrica",
     picUrl:
-      "https://en.wikipedia.org/wiki/Imperata_cylindrica#/media/File:Imperata_cylindrica_tigaya_colony.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/51/Imperata_cylindrica_tigaya_colony.jpg",
     threatLevel: "Significant",
   },
 ];
