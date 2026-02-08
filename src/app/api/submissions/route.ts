@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 export interface Submission {
   _id?: string;
@@ -10,6 +11,10 @@ export interface Submission {
   timestamp: number;
   notes?: string;
   imageData?: string; // Base64 encoded image
+  userId?: string; // Clerk user ID (optional for legacy submissions)
+  createdBy?: string; // User's display name
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // GET - Fetch all submissions from MongoDB
@@ -29,11 +34,27 @@ export async function GET() {
   }
 }
 
-// POST - Create new submission in MongoDB
+// POST - Create new submission in MongoDB (requires authentication)
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const authResult = await auth();
+    const userId = authResult.userId;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in to submit" },
+        { status: 401 }
+      );
+    }
+
+    // Get user info from Clerk
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
+
     const data: Submission = await request.json();
-    
+
     // Validate required fields
     if (!data.plantName || data.lat === undefined || data.lng === undefined) {
       return NextResponse.json(
@@ -51,12 +72,14 @@ export async function POST(request: NextRequest) {
       timestamp: data.timestamp || Date.now(),
       notes: data.notes || null,
       imageData: data.imageData || null,
+      userId, // Add authenticated user ID
+      createdBy: displayName, // Add user's display name
       createdAt: new Date(),
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      id: result.insertedId.toString() 
+    return NextResponse.json({
+      success: true,
+      id: result.insertedId.toString()
     });
   } catch (error) {
     console.error("Error creating submission:", error);
