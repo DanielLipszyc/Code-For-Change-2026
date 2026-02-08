@@ -56,17 +56,17 @@ export default function Home() {
     <main className="min-h-screen bg-white text-slate-900">
 
       {/* HERO + SLIDESHOW */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#136207] to-[#1B3FAB] text-white">
+      <section className="relative overflow-hidden text-white">
         {/* background blobs */}
-        <div className="pointer-events-none absolute inset-0">
-          <img style = {{
+        <div className="pointer-events-none absolute inset-0 parallax">
+          {/* <img style = {{
             position: "absolute",
             width: "100%",
             height: "100%",
             objectFit: "cover",
             objectPosition: "center",
             filter: "brightness(.5)"
-          }} src="/forest.jpg" alt="forest"/>
+          }} src="/forest.jpg" alt="forest"/> */}
           <div className="absolute inset-0 bg-black/30" />
         </div>
 

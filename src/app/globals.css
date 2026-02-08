@@ -74,3 +74,12 @@ body {
 .animate-fade-in-out {
   animation: fadeInOut 2s ease-in-out;
 }
+
+.parallax {
+  background-image: url("/forest.jpg");
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: brightness(.7);
+}
