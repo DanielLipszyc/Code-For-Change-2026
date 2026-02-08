@@ -237,7 +237,7 @@ export default function Home() {
           {/* ✅ MOBILE: Image above each step */}
           <div className="mt-10 grid gap-8 lg:hidden">
             <div className="space-y-4">
-              <ImagePlaceholder label="Placeholder: 'Spotting' photo" />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
               <StepCard
                 n="01"
                 title="Spot"
@@ -246,7 +246,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              <ImagePlaceholder label="Placeholder: 'Guide' screenshot" />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
               <StepCard
                 n="02"
                 title="Identify"
@@ -255,7 +255,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              <ImagePlaceholder label="Placeholder: 'Submission' screenshot" />
+              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
               <StepCard
                 n="03"
                 title="Submit"
@@ -356,22 +356,6 @@ function StepCard({ n, title, body }: { n: string; title: string; body: string }
         <p className="text-lg font-bold text-slate-900">{title}</p>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">{body}</p>
-    </div>
-  );
-}
-
-function ImagePlaceholder({ label }: { label: string }) {
-  return (
-    <div className="overflow-hidden rounded-3xl border border-dashed border-slate-300 bg-white">
-      <div className="flex h-44 items-center justify-center bg-slate-50">
-        <p className="text-sm font-semibold text-slate-500">{label}</p>
-      </div>
-      <div className="border-t border-slate-200 px-5 py-4">
-        <p className="text-sm font-semibold text-slate-900">Drop-in image slot</p>
-        <p className="mt-1 text-sm text-slate-600">
-          Put a real photo or screenshot here to elevate the page instantly.
-        </p>
-      </div>
     </div>
   );
 }
