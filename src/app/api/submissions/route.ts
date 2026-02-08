@@ -15,18 +15,24 @@ export interface Submission {
   createdBy?: string; // User's display name
   createdAt?: Date;
   updatedAt?: Date;
+  status?: 'pending' | 'approved'; // Approval status (pending = red for admins, approved = green for all)
 }
 
 // GET - Fetch all submissions from MongoDB
+// All users see all submissions
+// Admins see pending (red) vs approved (green) markers
+// Regular users see all markers as green
 export async function GET() {
   try {
     const db = await getDb();
+
+    // Return all submissions - frontend handles visual differences based on role
     const submissions = await db
       .collection("submissions")
       .find({})
       .sort({ timestamp: -1 })
       .toArray();
-    
+
     return NextResponse.json(submissions);
   } catch (error) {
     console.error("Error fetching submissions:", error);
@@ -53,6 +59,10 @@ export async function POST(request: NextRequest) {
     const user = await client.users.getUser(userId);
     const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
 
+    // Check if user is admin
+    const userRole = (user.publicMetadata.role as string) || 'user';
+    const isUserAdmin = userRole === 'admin';
+
     const data: Submission = await request.json();
 
     // Validate required fields
@@ -75,6 +85,7 @@ export async function POST(request: NextRequest) {
       userId, // Add authenticated user ID
       createdBy: displayName, // Add user's display name
       createdAt: new Date(),
+      status: isUserAdmin ? 'approved' : 'pending', // Auto-approve admin submissions, users need approval
     });
 
     return NextResponse.json({

@@ -18,6 +18,7 @@ interface Submission {
   createdBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  status?: 'pending' | 'approved';
 }
 
 let alachuaJson = require('./alachua.json');
@@ -56,10 +57,12 @@ export default function Map() {
     };
     (window as any).handleDeleteSubmission = handleDelete;
     (window as any).handleEditSubmission = handleEdit;
+    (window as any).handleApproveSubmission = handleApprove;
     return () => {
       delete (window as any).showSubmissionDetails;
       delete (window as any).handleDeleteSubmission;
       delete (window as any).handleEditSubmission;
+      delete (window as any).handleApproveSubmission;
     };
   }, [submissions]);
 
@@ -112,6 +115,33 @@ export default function Map() {
     window.location.href = `/submit/edit/${submissionId}`;
   };
 
+  // Handle approve submission (admin only)
+  const handleApprove = async (submissionId: string) => {
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}/approve`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        // Update submission status in state
+        setSubmissions(prev => prev.map(s =>
+          s._id === submissionId ? { ...s, status: 'approved' as const } : s
+        ));
+        // Update selected submission if it's the one being approved
+        if (selectedSubmission?._id === submissionId) {
+          setSelectedSubmission({ ...selectedSubmission, status: 'approved' as const });
+        }
+        alert('Submission approved successfully');
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to approve submission');
+      }
+    } catch (error) {
+      console.error('Error approving submission:', error);
+      alert('Failed to approve submission');
+    }
+  };
+
   // Check if user can edit submission
   const canEdit = (submission: Submission): boolean => {
     if (!user || !submission.userId) return false;
@@ -155,9 +185,19 @@ export default function Map() {
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
         });
 
-        // Create custom green icon for plant submissions
-        const plantIcon = L.default.icon({
+        // Create custom green icon for approved plant submissions
+        const approvedPlantIcon = L.default.icon({
           iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+
+        // Create custom red icon for pending plant submissions (admin only)
+        const pendingPlantIcon = L.default.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
@@ -185,18 +225,25 @@ export default function Map() {
 
         // Add markers for all submitted plants from MongoDB
         submissions.forEach((submission) => {
+          // Determine icon color based on status and user role
+          // Admins see: pending (red) vs approved (green)
+          // Regular users see: all markers as green
+          const isPending = submission.status === 'pending';
+          const markerIcon = (isPending && userRole === 'admin') ? pendingPlantIcon : approvedPlantIcon;
+
           const popupContent = `
             <div style="min-width: 150px;">
               <b style="font-size: 14px; color: #136207;">🌿 ${submission.plantName}</b>
               ${submission.scientificName ? `<br><i style="color: #666; font-size: 12px;">${submission.scientificName}</i>` : ''}
               ${submission.notes ? `<br><span style="font-size: 12px;">${submission.notes}</span>` : ''}
               <br><span style="font-size: 11px; color: #888;">Spotted: ${new Date(submission.timestamp).toLocaleDateString()}</span>
+              ${(isPending && userRole === 'admin') ? `<br><span style="font-size: 11px; color: #dc2626; font-weight: 600;">⏳ Pending Approval</span>` : ''}
               <button onclick="window.showSubmissionDetails('${submission._id}')" style="margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;">More details</button>
             </div>
           `;
-          
+
           L.default.marker([submission.lat, submission.lng], {
-            icon: plantIcon,
+            icon: markerIcon,
             title: submission.plantName,
           })
             .addTo(map.current)
@@ -350,8 +397,8 @@ export default function Map() {
                   )}
                 </div>
 
-                {/* Edit/Delete Buttons */}
-                {user && (canEdit(selectedSubmission) || canDelete(selectedSubmission)) && (
+                {/* Edit/Delete/Approve Buttons */}
+                {user && (canEdit(selectedSubmission) || canDelete(selectedSubmission) || (userRole === 'admin' && selectedSubmission.status === 'pending')) && (
                   <div className="pt-4 flex gap-3">
                     {canEdit(selectedSubmission) && (
                       <button
@@ -367,6 +414,14 @@ export default function Map() {
                         className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
                       >
                         Delete
+                      </button>
+                    )}
+                    {userRole === 'admin' && selectedSubmission.status === 'pending' && (
+                      <button
+                        onClick={() => handleApprove(selectedSubmission._id!)}
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        Approve
                       </button>
                     )}
                   </div>
