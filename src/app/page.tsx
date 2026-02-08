@@ -33,7 +33,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">
             How It Works
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {[
               {
                 title: "Spot Plants",
@@ -45,11 +45,6 @@ export default function Home() {
                 title: "Submit Sightings",
                 description: "Upload your discoveries with location and details",
                 icon: "📸",
-              },
-              {
-                title: "Track & Learn",
-                description: "Build your collection and learn about wetland ecosystems",
-                icon: "🌿",
               },
             ].map((feature, index) => (
               <div
