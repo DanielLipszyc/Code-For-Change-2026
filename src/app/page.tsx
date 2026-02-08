@@ -13,14 +13,13 @@ type Slide = {
 };
 
 export default function Home() {
-  // ✅ Replace these with your own images (put them in /public)
   const slides: Slide[] = useMemo(
     () => [
       {
         src: "/slides/slide-3.jpg",
         alt: "Wetland boardwalk at sunrise",
         kicker: "Explore",
-        headline: "Spot plants in Florida wetlands",
+        headline: "Spot plants in Alachua County parks",
         body: "Use the guide to quickly identify invasive and native species while you’re out on trails.",
       },
       {
@@ -88,7 +87,7 @@ export default function Home() {
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
               Discover, identify, and document plants in swamps and wetlands—then submit sightings
-              that help teams and communities understand what’s spreading and what’s thriving.
+              that help teams and communities understand what&apos;s spreading and what&apos;s thriving.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -306,8 +305,7 @@ export default function Home() {
                 Ready to explore the swamp?
               </h2>
               <p className="mt-3 text-white/75">
-                Create an account to submit sightings, track your reports, and help build a clearer
-                picture of wetland biodiversity.
+                Create an account to submit sightings, track your reports, and help contribute to an ongoing citizen science effort.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -337,8 +335,6 @@ export default function Home() {
               <p>© {new Date().getFullYear()} Swamp Spotter</p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/about" className="hover:text-white">About</Link>
-                <Link href="/privacy" className="hover:text-white">Privacy</Link>
-                <Link href="/contact" className="hover:text-white">Contact</Link>
               </div>
             </div>
           </footer>

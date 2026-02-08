@@ -8,7 +8,7 @@ export default function About() {
             About Us
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400">
-            Learn more about our mission and values
+            Learn more about this project and the team behind it
           </p>
         </div>
 
@@ -25,49 +25,6 @@ export default function About() {
               positive social impact. We are committed to building accessible,
               sustainable, and impactful digital products.
             </p>
-          </div>
-        </section>
-
-        {/* Values Section */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            Our Values
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {[
-              {
-                title: "Integrity",
-                description:
-                  "We uphold the highest standards of honesty and transparency in everything we do.",
-              },
-              {
-                title: "Innovation",
-                description:
-                  "We constantly push boundaries and embrace new ideas to solve complex problems.",
-              },
-              {
-                title: "Inclusivity",
-                description:
-                  "We design solutions that are accessible to everyone, regardless of their background.",
-              },
-              {
-                title: "Impact",
-                description:
-                  "We measure success by the positive change we create in people's lives.",
-              },
-            ].map((value, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-xl p-6"
-              >
-                <h3 className="text-lg font-semibold text-primary-700 dark:text-primary-400 mb-2">
-                  {value.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {value.description}
-                </p>
-              </div>
-            ))}
           </div>
         </section>
 
