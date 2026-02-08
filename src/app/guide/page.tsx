@@ -298,15 +298,6 @@ function InfoModal({ plant, onClose }: { plant: Plant; onClose: () => void }) {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-1">
-                <a
-                  href={plant.picUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Open image source
-                </a>
-
                 <Link
                   href={`/submit?plant=${encodeURIComponent(plant.name)}`}
                   className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
@@ -315,10 +306,6 @@ function InfoModal({ plant, onClose }: { plant: Plant; onClose: () => void }) {
                   Report this plant
                 </Link>
               </div>
-
-              <p className="text-xs text-slate-500">
-                Tip: press <span className="font-semibold">Esc</span> to close.
-              </p>
             </div>
           </div>
         </div>
