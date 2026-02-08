@@ -76,6 +76,59 @@ export default function Map() {
   const { user } = useUser();
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [roleLoaded, setRoleLoaded] = useState(false);
+  const [selectedPlants, setSelectedPlants] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+
+  // Get unique plant names for filter
+  const uniquePlants = Array.from(
+    submissions.reduce((set, s) => {
+      if (s.plantName) set.add(s.plantName);
+      return set;
+    }, new Set<string>())
+  ).sort();
+
+  // Filter submissions based on selected filters
+  const filteredSubmissions = submissions.filter((s) => {
+    // Check plant filter
+    if (selectedPlants.length > 0 && !selectedPlants.includes(s.plantName)) {
+      return false;
+    }
+    // Check date range filter
+    if (dateFrom && new Date(s.timestamp) < new Date(dateFrom)) {
+      return false;
+    }
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      if (new Date(s.timestamp) > endOfDay) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const handleClearFilters = () => {
+    setSelectedPlants([]);
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const handleSelectAllPlants = () => {
+    setSelectedPlants(uniquePlants);
+  };
+
+  const handleClearAllPlants = () => {
+    setSelectedPlants([]);
+  };
+
+  const handlePlantToggle = (plantName: string) => {
+    setSelectedPlants((prev) =>
+      prev.includes(plantName)
+        ? prev.filter((p) => p !== plantName)
+        : [...prev, plantName]
+    );
+  };
 
   const handleExportCsv = useCallback(() => {
     // Non-admins: export approved only
@@ -308,8 +361,8 @@ export default function Map() {
 
         L.geoJSON(alachuaJson, {style: mapStyle}).addTo(map.current);
 
-        // Add markers for all submitted plants from MongoDB
-        submissions.forEach((submission) => {
+        // Add markers for filtered submitted plants from MongoDB
+        filteredSubmissions.forEach((submission) => {
           // Determine icon color based on status and user role
           // Admins see: pending (red) vs approved (green)
           // Regular users see: all markers as green
@@ -351,7 +404,7 @@ export default function Map() {
         map.current = null;
       }
     };
-  }, [dataLoaded, submissions, userRole, roleLoaded]);
+  }, [dataLoaded, submissions, userRole, roleLoaded, filteredSubmissions, selectedPlants, dateFrom, dateTo]);
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -388,6 +441,93 @@ export default function Map() {
             >
               ⬇️ Export CSV
             </button>
+          </div>
+
+          {/* Filter Section */}
+          <div className="px-4 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            {/* Plant Species Filter */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-semibold text-gray-900 dark:text-white">
+                  🌿 Filter by Plant Species
+                </label>
+                {uniquePlants.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSelectAllPlants}
+                      className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={handleClearAllPlants}
+                      className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+              {uniquePlants.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {uniquePlants.map((plant) => (
+                    <label key={plant} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlants.includes(plant)}
+                        onChange={() => handlePlantToggle(plant)}
+                        className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{plant}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No plants to filter</p>
+              )}
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="mb-4">
+              <label className="text-sm font-semibold text-gray-900 dark:text-white block mb-3">
+                📅 Filter by Date Range
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">From</label>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">To</label>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Filters Button and Results Count */}
+            <div className="flex items-center justify-between">
+              {(selectedPlants.length > 0 || dateFrom || dateTo) && (
+                <button
+                  onClick={handleClearFilters}
+                  className="px-4 py-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-sm font-medium transition-colors"
+                >
+                  ✕ Clear All Filters
+                </button>
+              )}
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Showing {filteredSubmissions.length} of {submissions.length} sightings
+              </span>
+            </div>
           </div>
 
           {/* Map */}
