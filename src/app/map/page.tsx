@@ -94,14 +94,13 @@ export default function Map() {
     if (selectedPlants.length > 0 && !selectedPlants.includes(s.plantName)) {
       return false;
     }
-    // Check date range filter
-    if (dateFrom && new Date(s.timestamp) < new Date(dateFrom)) {
-      return false;
-    }
-    if (dateTo) {
-      const endOfDay = new Date(dateTo);
-      endOfDay.setHours(23, 59, 59, 999);
-      if (new Date(s.timestamp) > endOfDay) {
+    // Check date range filter - compare date strings to avoid timezone issues
+    if (dateFrom || dateTo) {
+      const submissionDateStr = new Date(s.timestamp).toISOString().split('T')[0];
+      if (dateFrom && submissionDateStr < dateFrom) {
+        return false;
+      }
+      if (dateTo && submissionDateStr > dateTo) {
         return false;
       }
     }
