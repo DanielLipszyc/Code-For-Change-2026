@@ -59,10 +59,6 @@ export async function POST(request: NextRequest) {
     const user = await client.users.getUser(userId);
     const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
 
-    // Check if user is admin
-    const userRole = (user.publicMetadata.role as string) || 'user';
-    const isUserAdmin = userRole === 'admin';
-
     const data: Submission = await request.json();
 
     // Validate required fields
@@ -85,7 +81,7 @@ export async function POST(request: NextRequest) {
       userId, // Add authenticated user ID
       createdBy: displayName, // Add user's display name
       createdAt: new Date(),
-      status: isUserAdmin ? 'approved' : 'pending', // Auto-approve admin submissions, users need approval
+      status: 'pending', // All submissions require admin approval
     });
 
     return NextResponse.json({
