@@ -79,14 +79,16 @@ export default function Home() {
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              Welcome to{" "}
               <span className="bg-gradient-to-r from-orange-300 to-sky-300 bg-clip-text text-transparent">
                 Swamp
               </span>{" "}
               Spotter 🌿
             </h1>
 
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
+            <p style = {{
+              backgroundColor: "transparent"
+            }}
+              className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
               Discover, identify, and document plants in swamps and wetlands—then submit sightings
               that help teams and communities understand what’s spreading and what’s thriving.
             </p>
