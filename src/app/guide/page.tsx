@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ThreatLevel = "Low" | "Moderate" | "Significant";
 
@@ -11,7 +11,7 @@ type Plant = {
   scientificName: string;
   picUrl: string;
   threatLevel: ThreatLevel;
-  tip: string
+  tip: string;
 };
 
 const PLANTS: Plant[] = [
@@ -22,7 +22,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/9/9b/Chinese_yam_-_air-potato_-_dioscorea_polystachya_IMG_8134.jpg",
     threatLevel: "Significant",
-    tip: "pointed, heart-shaped leaves and bulbs growing on the vine."
+    tip: "pointed, heart-shaped leaves and bulbs growing on the vine.",
   },
   {
     id: 2,
@@ -31,16 +31,15 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://www.floridamuseum.ufl.edu/wp-content/uploads/sites/23/2017/03/Ardisia-crenata-mature-fruit.jpg",
     threatLevel: "Significant",
-    tip: "wavy (crenate) leaves and small red berries."
+    tip: "wavy (crenate) leaves and small red berries.",
   },
   {
     id: 3,
     name: "Spanish Gold",
     scientificName: "Sesbania Punicea",
-    picUrl:
-      "https://www.picturethisai.com/wiki-image/1080/215992612534845440.jpeg",
+    picUrl: "https://www.picturethisai.com/wiki-image/1080/215992612534845440.jpeg",
     threatLevel: "Low",
-    tip: "dangling red-orange flowers. Their seed pods may make a rattling sound."
+    tip: "dangling red-orange flowers. Their seed pods may make a rattling sound.",
   },
   {
     id: 4,
@@ -48,7 +47,7 @@ const PLANTS: Plant[] = [
     scientificName: "Panicum repens",
     picUrl: "https://fsus.ncbg.unc.edu/img/orig/jho/jho_01342f.jpg",
     threatLevel: "Significant",
-    tip: "silver-green leaves with defined points."
+    tip: "silver-green leaves with defined points.",
   },
   {
     id: 5,
@@ -57,7 +56,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://apps.lucidcentral.org/pppw_v10/images/entities/wedelia_447/ronggy_sphagneticola_trilobata_in_singapore2017.jpg",
     threatLevel: "Moderate",
-    tip: "flower heads resembling daisies and waxy, jagged leaves."
+    tip: "flower heads resembling daisies and waxy, jagged leaves.",
   },
   {
     id: 6,
@@ -66,7 +65,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://plant-directory.ifas.ufl.edu/site/assets/files/1163/urena_lobata_at_kadavoor.0x1800.jpg",
     threatLevel: "Low",
-    tip: "pink-purple flowers and small burs covered in hooked bristles."
+    tip: "pink-purple flowers and small burs covered in hooked bristles.",
   },
   {
     id: 7,
@@ -75,16 +74,15 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://plant-directory.ifas.ufl.edu/site/assets/files/1157/tradescantia_fluminensis_flowers.0x1800.jpg",
     threatLevel: "Significant",
-    tip: "white flowers with three petals on hairless green stems."
+    tip: "white flowers with three petals on hairless green stems.",
   },
   {
     id: 8,
     name: "Wild Taro",
     scientificName: "Colocasia esculenta",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/a/a5/Taimo_Okinawa.jpg",
+    picUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a5/Taimo_Okinawa.jpg",
     threatLevel: "Moderate",
-    tip: "leaves attached at the underside rather than the edge. Stalks can be several feet tall."
+    tip: "leaves attached at the underside rather than the edge. Stalks can be several feet tall.",
   },
   {
     id: 9,
@@ -92,7 +90,7 @@ const PLANTS: Plant[] = [
     scientificName: "Lygodium japonicum",
     picUrl: "https://fsus.ncbg.unc.edu/img/orig/amc/amc_04402.jpg",
     threatLevel: "Significant",
-    tip: "symmetrical, triangular leaflets."
+    tip: "symmetrical, triangular leaflets.",
   },
   {
     id: 10,
@@ -101,7 +99,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/1/13/UC_Davis_arboretum_-_Sapium_sebiferum.jpg",
     threatLevel: "Significant",
-    tip: "wide heart shaped leaves with quickly tapering tips."
+    tip: "wide heart shaped leaves with quickly tapering tips.",
   },
   {
     id: 11,
@@ -110,7 +108,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/a/ae/Cinnamomum_camphora20050314.jpg",
     threatLevel: "Significant",
-    tip: "a distinct camphor smell from the twigs when crushed."
+    tip: "a distinct camphor smell from the twigs when crushed.",
   },
   {
     id: 12,
@@ -119,7 +117,7 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/c/c5/2018-07-08_11_10_27_Rosea_Mimosa_blossoms_along_the_ramp_from_southbound_Interstate_95_(New_Jersey_Turnpike_Eastern_Spur)_to_westbound_Interstate_280_(Essex_Freeway)_in_the_New_Jersey_Meadowlands%2C_within_Kearny%2C_Hudson_County%2C_New_Jersey.jpg",
     threatLevel: "Significant",
-    tip: "tree with prominent pink-white flowers over a canopy shaped like an umbrella."
+    tip: "tree with prominent pink-white flowers over a canopy shaped like an umbrella.",
   },
   {
     id: 13,
@@ -128,43 +126,39 @@ const PLANTS: Plant[] = [
     picUrl:
       "https://upload.wikimedia.org/wikipedia/commons/a/ae/Starr_070221-4728_Lantana_montevidensis.jpg",
     threatLevel: "Significant",
-    tip: "red, orange, pink, or white densely packed flower clusters."
+    tip: "red, orange, pink, or white densely packed flower clusters.",
   },
   {
     id: 14,
     name: "Boston Fern",
     scientificName: "Nephrolepis cordifolia",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/3/30/Boston_Fern_(2873392811).png",
+    picUrl: "https://upload.wikimedia.org/wikipedia/commons/3/30/Boston_Fern_(2873392811).png",
     threatLevel: "Significant",
-    tip: "potato-like growths on roots."
+    tip: "potato-like growths on roots.",
   },
   {
     id: 15,
     name: "Winged Yam",
     scientificName: "Dioscorea alata",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/9/96/Dioscorea_balcanica_BotGardBln310505.jpg",
+    picUrl: "https://upload.wikimedia.org/wikipedia/commons/9/96/Dioscorea_balcanica_BotGardBln310505.jpg",
     threatLevel: "Significant",
-    tip: "rough brown growths growing along the leaves and stem."
+    tip: "rough brown growths growing along the leaves and stem.",
   },
   {
     id: 16,
     name: "Tropical Soda Apple",
     scientificName: "Solanum viarum",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/a/ac/Solanum_viarum_fruit.jpg",
+    picUrl: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Solanum_viarum_fruit.jpg",
     threatLevel: "Significant",
-    tip: "spines growing along stem and fruits resembling miniature yellow or green watermelons."
+    tip: "spines growing along stem and fruits resembling miniature yellow or green watermelons.",
   },
   {
     id: 17,
     name: "Cogon Grass",
     scientificName: "Imperata cylindrica",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/5/51/Imperata_cylindrica_tigaya_colony.jpg",
+    picUrl: "https://upload.wikimedia.org/wikipedia/commons/5/51/Imperata_cylindrica_tigaya_colony.jpg",
     threatLevel: "Significant",
-    tip: "large white cylindrical plumes appearing during the spring season."
+    tip: "large white cylindrical plumes appearing during the spring season.",
   },
 ];
 
@@ -176,6 +170,17 @@ function threatBadgeClasses(level: ThreatLevel) {
       return "bg-amber-50 text-amber-800 ring-amber-200";
     case "Significant":
       return "bg-rose-50 text-rose-800 ring-rose-200";
+  }
+}
+
+function threatDotClasses(level: ThreatLevel) {
+  switch (level) {
+    case "Low":
+      return "bg-emerald-500";
+    case "Moderate":
+      return "bg-amber-500";
+    case "Significant":
+      return "bg-rose-500";
   }
 }
 
@@ -196,7 +201,155 @@ const FALLBACK_IMG =
   </svg>
 `);
 
-function PlantCard({ plant }: { plant: Plant }) {
+function InfoModal({
+  plant,
+  onClose,
+}: {
+  plant: Plant;
+  onClose: () => void;
+}) {
+  const [src, setSrc] = useState(plant.picUrl);
+
+  // Escape key closes
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${plant.name} information`}
+    >
+      {/* Backdrop */}
+      <button
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="Close"
+      />
+
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-900">
+              {plant.name}
+            </p>
+            <p className="truncate text-xs italic text-slate-600">
+              {plant.scientificName}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Close modal"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="grid gap-0 sm:grid-cols-2">
+          {/* Left: image */}
+          <div className="relative bg-slate-100">
+            <div className="relative aspect-[16/11] sm:aspect-auto sm:h-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={plant.name}
+                className="h-full w-full object-cover"
+                onError={() => setSrc(FALLBACK_IMG)}
+              />
+            </div>
+
+            <div className="absolute left-4 top-4">
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${threatBadgeClasses(
+                  plant.threatLevel
+                )}`}
+              >
+                <span className={`h-2 w-2 rounded-full ${threatDotClasses(plant.threatLevel)}`} />
+                {plant.threatLevel} threat
+              </span>
+            </div>
+          </div>
+
+          {/* Right: info */}
+          <div className="p-5 sm:p-6">
+            <h4 className="text-base font-bold text-slate-900">Quick ID</h4>
+            <p className="mt-2 text-sm leading-relaxed text-slate-700">
+              <span className="font-semibold text-slate-900">Look for:</span>{" "}
+              {plant.tip}
+            </p>
+
+            <div className="mt-5 grid gap-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Why it matters
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  Invasive plants can spread quickly, outcompete native species, and
+                  impact local ecosystems. Reporting helps prioritize removals and
+                  protect habitats.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  What to do if you find it
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                  <li>Take a clear photo (leaves + stem/flowers/fruit if possible).</li>
+                  <li>Note the location (trail name, nearest landmark, or address).</li>
+                  <li>Avoid spreading seeds/fragments on shoes or tools.</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <a
+                  href={plant.picUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  title="Open image source in a new tab"
+                >
+                  Open image source
+                </a>
+
+                <Link
+                  href={`/submit?plant=${encodeURIComponent(plant.name)}`}
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                  title={`Report a ${plant.name} sighting`}
+                  onClick={onClose}
+                >
+                  Report this plant
+                </Link>
+              </div>
+
+              <p className="text-xs text-slate-500">
+                Tip: press <span className="font-semibold">Esc</span> to close.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlantCard({
+  plant,
+  onInfo,
+}: {
+  plant: Plant;
+  onInfo: (plant: Plant) => void;
+}) {
   const [src, setSrc] = useState(plant.picUrl);
 
   return (
@@ -231,15 +384,16 @@ function PlantCard({ plant }: { plant: Plant }) {
           </div>
 
           <div className="flex gap-2">
-            <a
-              href={plant.picUrl}
-              target="_blank"
-              rel="noreferrer"
+            {/* NEW: Info button opens modal */}
+            <button
+              type="button"
+              onClick={() => onInfo(plant)}
               className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
-              title="Open source image link"
+              title="View plant info"
+              aria-label={`More info about ${plant.name}`}
             >
-              Source
-            </a>
+              Info
+            </button>
 
             <Link
               href={`/submit?plant=${encodeURIComponent(plant.name)}`}
@@ -251,9 +405,7 @@ function PlantCard({ plant }: { plant: Plant }) {
           </div>
         </div>
 
-        <p className="mt-3 text-sm text-slate-600">
-          Look for: {plant.tip}
-        </p>
+        <p className="mt-3 text-sm text-slate-600">Look for: {plant.tip}</p>
       </div>
     </div>
   );
@@ -263,6 +415,9 @@ export default function GuidePage() {
   const [query, setQuery] = useState("");
   const [threat, setThreat] = useState<"All" | ThreatLevel>("All");
   const [sort, setSort] = useState<"Threat" | "Name">("Threat");
+
+  // NEW: modal state
+  const [activePlant, setActivePlant] = useState<Plant | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -296,7 +451,8 @@ export default function GuidePage() {
               Alachua County Invasive Plant ID Guide
             </h1>
             <p className="mt-2 text-slate-600">
-              Search by common or scientific name. Use the threat level to prioritize reporting.
+              Search by common or scientific name. Use the threat level to prioritize
+              reporting.
             </p>
           </div>
 
@@ -344,7 +500,7 @@ export default function GuidePage() {
 
           <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (
-              <PlantCard key={p.id} plant={p} />
+              <PlantCard key={p.id} plant={p} onInfo={setActivePlant} />
             ))}
           </div>
 
@@ -355,7 +511,11 @@ export default function GuidePage() {
           )}
         </div>
       </div>
+
+      {/* NEW: modal */}
+      {activePlant && (
+        <InfoModal plant={activePlant} onClose={() => setActivePlant(null)} />
+      )}
     </div>
   );
 }
-

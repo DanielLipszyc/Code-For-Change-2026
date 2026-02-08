@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
 
 interface AIPrediction {
@@ -55,6 +55,7 @@ function toSpeciesId(commonName: string): string | null {
 }
 
 export default function SubmitClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
 
@@ -63,10 +64,10 @@ export default function SubmitClient() {
   const [plantName, setPlantName] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,6 +80,16 @@ export default function SubmitClient() {
 
     setPlantName((current) => (current ? current : value));
   }, [plantParam]);
+
+  // Redirect to map after success notification
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        router.push('/map');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, router]);
 
   const identifyPlant = async (imageData: string) => {
     setIsIdentifying(true);
@@ -203,7 +214,8 @@ export default function SubmitClient() {
         throw new Error(err?.error || "Failed to save submission");
       }
 
-      setSubmitted(true);
+      // Show success notification, then redirect to map
+      setShowSuccess(true);
     } catch (error) {
       console.error("Error submitting plant:", error);
       alert("Unable to submit. Please check your location services and try again.");
@@ -212,41 +224,21 @@ export default function SubmitClient() {
     }
   };
 
-  const resetForm = () => {
-    setSelectedImage(null);
-    setFileName("");
-    setPlantName("");
-    setNotes("");
-    setSubmitted(false);
-    setAiPrediction(null);
-    setShowComparison(false);
-  };
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-primary-50">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
-            <div className="text-6xl mb-6">🌿</div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Plant Submitted!</h2>
-            <p className="text-gray-600 mb-8">
-              Thank you for your contribution to documenting wetland plants. Your submission is
-              being reviewed.
-            </p>
-            <button
-              onClick={resetForm}
-              className="inline-flex items-center justify-center px-6 py-3 bg-[#136207] hover:bg-[#0f5006] text-white font-medium rounded-lg transition-colors"
-            >
-              Submit Another Plant
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-primary-50">
+      {/* Success Notification */}
+      {showSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-[#136207] text-white px-12 py-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-fade-in-out">
+            <div className="text-6xl">✅</div>
+            <div className="text-center">
+              <p className="font-bold text-3xl mb-2">Success!</p>
+              <p className="text-lg opacity-90">Plant submitted successfully</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
