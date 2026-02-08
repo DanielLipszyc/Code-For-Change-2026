@@ -74,7 +74,7 @@ export default function Home() {
             Join our community of plant enthusiasts and help document wetland biodiversity
           </p>
           <a
-            href="/dashboard"
+            href="/guide"
             className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
           >
             🐊 Get Started
