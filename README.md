@@ -25,7 +25,7 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 3. **Submit** (`/submit`) - Plant sighting submission form
 4. **Invasive Plant Guide** (`/guide`) - Information about each species
 5. **My Log** (`/log`) - Searchable log of user's submissions
-6. **Map** (`/Map`) - Interactive invasive plant species map
+6. **Map** (`/map`) - Interactive invasive plant species map
 
 ## Getting Started
 
