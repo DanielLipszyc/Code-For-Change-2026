@@ -223,15 +223,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TRUST / STATS */}
-      <section id="impact" className="border-b border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
-          <StatCard title="ID-first workflow" body="Guide → photo → submission. Fewer dead-end reports." />
-          <StatCard title="Structured sightings" body="Consistent fields make data searchable and usable." />
-          <StatCard title="Map-ready" body="Designed for a community view of locations over time." />
-        </div>
-      </section>
-
       {/* HOW IT WORKS */}
       <section id="how" className="bg-slate-50 py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -259,89 +250,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="features" className="bg-white py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl">
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                Built to feel like a real product
-              </h2>
-              <p className="mt-3 text-slate-600">
-                Clean hierarchy, consistent UI, and an experience you can demo confidently.
-              </p>
-            </div>
-
-            <Link
-              href="/map"
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
-            >
-              🐊 Open the Map
-            </Link>
-          </div>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <FeatureCard title="Fast submissions" body="Optimized input flow with strong defaults and minimal friction." />
-            <FeatureCard title="Plant guide UX" body="Search, filter, and open info without leaving the page." />
-            <FeatureCard title="Quality signals" body="Threat level + tips help users prioritize what matters." />
-            <FeatureCard title="Accessible UI" body="Keyboard-friendly patterns and readable contrast." />
-            <FeatureCard title="Deploy-friendly" body="Works cleanly in Next.js with modern best practices." />
-            <FeatureCard title="Extensible" body="Easy to add more plants, metadata, or moderation tools." />
-          </div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="bg-slate-950 py-16 text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
-            <div>
-              <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Ready to explore the swamp?
-              </h2>
-              <p className="mt-3 text-white/75">
-                Join a community effort to document wetland biodiversity—and help spot invasive
-                plants early.
-              </p>
-
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/submit"
-                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-white/90 hover:scale-[1.03]"
-                >
-                  🌱 Submit a Sighting
-                </Link>
-                <Link
-                  href="/guide"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 hover:scale-[1.03]"
-                >
-                  Browse the Guide
-                </Link>
-              </div>
-            </div>
-
-            {/* CTA image placeholder */}
-            <div className="relative">
-              <div className="absolute -inset-4 rounded-3xl bg-white/10 blur-2xl" />
-              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-                <div className="relative h-[260px] sm:h-[320px]">
-                  {/* Replace with a real CTA image when ready */}
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-white/10 to-white/5">
-                    <p className="text-sm font-semibold text-white/70">
-                      Insert image: team/community in the field
-                    </p>
-                  </div>
-                </div>
-                <div className="border-t border-white/10 px-5 py-4">
-                  <p className="text-sm font-semibold">Make sightings count</p>
-                  <p className="mt-1 text-sm text-white/70">
-                    Strong photos + notes = better identification and faster action.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <footer className="mt-14 border-t border-white/10 pt-8 text-sm text-white/60">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p>© {new Date().getFullYear()} Swamp Spotter</p>
@@ -364,14 +276,6 @@ export default function Home() {
   );
 }
 
-function StatCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-base font-semibold text-slate-900">{title}</p>
-      <p className="mt-2 text-sm leading-relaxed text-slate-600">{body}</p>
-    </div>
-  );
-}
 
 function StepCard({ n, title, body }: { n: string; title: string; body: string }) {
   return (
