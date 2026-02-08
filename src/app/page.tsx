@@ -55,45 +55,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      {/* Top nav */}
-      <header className="sticky top-0 z-40 border-b border-black/5 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="relative h-9 w-9 overflow-hidden rounded-xl ring-1 ring-black/10">
-              <Image src="/logo.png" alt="Swamp Spotter" fill className="object-cover" priority />
-            </div>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold">Swamp Spotter</p>
-              <p className="text-xs text-slate-500">Wetlands · Plants · Community</p>
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-6 md:flex">
-            <a href="#how" className="text-sm text-slate-600 hover:text-slate-900">
-              How it works
-            </a>
-            <a href="#features" className="text-sm text-slate-600 hover:text-slate-900">
-              Features
-            </a>
-            <a href="#impact" className="text-sm text-slate-600 hover:text-slate-900">
-              Impact
-            </a>
-            <Link
-              href="/submit"
-              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
-            >
-              Submit
-            </Link>
-          </nav>
-
-          <Link
-            href="/submit"
-            className="md:hidden rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
-          >
-            Submit
-          </Link>
-        </div>
-      </header>
 
       {/* HERO + SLIDESHOW */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#136207] to-[#1B3FAB] text-white">
