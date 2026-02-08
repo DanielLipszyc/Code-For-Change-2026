@@ -172,7 +172,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setActive((i) => (i - 1 + slides.length) % slides.length)}
-                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15 hover:scale-[1.03]"
                         aria-label="Previous slide"
                       >
                         ←
@@ -180,7 +180,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setActive((i) => (i + 1) % slides.length)}
-                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15 hover:scale-[1.03]"
                         aria-label="Next slide"
                       >
                         →
@@ -190,7 +190,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => setPaused((p) => !p)}
-                      className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                      className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15 hover:scale-[1.03]"
                       aria-label={paused ? "Resume slideshow" : "Pause slideshow"}
                       title={paused ? "Resume" : "Pause"}
                     >
@@ -313,14 +313,14 @@ export default function Home() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/sign-in"
-                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-white/90"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-white/90 hover:scale-[1.03]"
                 >
                   Log in
                 </Link>
 
                 <Link
                   href="/sign-up"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 hover:scale-[1.03]"
                 >
                   Sign up
                 </Link>
@@ -337,8 +337,6 @@ export default function Home() {
               <p>© {new Date().getFullYear()} Swamp Spotter</p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/about" className="hover:text-white">About</Link>
-                <Link href="/privacy" className="hover:text-white">Privacy</Link>
-                <Link href="/contact" className="hover:text-white">Contact</Link>
               </div>
             </div>
           </footer>
@@ -360,20 +358,6 @@ function StepCard({ n, title, body }: { n: string; title: string; body: string }
         <p className="text-lg font-bold text-slate-900">{title}</p>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">{body}</p>
-    </div>
-  );
-}
-
-function FeatureCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-      <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-sky-100 ring-1 ring-slate-200" />
-      <p className="mt-4 text-base font-semibold text-slate-900">{title}</p>
-      <p className="mt-2 text-sm leading-relaxed text-slate-600">{body}</p>
-      <div className="mt-5 h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-      <p className="mt-4 text-xs text-slate-500">
-        Replace placeholders with real screenshots for an instant “product” feel.
-      </p>
     </div>
   );
 }
