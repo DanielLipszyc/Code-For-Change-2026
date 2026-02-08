@@ -8,8 +8,14 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-b from-[#136207] to-[#1B3FAB] text-white py-16 px-4 sm:px-6 lg:px-8">
         {/* Subtle background blobs */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+          <img style = {{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center"
+          }} src="/forest.jpg" alt="forest"/>
+          <div className="absolute inset-0 bg-black/30" />
         </div>
 
         <div className="relative max-w-7xl mx-auto text-center">
@@ -60,14 +66,14 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/submit"
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-green-700 bg-white hover:bg-green-50 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-green-700 bg-white hover:bg-green-50 transition-colors hover:scale-[1.03]"
             >
               🌱 Submit Plant
             </Link>
 
             <Link
               href="/about"
-              className="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-base font-medium rounded-md text-white hover:bg-white/10 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-base font-medium rounded-md text-white hover:bg-white/10 transition-colors hover:scale-[1.03]"
             >
               Learn More
             </Link>
@@ -130,7 +136,7 @@ export default function Home() {
 
           <Link
             href="/map"
-            className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+            className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors hover:scale-[1.03]"
           >
             🐊 Get Started
           </Link>
