@@ -253,25 +253,52 @@ export default function Home() {
 
       {/* CTA */}
       <section className="bg-slate-950 py-16 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <footer className="mt-14 border-t border-white/10 pt-8 text-sm text-white/60">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div>
+              <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                Ready to explore the swamp?
+              </h2>
+              <p className="mt-3 text-white/75">
+                Create an account to submit sightings, track your reports, and help build a clearer
+                picture of wetland biodiversity.
+              </p>
+
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/sign-in"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-white/90"
+                >
+                  Log in
+                </Link>
+
+                <Link
+                  href="/sign-up"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+                >
+                  Sign up
+                </Link>
+              </div>
+
+              <p className="mt-4 text-xs text-white/60">
+                Already exploring? Log in to keep your submissions in one place.
+              </p>
+            </div>
+          </div>
+
+          <footer className="border-t border-white/10 pt-8 text-sm text-white/60">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p>© {new Date().getFullYear()} Swamp Spotter</p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/about" className="hover:text-white">
-                  About
-                </Link>
-                <Link href="/privacy" className="hover:text-white">
-                  Privacy
-                </Link>
-                <Link href="/contact" className="hover:text-white">
-                  Contact
-                </Link>
+                <Link href="/about" className="hover:text-white">About</Link>
+                <Link href="/privacy" className="hover:text-white">Privacy</Link>
+                <Link href="/contact" className="hover:text-white">Contact</Link>
               </div>
             </div>
           </footer>
         </div>
       </section>
+
     </main>
   );
 }
