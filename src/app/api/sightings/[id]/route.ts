@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getDb } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { supabase, isValidId, toSighting } from "@/lib/supabase";
 import { canEditSighting, canDeleteSighting } from "@/lib/auth";
 
 /**
@@ -15,18 +14,21 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    // Validate ID
+    if (!isValidId(id)) {
       return NextResponse.json(
         { error: "Invalid sighting ID" },
         { status: 400 }
       );
     }
 
-    const db = await getDb();
-    const sighting = await db.collection("sightings").findOne({
-      _id: new ObjectId(id),
-    });
+    const { data: sighting, error } = await supabase
+      .from("sightings")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) throw error;
 
     if (!sighting) {
       return NextResponse.json(
@@ -35,7 +37,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(sighting);
+    return NextResponse.json(toSighting(sighting));
   } catch (error) {
     console.error("Error fetching sighting:", error);
     return NextResponse.json(
@@ -67,8 +69,8 @@ export async function PUT(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    // Validate ID
+    if (!isValidId(id)) {
       return NextResponse.json(
         { error: "Invalid sighting ID" },
         { status: 400 }
@@ -88,20 +90,22 @@ export async function PUT(
 
     // Build update object
     const updateFields: any = {
-      updatedAt: new Date(),
+      updated_at: new Date().toISOString(),
     };
 
-    if (body.speciesId !== undefined) updateFields.speciesId = body.speciesId;
+    if (body.speciesId !== undefined) updateFields.species_id = body.speciesId;
     if (body.notes !== undefined) updateFields.notes = body.notes;
     if (body.status !== undefined) updateFields.status = body.status;
 
-    const db = await getDb();
-    const result = await db.collection("sightings").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updateFields }
-    );
+    const { data: updated, error } = await supabase
+      .from("sightings")
+      .update(updateFields)
+      .eq("id", id)
+      .select("id");
 
-    if (result.matchedCount === 0) {
+    if (error) throw error;
+
+    if (updated.length === 0) {
       return NextResponse.json(
         { error: "Sighting not found" },
         { status: 404 }
@@ -143,8 +147,8 @@ export async function DELETE(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    // Validate ID
+    if (!isValidId(id)) {
       return NextResponse.json(
         { error: "Invalid sighting ID" },
         { status: 400 }
@@ -160,12 +164,15 @@ export async function DELETE(
       );
     }
 
-    const db = await getDb();
-    const result = await db.collection("sightings").deleteOne({
-      _id: new ObjectId(id),
-    });
+    const { data: deleted, error } = await supabase
+      .from("sightings")
+      .delete()
+      .eq("id", id)
+      .select("id");
 
-    if (result.deletedCount === 0) {
+    if (error) throw error;
+
+    if (deleted.length === 0) {
       return NextResponse.json(
         { error: "Sighting not found" },
         { status: 404 }

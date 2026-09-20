@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getDb } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { supabase, isValidId, toSubmission } from "@/lib/supabase";
 import { canEditSubmission, canDeleteSubmission } from "@/lib/auth";
 
 /**
@@ -15,18 +14,21 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    // Validate ID
+    if (!isValidId(id)) {
       return NextResponse.json(
         { error: "Invalid submission ID" },
         { status: 400 }
       );
     }
 
-    const db = await getDb();
-    const submission = await db.collection("submissions").findOne({
-      _id: new ObjectId(id),
-    });
+    const { data: submission, error } = await supabase
+      .from("submissions")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) throw error;
 
     if (!submission) {
       return NextResponse.json(
@@ -35,7 +37,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(submission);
+    return NextResponse.json(toSubmission(submission));
   } catch (error) {
     console.error("Error fetching submission:", error);
     return NextResponse.json(
@@ -67,8 +69,8 @@ export async function PUT(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    // Validate ID
+    if (!isValidId(id)) {
       return NextResponse.json(
         { error: "Invalid submission ID" },
         { status: 400 }
@@ -88,21 +90,23 @@ export async function PUT(
 
     // Build update object (only allow certain fields to be updated)
     const updateFields: any = {
-      updatedAt: new Date(),
+      updated_at: new Date().toISOString(),
     };
 
-    if (body.plantName) updateFields.plantName = body.plantName;
-    if (body.scientificName !== undefined) updateFields.scientificName = body.scientificName;
+    if (body.plantName) updateFields.plant_name = body.plantName;
+    if (body.scientificName !== undefined) updateFields.scientific_name = body.scientificName;
     if (body.notes !== undefined) updateFields.notes = body.notes;
-    if (body.imageData !== undefined) updateFields.imageData = body.imageData;
+    if (body.imageData !== undefined) updateFields.image_data = body.imageData;
 
-    const db = await getDb();
-    const result = await db.collection("submissions").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updateFields }
-    );
+    const { data: updated, error } = await supabase
+      .from("submissions")
+      .update(updateFields)
+      .eq("id", id)
+      .select("id");
 
-    if (result.matchedCount === 0) {
+    if (error) throw error;
+
+    if (updated.length === 0) {
       return NextResponse.json(
         { error: "Submission not found" },
         { status: 404 }
@@ -144,8 +148,8 @@ export async function DELETE(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    // Validate ID
+    if (!isValidId(id)) {
       return NextResponse.json(
         { error: "Invalid submission ID" },
         { status: 400 }
@@ -161,12 +165,15 @@ export async function DELETE(
       );
     }
 
-    const db = await getDb();
-    const result = await db.collection("submissions").deleteOne({
-      _id: new ObjectId(id),
-    });
+    const { data: deleted, error } = await supabase
+      .from("submissions")
+      .delete()
+      .eq("id", id)
+      .select("id");
 
-    if (result.deletedCount === 0) {
+    if (error) throw error;
+
+    if (deleted.length === 0) {
       return NextResponse.json(
         { error: "Submission not found" },
         { status: 404 }

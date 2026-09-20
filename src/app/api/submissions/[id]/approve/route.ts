@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getDb } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { supabase, isValidId } from "@/lib/supabase";
 import { isAdmin } from "@/lib/auth";
 
 /**
@@ -35,27 +34,27 @@ export async function POST(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    // Validate ID
+    if (!isValidId(id)) {
       return NextResponse.json(
         { error: "Invalid submission ID" },
         { status: 400 }
       );
     }
 
-    const db = await getDb();
-    const result = await db.collection("submissions").updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          status: 'approved',
-          approvedAt: new Date(),
-          approvedBy: userId
-        }
-      }
-    );
+    const { data: updated, error } = await supabase
+      .from("submissions")
+      .update({
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: userId,
+      })
+      .eq("id", id)
+      .select("id");
 
-    if (result.matchedCount === 0) {
+    if (error) throw error;
+
+    if (updated.length === 0) {
       return NextResponse.json(
         { error: "Submission not found" },
         { status: 404 }

@@ -1,4 +1,4 @@
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { createClerkClient } from '@clerk/backend';
 import { config } from 'dotenv';
 import { resolve } from 'path';
 
@@ -13,8 +13,7 @@ if (!CLERK_SECRET_KEY) {
   process.exit(1);
 }
 
-// Note: clerkClient is already initialized, no need to call it as a function
-const clerk = clerkClient;
+const clerk = createClerkClient({ secretKey: CLERK_SECRET_KEY });
 
 async function promoteToAdmin(emailOrUserId: string) {
   try {
@@ -23,7 +22,7 @@ async function promoteToAdmin(emailOrUserId: string) {
     // Check if input is an email or userId
     if (emailOrUserId.includes('@')) {
       // It's an email, find the user
-      const users = await clerk.users.getUserList({ emailAddress: [emailOrUserId] });
+      const { data: users } = await clerk.users.getUserList({ emailAddress: [emailOrUserId] });
 
       if (!users || users.length === 0) {
         console.error(`Error: No user found with email: ${emailOrUserId}`);
@@ -38,7 +37,7 @@ async function promoteToAdmin(emailOrUserId: string) {
     }
 
     // Update user's public metadata to set role as admin
-    await clerk.users.updateUser(userId, {
+    await clerk.users.updateUserMetadata(userId, {
       publicMetadata: { role: 'admin' },
     });
 

@@ -172,7 +172,7 @@ export default function SubmitClient() {
         return;
       }
 
-      // Compress image again specifically for storage in Mongo
+      // Compress image again specifically for storage in the database
       // (bigger than AI compression is ok, but keep it reasonable)
       const imageData = await compressImage(selectedImage, 800, 0.7);
 
@@ -197,7 +197,7 @@ export default function SubmitClient() {
 
         // Notes + image
         notes: notes || undefined,
-        imageData, // ✅ stored in Mongo as a base64 data URL
+        imageData, // ✅ stored in the database as a base64 data URL
 
         // Moderation default (if you want it)
         status: "pending",

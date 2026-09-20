@@ -1,7 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { getDb } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { supabase, isValidId, toSubmission } from '@/lib/supabase';
 import { canEditSubmission } from '@/lib/auth';
 import EditSubmissionClient from './EditSubmissionClient';
 
@@ -22,8 +21,8 @@ export default async function EditSubmissionPage({ params }: PageProps) {
     redirect('/sign-in');
   }
 
-  // Validate ObjectId
-  if (!ObjectId.isValid(id)) {
+  // Validate ID
+  if (!isValidId(id)) {
     redirect('/map');
   }
 
@@ -34,28 +33,26 @@ export default async function EditSubmissionPage({ params }: PageProps) {
   }
 
   // Fetch submission data
-  const db = await getDb();
-  const submission = await db.collection('submissions').findOne({
-    _id: new ObjectId(id),
-  }) as {
-    _id: ObjectId;
-    plantName: string;
-    scientificName?: string;
-    lat: number;
-    lng: number;
-    timestamp: number;
-    notes?: string;
-    imageData?: string;
-  } | null;
+  const { data: row, error } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
 
-  if (!submission) {
+  if (error || !row) {
     redirect('/map');
   }
 
-  // Convert ObjectId to string for client component
+  const s = toSubmission(row);
   const submissionData = {
-    ...submission,
-    _id: submission._id.toString(),
+    _id: s._id,
+    plantName: s.plantName,
+    scientificName: s.scientificName ?? undefined,
+    lat: s.lat,
+    lng: s.lng,
+    timestamp: s.timestamp,
+    notes: s.notes ?? undefined,
+    imageData: s.imageData ?? undefined,
   };
 
   return <EditSubmissionClient submission={submissionData} />;
