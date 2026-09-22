@@ -11,7 +11,8 @@ const navItems = [
   { href: "/submit", label: "Submit" },
   { href: "/guide", label: "Invasive Plant Guide" },
   { href: "/log", label: "My Log" },
-  { href: "/map", label: "Map"},
+  { href: "/sightings", label: "Sightings" },
+  { href: "/map", label: "Map" },
 ];
 
 export default function Navigation() {
