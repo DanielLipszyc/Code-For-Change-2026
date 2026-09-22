@@ -62,7 +62,7 @@ const STACK: StackItem[] = [
   { name: "React + TypeScript", detail: "Type-safe UI components and reliable iteration.", badge: "Frontend" },
   { name: "Tailwind CSS", detail: "Consistent spacing, typography, and responsive design.", badge: "Frontend" },
   { name: "Clerk", detail: "Authentication for sign-in/sign-up and user sessions.", badge: "Auth" },
-  { name: "MongoDB", detail: "Stores submissions and metadata for sightings.", badge: "Database" },
+  { name: "Supabase (PostgreSQL)", detail: "Stores submissions and metadata for sightings.", badge: "Database" },
   { name: "API Routes", detail: "Server endpoints for submissions and user workflows.", badge: "Backend" },
   { name: "Vercel", detail: "Deployments with environment-based configuration.", badge: "Infra" },
   { name: "Git + GitHub", detail: "Version control and team collaboration.", badge: "Tools" },

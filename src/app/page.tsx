@@ -104,21 +104,6 @@ export default function Home() {
                 Browse the ID Guide
               </Link>
             </div>
-
-            <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/75">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-300" />
-                Fast submissions
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-sky-300" />
-                Clean plant guide
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-orange-300" />
-                Map-ready data
-              </div>
-            </div>
           </div>
 
           {/* Right slideshow */}
