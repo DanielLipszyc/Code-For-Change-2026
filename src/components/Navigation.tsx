@@ -33,8 +33,28 @@ export default function Navigation() {
                 }} 
                 src="/logo.png" alt="Home"/>
               <span className="text-xl font-bold">
-                <span className="bg-gradient-to-r from-orange-500 to-sky-500 bg-clip-text text-transparent">Swamp</span>
-                <span className="text-[#136207]"> Spotter</span>
+                <span
+                  className="inline-block"
+                  style={{
+                    backgroundImage: "linear-gradient(90deg, #f59e0b 0%, #38bdf8 100%)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  Swamp
+                </span>
+                <span
+                  className="ml-1 inline-block"
+                  style={{
+                    backgroundImage: "linear-gradient(90deg, #22c55e 0%, #16a34a 100%)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  Spotter
+                </span>
               </span>
             </Link>
           </div>
@@ -59,7 +79,7 @@ export default function Navigation() {
             <SignedOut>
               <Link
                 href="/sign-in"
-                className="px-4 py-2 rounded-md text-sm font-medium bg-[#136207] text-white hover:bg-[#0d4705] transition-colors"
+                className="inline-flex min-w-[108px] items-center justify-center px-5 py-2.5 rounded-md text-sm font-semibold bg-[#136207] text-white shadow-sm hover:bg-[#0d4705] transition-colors"
               >
                 Sign In
               </Link>

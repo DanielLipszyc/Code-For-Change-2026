@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/mongodb";
+import { getDb } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getUserRole } from "@/lib/auth";
@@ -44,26 +44,52 @@ export async function GET() {
 // POST - Create new submission in MongoDB (requires authentication)
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
     const authResult = await auth();
     const userId = authResult.userId;
+    const data: Submission & { anonymous?: boolean } = await request.json();
+    const isAnonymousSubmission = Boolean(data.anonymous);
 
-    if (!userId) {
+    if (!userId && !isAnonymousSubmission) {
       return NextResponse.json(
         { error: "Unauthorized - Please sign in to submit" },
         { status: 401 }
       );
     }
 
-    // Get user info from Clerk
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
+    let displayName = 'Anonymous';
+    let userRole: 'user' | 'admin' = 'user';
+    const submissionRecord: Record<string, unknown> = {
+      plantName: data.plantName,
+      scientificName: data.scientificName || null,
+      lat: data.lat,
+      lng: data.lng,
+      timestamp: data.timestamp || Date.now(),
+      notes: data.notes || null,
+      imageData: data.imageData || null,
+      createdBy: displayName,
+      createdAt: new Date(),
+      status: 'pending',
+    };
 
-    // Get user role to determine auto-approval
-    const userRole = await getUserRole(userId);
+    if (userId) {
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
+      userRole = await getUserRole(userId);
 
-    const data: Submission = await request.json();
+      if (!isAnonymousSubmission) {
+        submissionRecord.userId = userId;
+        submissionRecord.createdBy = displayName;
+      }
+    }
+
+    if (isAnonymousSubmission) {
+      submissionRecord.createdBy = 'Anonymous';
+    }
+
+    if (userRole === 'admin' && !isAnonymousSubmission) {
+      submissionRecord.status = 'approved';
+    }
 
     // Validate required fields
     if (!data.plantName || data.lat === undefined || data.lng === undefined) {
@@ -74,19 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDb();
-    const result = await db.collection("submissions").insertOne({
-      plantName: data.plantName,
-      scientificName: data.scientificName || null,
-      lat: data.lat,
-      lng: data.lng,
-      timestamp: data.timestamp || Date.now(),
-      notes: data.notes || null,
-      imageData: data.imageData || null,
-      userId, // Add authenticated user ID
-      createdBy: displayName, // Add user's display name
-      createdAt: new Date(),
-      status: userRole === 'admin' ? 'approved' : 'pending', // Auto-approve admin submissions
-    });
+    const result = await db.collection("submissions").insertOne(submissionRecord);
 
     return NextResponse.json({
       success: true,

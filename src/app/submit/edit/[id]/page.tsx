@@ -1,7 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { getDb } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { getDb } from '@/lib/supabase';
 import { canEditSubmission } from '@/lib/auth';
 import EditSubmissionClient from './EditSubmissionClient';
 
@@ -22,8 +21,7 @@ export default async function EditSubmissionPage({ params }: PageProps) {
     redirect('/sign-in');
   }
 
-  // Validate ObjectId
-  if (!ObjectId.isValid(id)) {
+  if (!id || !id.trim()) {
     redirect('/map');
   }
 
@@ -36,9 +34,9 @@ export default async function EditSubmissionPage({ params }: PageProps) {
   // Fetch submission data
   const db = await getDb();
   const submission = await db.collection('submissions').findOne({
-    _id: new ObjectId(id),
+    _id: id,
   }) as {
-    _id: ObjectId;
+    _id: string;
     plantName: string;
     scientificName?: string;
     lat: number;
@@ -55,7 +53,7 @@ export default async function EditSubmissionPage({ params }: PageProps) {
   // Convert ObjectId to string for client component
   const submissionData = {
     ...submission,
-    _id: submission._id.toString(),
+    _id: String(submission._id),
   };
 
   return <EditSubmissionClient submission={submissionData} />;

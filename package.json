@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",
+    "@supabase/supabase-js": "^2.109.0",
     "clerk": "^0.8.3",
     "leaflet": "^1.9.4",
     "mongodb": "^7.1.0",

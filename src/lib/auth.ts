@@ -1,6 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server';
-import { getDb } from './mongodb';
-import { ObjectId } from 'mongodb';
+import { getDb } from './supabase';
 import { UserRole } from '@/types/auth';
 
 /**
@@ -35,14 +34,13 @@ export async function canEditSubmission(
   submissionId: string
 ): Promise<boolean> {
   try {
-    // Validate ObjectId
-    if (!ObjectId.isValid(submissionId)) {
+    if (!submissionId || !submissionId.trim()) {
       return false;
     }
 
     const db = await getDb();
     const submission = await db.collection('submissions').findOne({
-      _id: new ObjectId(submissionId),
+      _id: submissionId,
     });
 
     // Can't edit if submission doesn't exist or has no userId (legacy)
@@ -67,19 +65,17 @@ export async function canDeleteSubmission(
   submissionId: string
 ): Promise<boolean> {
   try {
-    // Admins can delete anything
     if (await isAdmin(userId)) {
       return true;
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(submissionId)) {
+    if (!submissionId || !submissionId.trim()) {
       return false;
     }
 
     const db = await getDb();
     const submission = await db.collection('submissions').findOne({
-      _id: new ObjectId(submissionId),
+      _id: submissionId,
     });
 
     // Can't delete if submission doesn't exist
@@ -109,14 +105,13 @@ export async function canEditSighting(
   sightingId: string
 ): Promise<boolean> {
   try {
-    // Validate ObjectId
-    if (!ObjectId.isValid(sightingId)) {
+    if (!sightingId || !sightingId.trim()) {
       return false;
     }
 
     const db = await getDb();
     const sighting = await db.collection('sightings').findOne({
-      _id: new ObjectId(sightingId),
+      _id: sightingId,
     });
 
     // Can't edit if sighting doesn't exist or has no userId (legacy)
@@ -141,19 +136,17 @@ export async function canDeleteSighting(
   sightingId: string
 ): Promise<boolean> {
   try {
-    // Admins can delete anything
     if (await isAdmin(userId)) {
       return true;
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(sightingId)) {
+    if (!sightingId || !sightingId.trim()) {
       return false;
     }
 
     const db = await getDb();
     const sighting = await db.collection('sightings').findOne({
-      _id: new ObjectId(sightingId),
+      _id: sightingId,
     });
 
     // Can't delete if sighting doesn't exist

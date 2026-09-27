@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getDb } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/supabase";
 import { canEditSighting, canDeleteSighting } from "@/lib/auth";
 
 /**
@@ -15,8 +14,7 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    if (!id || !id.trim()) {
       return NextResponse.json(
         { error: "Invalid sighting ID" },
         { status: 400 }
@@ -25,7 +23,7 @@ export async function GET(
 
     const db = await getDb();
     const sighting = await db.collection("sightings").findOne({
-      _id: new ObjectId(id),
+      _id: id,
     });
 
     if (!sighting) {
@@ -67,8 +65,7 @@ export async function PUT(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    if (!id || !id.trim()) {
       return NextResponse.json(
         { error: "Invalid sighting ID" },
         { status: 400 }
@@ -97,7 +94,7 @@ export async function PUT(
 
     const db = await getDb();
     const result = await db.collection("sightings").updateOne(
-      { _id: new ObjectId(id) },
+      { _id: id },
       { $set: updateFields }
     );
 
@@ -143,8 +140,7 @@ export async function DELETE(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    if (!id || !id.trim()) {
       return NextResponse.json(
         { error: "Invalid sighting ID" },
         { status: 400 }
@@ -162,7 +158,7 @@ export async function DELETE(
 
     const db = await getDb();
     const result = await db.collection("sightings").deleteOne({
-      _id: new ObjectId(id),
+      _id: id,
     });
 
     if (result.deletedCount === 0) {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getDb } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/supabase";
 import { isAdmin } from "@/lib/auth";
 
 /**
@@ -35,8 +34,7 @@ export async function POST(
       );
     }
 
-    // Validate ObjectId
-    if (!ObjectId.isValid(id)) {
+    if (!id || !id.trim()) {
       return NextResponse.json(
         { error: "Invalid submission ID" },
         { status: 400 }
@@ -45,7 +43,7 @@ export async function POST(
 
     const db = await getDb();
     const result = await db.collection("submissions").updateOne(
-      { _id: new ObjectId(id) },
+      { _id: id },
       {
         $set: {
           status: 'approved',
