@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabase, toSubmission } from "@/lib/supabase";
+import { getPublicDisplayName } from "@/lib/auth";
 
 async function getUserName(userId: string) {
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-    return fullName || user.emailAddresses[0]?.emailAddress || "Observer";
+    return getPublicDisplayName(user, { includeLastName: true });
   } catch {
     return "Observer";
   }
@@ -21,10 +21,9 @@ async function getUserMap(userIds: string[]) {
     userIds.map(async (userId) => {
       try {
         const user = await client.users.getUser(userId);
-        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
         return {
           id: userId,
-          name: fullName || user.emailAddresses[0]?.emailAddress || "Observer",
+          name: getPublicDisplayName(user, { includeLastName: true }),
           imageUrl: user.imageUrl,
         };
       } catch {
@@ -104,9 +103,13 @@ export async function GET() {
     const submissions = submissionRows.map(toSubmission);
 
     const currentUserSubmissions = submissions.filter((submission) => submission.userId === currentUserId);
+    // Other people's pending reports haven't been reviewed; keep them out of the observers list and feed
+    const visibleSubmissions = submissions.filter(
+      (submission) => submission.status === "approved" || submission.userId === currentUserId
+    );
     const uniqueObserverIds = Array.from(
       new Set(
-        submissions
+        visibleSubmissions
           .map((submission) => submission.userId)
           .filter((userId): userId is string => Boolean(userId) && userId !== currentUserId)
       )
@@ -141,7 +144,7 @@ export async function GET() {
 
     const observers = uniqueObserverIds
       .map((observerId) => {
-        const observerEntries = submissions.filter((submission) => submission.userId === observerId);
+        const observerEntries = visibleSubmissions.filter((submission) => submission.userId === observerId);
         const observerInfo = userMap.get(observerId) ?? { id: observerId, name: "Observer", imageUrl: "" };
 
         return {
@@ -205,7 +208,7 @@ export async function GET() {
       },
     ];
 
-    const feed = submissions.slice(0, 3).map((submission) => {
+    const feed = visibleSubmissions.slice(0, 3).map((submission) => {
       const observerName = submission.createdBy || (submission.userId ? "Observer" : "Community");
       const submissionName = submission.plantName || "plant report";
       const eventDate = toSafeDate(submission.createdAt ?? submission.timestamp ?? new Date()) ?? new Date();

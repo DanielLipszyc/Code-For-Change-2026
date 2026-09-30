@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase, isValidId, toSubmission } from "@/lib/supabase";
-import { canEditSubmission, canDeleteSubmission } from "@/lib/auth";
+import { canEditSubmission, canDeleteSubmission, isAdmin } from "@/lib/auth";
+import { parseNotes, resolvePlant } from "@/lib/submissionInput";
 
 /**
  * GET /api/submissions/[id]
- * Fetch a single submission by ID (public)
+ * Fetch a single submission by ID. Approved submissions are public;
+ * pending ones are visible only to their owner and admins.
  */
 export async function GET(
   request: NextRequest,
@@ -37,7 +39,20 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(toSubmission(submission));
+    const { userId } = await auth();
+    const isOwner = !!userId && submission.user_id === userId;
+    const canSeeAll = isOwner || (!!userId && (await isAdmin(userId)));
+
+    // Pending reports answer 404 to everyone else, so their existence isn't revealed
+    if (submission.status !== "approved" && !canSeeAll) {
+      return NextResponse.json(
+        { error: "Submission not found" },
+        { status: 404 }
+      );
+    }
+
+    const result = toSubmission(submission);
+    return NextResponse.json(canSeeAll ? result : { ...result, userId: null });
   } catch (error) {
     console.error("Error fetching submission:", error);
     return NextResponse.json(
@@ -88,15 +103,46 @@ export async function PUT(
 
     const body = await request.json();
 
-    // Build update object (only allow certain fields to be updated)
-    const updateFields: any = {
+    // Build update object (only the plant and notes can be edited; the photo,
+    // location and scientific name are not taken from the client)
+    const updateFields: Record<string, string | null> = {
       updated_at: new Date().toISOString(),
     };
 
-    if (body.plantName) updateFields.plant_name = body.plantName;
-    if (body.scientificName !== undefined) updateFields.scientific_name = body.scientificName;
-    if (body.notes !== undefined) updateFields.notes = body.notes;
-    if (body.imageData !== undefined) updateFields.image_data = body.imageData;
+    if (body.plantName !== undefined) {
+      const plant = resolvePlant(body.plantName);
+      if (!plant) {
+        return NextResponse.json(
+          { error: "Plant name must be one of the listed species or Unknown" },
+          { status: 400 }
+        );
+      }
+      updateFields.plant_name = plant.plantName;
+      updateFields.scientific_name = plant.scientificName;
+    }
+
+    if (body.notes !== undefined) {
+      const notes = parseNotes(body.notes);
+      if ("error" in notes) {
+        return NextResponse.json({ error: notes.error }, { status: 400 });
+      }
+      updateFields.notes = notes.value;
+    }
+
+    if (!("plant_name" in updateFields) && !("notes" in updateFields)) {
+      return NextResponse.json(
+        { error: "Nothing to update: send plantName and/or notes" },
+        { status: 400 }
+      );
+    }
+
+    // An edited report must be reviewed again, otherwise an approved report
+    // could be changed after approval and go straight to the public map
+    if (!(await isAdmin(userId))) {
+      updateFields.status = "pending";
+      updateFields.approved_at = null;
+      updateFields.approved_by = null;
+    }
 
     const { data: updated, error } = await supabase
       .from("submissions")

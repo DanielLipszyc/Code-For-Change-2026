@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { plantNames, plants } from "@/data/plants";
+import { UNKNOWN_PLANT } from "@/lib/submissionInput";
+import { LIMITS, isWithinRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { PLANT_ID_ENABLED } from "@/lib/features";
 
 // Helper function to call Gemini once
 async function callGemini(apiKey: string, mimeType: string, base64Data: string, plantList: string) {
@@ -51,9 +55,24 @@ Reply with ONLY the plant name, nothing else.`;
 }
 
 export async function POST(request: NextRequest) {
+  if (!PLANT_ID_ENABLED) {
+    return NextResponse.json({ error: "Plant identification is turned off" }, { status: 404 });
+  }
+
   console.log("=== Plant identification API called ===");
-  
+
+  // Checked here as well as in middleware, so a middleware bypass can't spend Gemini quota
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized - Please sign in" }, { status: 401 });
+  }
+
   try {
+    // Each call costs Gemini quota
+    if (!(await isWithinRateLimit(`identify:user:${userId}`, LIMITS.identifyPlant))) {
+      return tooManyRequests(LIMITS.identifyPlant.windowSeconds);
+    }
+
     const { image } = await request.json();
     console.log("Image received, length:", image?.length || 0);
 
@@ -85,16 +104,17 @@ export async function POST(request: NextRequest) {
       (p) => p.name.toLowerCase() === predictionLower
     );
     
-    // If no exact match, try partial match (plant name contains or is contained in prediction)
-    if (!matchedPlant) {
+    // If no exact match, try partial match (plant name contains or is contained in prediction).
+    // Skip when the reply is empty: every name "contains" the empty string.
+    if (!matchedPlant && predictionLower) {
       matchedPlant = plants.find(
         (p) => predictionLower.includes(p.name.toLowerCase()) || 
                p.name.toLowerCase().includes(predictionLower)
       );
     }
 
-    // Use the matched plant name if found, otherwise use AI's response
-    const finalPrediction = matchedPlant ? matchedPlant.name : result.prediction;
+    // Never pass raw model text through: it could carry text read from the photo
+    const finalPrediction = matchedPlant ? matchedPlant.name : UNKNOWN_PLANT;
 
     return NextResponse.json({
       prediction: finalPrediction,

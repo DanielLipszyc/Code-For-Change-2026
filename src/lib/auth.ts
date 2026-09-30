@@ -3,6 +3,20 @@ import { supabase, isValidId } from './supabase';
 import { UserRole } from '@/types/auth';
 
 /**
+ * Name shown to other users. Never falls back to the email address,
+ * because stored names are returned by public endpoints.
+ */
+export function getPublicDisplayName(
+  user: { firstName: string | null; lastName: string | null; username: string | null },
+  { includeLastName = false, fallback = 'Observer' } = {}
+): string {
+  const name = includeLastName
+    ? [user.firstName, user.lastName].filter(Boolean).join(' ')
+    : user.firstName;
+  return name || user.username || fallback;
+}
+
+/**
  * Get user role from Clerk metadata
  * Defaults to 'user' if no role is set
  */
@@ -30,7 +44,7 @@ export async function isAdmin(userId: string): Promise<boolean> {
  * Returns false if the row doesn't exist or has no user_id (legacy/anonymous).
  */
 async function isOwner(
-  table: 'submissions' | 'sightings',
+  table: 'submissions',
   userId: string,
   rowId: string
 ): Promise<boolean> {
@@ -77,31 +91,6 @@ export async function canDeleteSubmission(
     return true;
   }
   return isOwner('submissions', userId, submissionId);
-}
-
-/**
- * Check if user can edit a specific sighting
- * Only the owner can edit their own sightings
- */
-export async function canEditSighting(
-  userId: string,
-  sightingId: string
-): Promise<boolean> {
-  return isOwner('sightings', userId, sightingId);
-}
-
-/**
- * Check if user can delete a specific sighting
- * Owner can delete their own, admins can delete any
- */
-export async function canDeleteSighting(
-  userId: string,
-  sightingId: string
-): Promise<boolean> {
-  if (await isAdmin(userId)) {
-    return true;
-  }
-  return isOwner('sightings', userId, sightingId);
 }
 
 /**

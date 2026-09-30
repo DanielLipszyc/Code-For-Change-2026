@@ -64,6 +64,53 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Build a marker popup from DOM nodes. User-supplied fields are only ever set
+ * through textContent, so submitted text can't inject HTML or script.
+ */
+function buildPopupContent(
+  submission: Submission,
+  showPending: boolean,
+  onShowDetails: () => void
+): HTMLElement {
+  const root = document.createElement('div');
+  root.style.minWidth = '150px';
+
+  const addLine = (tag: string, text: string, cssText: string) => {
+    if (root.childNodes.length > 0) root.appendChild(document.createElement('br'));
+    const el = document.createElement(tag);
+    el.style.cssText = cssText;
+    el.textContent = text;
+    root.appendChild(el);
+  };
+
+  addLine('b', `🌿 ${submission.plantName}`, 'font-size: 14px; color: #136207;');
+  if (submission.scientificName) {
+    addLine('i', submission.scientificName, 'color: #666; font-size: 12px;');
+  }
+  if (submission.notes) {
+    addLine('span', submission.notes, 'font-size: 12px;');
+  }
+  addLine(
+    'span',
+    `Spotted: ${new Date(submission.timestamp).toLocaleDateString()}`,
+    'font-size: 11px; color: #888;'
+  );
+  if (showPending) {
+    addLine('span', '⏳ Pending Approval', 'font-size: 11px; color: #dc2626; font-weight: 600;');
+  }
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = 'More details';
+  button.style.cssText =
+    'display: block; margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;';
+  button.addEventListener('click', onShowDetails);
+  root.appendChild(button);
+
+  return root;
+}
+
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
@@ -246,24 +293,6 @@ export default function Map() {
     [selectedSubmission]
   );
 
-  // Expose handlers to window for popup button clicks
-  useEffect(() => {
-    (window as any).showSubmissionDetails = (submissionId: string) => {
-      const submission = submissions.find((s) => s._id === submissionId);
-      if (submission) setSelectedSubmission(submission);
-    };
-    (window as any).handleDeleteSubmission = handleDelete;
-    (window as any).handleEditSubmission = handleEdit;
-    (window as any).handleApproveSubmission = handleApprove;
-
-    return () => {
-      delete (window as any).showSubmissionDetails;
-      delete (window as any).handleDeleteSubmission;
-      delete (window as any).handleEditSubmission;
-      delete (window as any).handleApproveSubmission;
-    };
-  }, [submissions, handleApprove]); // handleDelete/handleEdit are stable enough
-
   // Check if user can edit submission
   const canEdit = (submission: Submission): boolean => {
     if (!user || !submission.userId) return false;
@@ -344,32 +373,11 @@ export default function Map() {
           const markerIcon =
             isPending && userRole === 'admin' ? pendingPlantIcon : approvedPlantIcon;
 
-          const popupContent = `
-            <div style="min-width: 150px;">
-              <b style="font-size: 14px; color: #136207;">🌿 ${submission.plantName}</b>
-              ${
-                submission.scientificName
-                  ? `<br><i style="color: #666; font-size: 12px;">${submission.scientificName}</i>`
-                  : ''
-              }
-              ${
-                submission.notes
-                  ? `<br><span style="font-size: 12px;">${submission.notes}</span>`
-                  : ''
-              }
-              <br><span style="font-size: 11px; color: #888;">Spotted: ${new Date(
-                submission.timestamp
-              ).toLocaleDateString()}</span>
-              ${
-                isPending && userRole === 'admin'
-                  ? `<br><span style="font-size: 11px; color: #dc2626; font-weight: 600;">⏳ Pending Approval</span>`
-                  : ''
-              }
-              <button onclick="window.showSubmissionDetails('${
-                submission._id
-              }')" style="margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;">More details</button>
-            </div>
-          `;
+          const popupContent = buildPopupContent(
+            submission,
+            isPending && userRole === 'admin',
+            () => setSelectedSubmission(submission)
+          );
 
           L.default
             .marker([submission.lat, submission.lng], {
