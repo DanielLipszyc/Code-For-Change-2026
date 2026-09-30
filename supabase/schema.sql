@@ -52,6 +52,19 @@ create index if not exists sightings_reported_at_idx on public.sightings (report
 create index if not exists sightings_status_idx      on public.sightings (status);
 
 -- ---------------------------------------------------------------------------
+-- follows (observer follow graph used by /api/dashboard)
+-- ---------------------------------------------------------------------------
+create table if not exists public.follows (
+  id           uuid primary key default gen_random_uuid(),
+  follower_id  text not null,                  -- Clerk user ID of the follower
+  following_id text not null,                  -- Clerk user ID being followed
+  created_at   timestamptz not null default now(),
+  unique (follower_id, following_id)
+);
+
+create index if not exists follows_follower_id_idx on public.follows (follower_id);
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- The app talks to Supabase only from the server using the service role key
 -- (auth is handled by Clerk). Enabling RLS with no policies means the public
@@ -59,3 +72,4 @@ create index if not exists sightings_status_idx      on public.sightings (status
 -- ---------------------------------------------------------------------------
 alter table public.submissions enable row level security;
 alter table public.sightings   enable row level security;
+alter table public.follows     enable row level security;

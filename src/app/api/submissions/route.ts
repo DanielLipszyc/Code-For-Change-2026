@@ -40,29 +40,32 @@ export async function GET() {
   }
 }
 
-// POST - Create new submission in Supabase (requires authentication)
+// POST - Create new submission in Supabase
+// Requires authentication unless the submission is marked anonymous
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
     const authResult = await auth();
     const userId = authResult.userId;
+    const data: Submission & { anonymous?: boolean } = await request.json();
+    const isAnonymous = Boolean(data.anonymous);
 
-    if (!userId) {
+    if (!userId && !isAnonymous) {
       return NextResponse.json(
         { error: "Unauthorized - Please sign in to submit" },
         { status: 401 }
       );
     }
 
-    // Get user info from Clerk
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
+    let displayName = 'Anonymous';
+    let userRole: 'user' | 'admin' = 'user';
 
-    // Get user role to determine auto-approval
-    const userRole = await getUserRole(userId);
-
-    const data: Submission = await request.json();
+    // Anonymous submissions get no user attached and are never auto-approved
+    if (userId && !isAnonymous) {
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous';
+      userRole = await getUserRole(userId);
+    }
 
     // Validate required fields
     if (!data.plantName || data.lat === undefined || data.lng === undefined) {
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
         timestamp_ms: data.timestamp || Date.now(),
         notes: data.notes || null,
         image_data: data.imageData || null,
-        user_id: userId, // Add authenticated user ID
+        user_id: isAnonymous ? null : userId, // Add authenticated user ID
         created_by: displayName, // Add user's display name
         status: userRole === 'admin' ? 'approved' : 'pending', // Auto-approve admin submissions
       })

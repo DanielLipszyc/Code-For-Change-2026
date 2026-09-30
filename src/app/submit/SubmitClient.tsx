@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
 
@@ -58,11 +59,13 @@ export default function SubmitClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
+  const { user, isLoaded } = useUser();
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [plantName, setPlantName] = useState("");
   const [notes, setNotes] = useState("");
+  const [submitAnonymously, setSubmitAnonymously] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
@@ -80,6 +83,12 @@ export default function SubmitClient() {
 
     setPlantName((current) => (current ? current : value));
   }, [plantParam]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      setSubmitAnonymously(!user);
+    }
+  }, [isLoaded, user]);
 
   // Redirect to map after success notification
   useEffect(() => {
@@ -152,6 +161,12 @@ export default function SubmitClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user && !submitAnonymously) {
+      alert("Please sign in or choose to submit anonymously.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -201,6 +216,7 @@ export default function SubmitClient() {
 
         // Moderation default (if you want it)
         status: "pending",
+        anonymous: submitAnonymously,
       };
 
       const response = await fetch("/api/submissions", {
@@ -248,6 +264,37 @@ export default function SubmitClient() {
             Upload a photo of a plant you spotted in a swamp or wetland
           </p>
         </div>
+        {!user && (
+          <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
+            <label className="flex items-center gap-3 text-sm font-medium text-sky-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={submitAnonymously}
+                onChange={(e) => setSubmitAnonymously(e.target.checked)}
+                className="h-4 w-4 rounded border-sky-300 text-sky-700 focus:ring-sky-500"
+              />
+              Submit anonymously
+            </label>
+            <p className="mt-2 text-sm text-sky-800">
+              Your report will be added without a user profile or name attached.
+            </p>
+          </div>
+        )}
+
+        {user && (
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <label className="flex items-center gap-3 text-sm font-medium text-slate-800 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={submitAnonymously}
+                onChange={(e) => setSubmitAnonymously(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-[#136207] focus:ring-[#136207]"
+              />
+              Submit anonymously instead of using my account name
+            </label>
+          </div>
+        )}
+
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="text-2xl">📍</div>
