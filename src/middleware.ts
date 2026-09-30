@@ -10,7 +10,6 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/submissions(.*)', // GET requests are public, POST will be protected in route handler
-  '/api/sightings(.*)',  // GET requests are public, POST will be protected in route handler
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

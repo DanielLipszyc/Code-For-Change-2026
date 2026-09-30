@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { plants } from "@/data/plants";
+import { MAX_NOTES_LENGTH } from "@/lib/submissionInput";
 
 interface Submission {
   _id: string;
@@ -21,7 +22,10 @@ interface EditSubmissionClientProps {
 
 export default function EditSubmissionClient({ submission }: EditSubmissionClientProps) {
   const router = useRouter();
-  const [plantName, setPlantName] = useState(submission.plantName);
+  // "Unknown Plant" is stored for unidentified plants; the dropdown option is "Unknown"
+  const [plantName, setPlantName] = useState(
+    submission.plantName === "Unknown Plant" ? "Unknown" : submission.plantName
+  );
   const [notes, setNotes] = useState(submission.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,22 +34,18 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
     setIsSubmitting(true);
 
     try {
-      // Find scientific name for selected plant
-      const selectedPlant = plants.find(p => p.name === plantName);
-      const scientificName = selectedPlant?.scientificName || submission.scientificName;
-
+      // The server looks up the scientific name from the plant list
       const response = await fetch(`/api/submissions/${submission._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plantName,
-          scientificName,
           notes,
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         throw new Error(error.error || 'Failed to update submission');
       }
 
@@ -53,7 +53,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
       router.push('/map');
     } catch (error) {
       console.error('Error updating submission:', error);
-      alert('Failed to update submission. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to update submission. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -69,6 +69,9 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
             </h2>
             <p className="text-gray-600">
               Update the details of your plant sighting
+            </p>
+            <p className="text-sm text-amber-700 mt-2">
+              Saving changes sends your report back to an admin for review.
             </p>
           </div>
 
@@ -105,6 +108,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                maxLength={MAX_NOTES_LENGTH}
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
                 placeholder="Add any observations or additional details..."
