@@ -1,215 +1,107 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const url = process.env.SUPABASE_URL;
+const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-declare global {
-  var _supabaseClient: SupabaseClient | undefined;
+if (!url) {
+  throw new Error("Please define SUPABASE_URL in .env.local");
 }
 
-function getSupabaseClient(): SupabaseClient {
-  if (!url || !serviceKey) {
-    throw new Error(
-      "Please define SUPABASE_URL and SUPABASE_SECRET_KEY in your environment before using the database."
-    );
-  }
-
-  if (!globalThis._supabaseClient) {
-    globalThis._supabaseClient = createClient(url, serviceKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
-  }
-
-  return globalThis._supabaseClient;
+if (!secretKey) {
+  throw new Error("Please define SUPABASE_SECRET_KEY in .env.local");
 }
 
-function toSnakeCase(value: string) {
-  return value
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .replace(/\s+/g, "_")
-    .replace(/-/g, "_")
-    .toLowerCase();
+// Server-only client. Auth is handled by Clerk, so all DB access goes through
+// API routes / server components using the secret key (bypasses RLS).
+// Never import this from a client component.
+export const supabase = createClient(url, secretKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Replacement for ObjectId.isValid — Supabase primary keys are UUIDs. */
+export function isValidId(id: string): boolean {
+  return UUID_RE.test(id);
 }
 
-function toCamelCase(value: string) {
-  return value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+// ---------------------------------------------------------------------------
+// Row types (snake_case, as stored in Postgres)
+// ---------------------------------------------------------------------------
+
+export interface SubmissionRow {
+  id: string;
+  plant_name: string;
+  scientific_name: string | null;
+  lat: number;
+  lng: number;
+  timestamp_ms: number;
+  notes: string | null;
+  image_data: string | null;
+  user_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+  status: "pending" | "approved";
+  approved_at: string | null;
+  approved_by: string | null;
 }
 
-function normalizeDbKey(key: string) {
-  if (key === "_id" || key === "id") return "id";
-  if (key === "createdAt") return "created_at";
-  if (key === "updatedAt") return "updated_at";
-  if (key === "timestamp") return "timestamp_ms";
-  return toSnakeCase(key);
+export interface SightingRow {
+  id: string;
+  species_id: string | null;
+  lat: number;
+  lng: number;
+  location_accuracy_m: number | null;
+  address_approx: string | null;
+  observed_at: string;
+  reported_at: string;
+  notes: string;
+  status: string;
+  user_id: string | null;
+  created_by: string | null;
+  updated_at: string | null;
 }
 
-function normalizeAppKey(key: string) {
-  if (key === "created_at") return "createdAt";
-  if (key === "updated_at") return "updatedAt";
-  if (key === "timestamp_ms") return "timestamp";
-  return toCamelCase(key);
-}
+// ---------------------------------------------------------------------------
+// Row -> API shape (camelCase with `_id`, matching what the frontend expects)
+// ---------------------------------------------------------------------------
 
-function normalizeQuery(filter: Record<string, unknown> = {}) {
-  return Object.fromEntries(
-    Object.entries(filter).map(([key, value]) => {
-      if (key === "_id" || key === "id") return ["id", value];
-      return [normalizeDbKey(key), value];
-    })
-  );
-}
-
-function normalizeDbPayload(row: Record<string, unknown> = {}) {
-  return Object.fromEntries(
-    Object.entries(row).map(([key, value]) => {
-      if (key === "_id" || key === "id") return ["id", value];
-      return [normalizeDbKey(key), value];
-    })
-  );
-}
-
-function normalizeRow(row: Record<string, unknown> = {}) {
-  const normalized = Object.fromEntries(
-    Object.entries(row).map(([key, value]) => {
-      if (key === "_id") return ["_id", value];
-      if (key === "id") return ["id", value];
-      return [normalizeAppKey(key), value];
-    })
-  );
-
-  if (!normalized.id && normalized._id) {
-    return { ...normalized, id: String(normalized._id) };
-  }
-
-  return normalized;
-}
-
-class QueryBuilder {
-  private table: string;
-  private query: Record<string, unknown>;
-  private sortFields: Record<string, number> = {};
-  private limitValue?: number;
-
-  constructor(table: string, query: Record<string, unknown> = {}) {
-    this.table = table;
-    this.query = normalizeQuery(query);
-  }
-
-  sort(sortFields: Record<string, number>) {
-    this.sortFields = Object.fromEntries(
-      Object.entries(sortFields).map(([key, value]) => [normalizeDbKey(key), value])
-    );
-    return this;
-  }
-
-  limit(value: number) {
-    this.limitValue = value;
-    return this;
-  }
-
-  async toArray() {
-    let request = getSupabaseClient().from(this.table).select("*");
-
-    Object.entries(this.query).forEach(([key, value]) => {
-      request = request.eq(key, value as never);
-    });
-
-    Object.entries(this.sortFields).forEach(([key, direction]) => {
-      request = request.order(key, { ascending: direction !== -1 });
-    });
-
-    if (this.limitValue) {
-      request = request.limit(this.limitValue);
-    }
-
-    const { data, error } = await request;
-    if (error) throw error;
-
-    return (data ?? []).map((row) => normalizeRow(row as Record<string, unknown>));
-  }
-}
-
-class CollectionAdapter {
-  private table: string;
-
-  constructor(table: string) {
-    this.table = table;
-  }
-
-  find(query: Record<string, unknown> = {}) {
-    return new QueryBuilder(this.table, query);
-  }
-
-  async findOne(query: Record<string, unknown> = {}) {
-    let request = getSupabaseClient().from(this.table).select("*");
-    const normalizedQuery = normalizeQuery(query);
-
-    Object.entries(normalizedQuery).forEach(([key, value]) => {
-      request = request.eq(key, value as never);
-    });
-
-    const { data, error } = await request.maybeSingle();
-    if (error && error.code !== "PGRST116") throw error;
-
-    return data ? normalizeRow(data as Record<string, unknown>) : null;
-  }
-
-  async insertOne(doc: Record<string, unknown>) {
-    const normalized = normalizeDbPayload(doc);
-    const { data, error } = await getSupabaseClient().from(this.table).insert(normalized).select();
-    if (error) throw error;
-
-    const row = data?.[0] ?? normalized;
-    return {
-      insertedId: String(row.id ?? row._id ?? crypto.randomUUID()),
-      ...row,
-    };
-  }
-
-  async updateOne(filter: Record<string, unknown>, update: Record<string, unknown>) {
-    const payload = (update as any).$set ?? update;
-    const normalizedFilter = normalizeQuery(filter);
-    const normalizedPayload = normalizeDbPayload(payload);
-
-    let request = getSupabaseClient().from(this.table).update(normalizedPayload);
-    Object.entries(normalizedFilter).forEach(([key, value]) => {
-      request = request.eq(key, value as never);
-    });
-
-    const { data, error } = await request.select();
-    if (error) throw error;
-
-    return {
-      matchedCount: data?.length ?? 0,
-      modifiedCount: data?.length ?? 0,
-    };
-  }
-
-  async deleteOne(filter: Record<string, unknown>) {
-    const normalizedFilter = normalizeQuery(filter);
-    let request = getSupabaseClient().from(this.table).delete();
-
-    Object.entries(normalizedFilter).forEach(([key, value]) => {
-      request = request.eq(key, value as never);
-    });
-
-    const { data, error } = await request.select();
-    if (error) throw error;
-
-    return {
-      deletedCount: data?.length ?? 0,
-    };
-  }
-}
-
-export async function getDb() {
+export function toSubmission(row: SubmissionRow) {
   return {
-    collection: (table: string) => new CollectionAdapter(table),
+    _id: row.id,
+    plantName: row.plant_name,
+    scientificName: row.scientific_name,
+    lat: row.lat,
+    lng: row.lng,
+    timestamp: Number(row.timestamp_ms),
+    notes: row.notes,
+    imageData: row.image_data,
+    userId: row.user_id,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    status: row.status,
+    approvedAt: row.approved_at,
+    approvedBy: row.approved_by,
   };
 }
 
-export default getDb;
+export function toSighting(row: SightingRow) {
+  return {
+    _id: row.id,
+    speciesId: row.species_id,
+    lat: row.lat,
+    lng: row.lng,
+    locationAccuracyM: row.location_accuracy_m,
+    addressApprox: row.address_approx,
+    observedAt: row.observed_at,
+    reportedAt: row.reported_at,
+    notes: row.notes,
+    status: row.status,
+    userId: row.user_id,
+    createdBy: row.created_by,
+    updatedAt: row.updated_at,
+  };
+}

@@ -174,7 +174,7 @@ export default function Map() {
     }
   }, [user]);
 
-  // Fetch submissions from MongoDB API
+  // Fetch submissions from the API
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {

@@ -1,13 +1,14 @@
 # Swamp Spotter
 ## Code For Change 2026
 
-A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, MongoDB, and Tailwind CSS.
+A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, Supabase, and Tailwind CSS.
 
 ## Tech Stack
 
 - **Framework:** Next.js 14 (App Router)
 - **Language:** TypeScript
-- **Database:** MongoDB
+- **Database:** Supabase (Postgres)
+- **Auth:** Clerk
 - **Styling:** Tailwind CSS
 - **Linting:** ESLint
 
@@ -33,6 +34,29 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 
 - Node.js 18+ installed
 - npm or yarn
+
+### Environment variables
+
+Create a `.env.local` file in the project root:
+
+```bash
+# Clerk (https://dashboard.clerk.com -> API Keys)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Supabase (Project Settings -> API Keys)
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SECRET_KEY=sb_secret_...   # the "Secret key", server-only, never expose to the browser
+
+# Optional: enables the photo-based plant ID feature
+GEMINI_API_KEY=...
+```
+
+### Database setup
+
+Open the Supabase dashboard, go to **SQL Editor**, paste the contents of
+[`supabase/schema.sql`](supabase/schema.sql), and run it. This creates the
+`submissions` and `sightings` tables.
 
 ### Installation
 
