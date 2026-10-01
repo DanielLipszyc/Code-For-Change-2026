@@ -52,7 +52,7 @@ This enables a local demo user so the dashboard can be tested for onboarding, fo
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 22+ installed
 - npm or yarn
 
 ### Environment variables
