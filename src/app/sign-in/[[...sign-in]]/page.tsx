@@ -9,6 +9,11 @@ export default function SignInPage() {
   const router = useRouter();
   const [showNotice, setShowNotice] = useState(false);
 
+  const handleDemoLogin = () => {
+    document.cookie = "demo_user=1; path=/; max-age=86400";
+    router.push("/dashboard?demo=1");
+  };
+
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -71,6 +76,17 @@ export default function SignInPage() {
           <p className="text-gray-600">
             Sign in to submit and manage plant sightings
           </p>
+        </div>
+
+        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+          <p className="text-sm font-semibold text-emerald-800">Demo access</p>
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            className="mt-3 w-full rounded-xl bg-[#136207] px-4 py-3 text-sm font-bold text-white hover:bg-[#0f5006]"
+          >
+            Continue as Demo User
+          </button>
         </div>
 
         <SignIn

@@ -103,6 +103,7 @@ jobs:
         with:
           target: http://127.0.0.1:3100
           fail_action: false
+          allow_issue_writing: false
           cmd_options: -a -m 2
 
       - name: Set up k6
