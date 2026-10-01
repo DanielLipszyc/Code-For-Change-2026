@@ -1,5 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server';
-import { getDb } from './supabase';
+import { supabase, isValidId } from './supabase';
 import { UserRole } from '@/types/auth';
 
 /**
@@ -26,6 +26,35 @@ export async function isAdmin(userId: string): Promise<boolean> {
 }
 
 /**
+ * Check whether the given user owns the row with the given ID.
+ * Returns false if the row doesn't exist or has no user_id (legacy/anonymous).
+ */
+async function isOwner(
+  table: 'submissions' | 'sightings',
+  userId: string,
+  rowId: string
+): Promise<boolean> {
+  try {
+    if (!isValidId(rowId)) {
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from(table)
+      .select('user_id')
+      .eq('id', rowId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return !!data?.user_id && data.user_id === userId;
+  } catch (error) {
+    console.error(`Error checking ownership of ${table} row:`, error);
+    return false;
+  }
+}
+
+/**
  * Check if user can edit a specific submission
  * Only the owner can edit their own submissions
  */
@@ -33,27 +62,7 @@ export async function canEditSubmission(
   userId: string,
   submissionId: string
 ): Promise<boolean> {
-  try {
-    if (!submissionId || !submissionId.trim()) {
-      return false;
-    }
-
-    const db = await getDb();
-    const submission = await db.collection('submissions').findOne({
-      _id: submissionId,
-    });
-
-    // Can't edit if submission doesn't exist or has no userId (legacy)
-    if (!submission || !submission.userId) {
-      return false;
-    }
-
-    // Check ownership
-    return submission.userId === userId;
-  } catch (error) {
-    console.error('Error checking edit permission:', error);
-    return false;
-  }
+  return isOwner('submissions', userId, submissionId);
 }
 
 /**
@@ -64,36 +73,10 @@ export async function canDeleteSubmission(
   userId: string,
   submissionId: string
 ): Promise<boolean> {
-  try {
-    if (await isAdmin(userId)) {
-      return true;
-    }
-
-    if (!submissionId || !submissionId.trim()) {
-      return false;
-    }
-
-    const db = await getDb();
-    const submission = await db.collection('submissions').findOne({
-      _id: submissionId,
-    });
-
-    // Can't delete if submission doesn't exist
-    if (!submission) {
-      return false;
-    }
-
-    // Can't delete if no userId (legacy anonymous submission) and not admin
-    if (!submission.userId) {
-      return false;
-    }
-
-    // Check ownership
-    return submission.userId === userId;
-  } catch (error) {
-    console.error('Error checking delete permission:', error);
-    return false;
+  if (await isAdmin(userId)) {
+    return true;
   }
+  return isOwner('submissions', userId, submissionId);
 }
 
 /**
@@ -104,27 +87,7 @@ export async function canEditSighting(
   userId: string,
   sightingId: string
 ): Promise<boolean> {
-  try {
-    if (!sightingId || !sightingId.trim()) {
-      return false;
-    }
-
-    const db = await getDb();
-    const sighting = await db.collection('sightings').findOne({
-      _id: sightingId,
-    });
-
-    // Can't edit if sighting doesn't exist or has no userId (legacy)
-    if (!sighting || !sighting.userId) {
-      return false;
-    }
-
-    // Check ownership
-    return sighting.userId === userId;
-  } catch (error) {
-    console.error('Error checking edit permission:', error);
-    return false;
-  }
+  return isOwner('sightings', userId, sightingId);
 }
 
 /**
@@ -135,36 +98,10 @@ export async function canDeleteSighting(
   userId: string,
   sightingId: string
 ): Promise<boolean> {
-  try {
-    if (await isAdmin(userId)) {
-      return true;
-    }
-
-    if (!sightingId || !sightingId.trim()) {
-      return false;
-    }
-
-    const db = await getDb();
-    const sighting = await db.collection('sightings').findOne({
-      _id: sightingId,
-    });
-
-    // Can't delete if sighting doesn't exist
-    if (!sighting) {
-      return false;
-    }
-
-    // Can't delete if no userId (legacy anonymous sighting) and not admin
-    if (!sighting.userId) {
-      return false;
-    }
-
-    // Check ownership
-    return sighting.userId === userId;
-  } catch (error) {
-    console.error('Error checking delete permission:', error);
-    return false;
+  if (await isAdmin(userId)) {
+    return true;
   }
+  return isOwner('sightings', userId, sightingId);
 }
 
 /**
@@ -177,7 +114,7 @@ export async function setUserRole(
 ): Promise<void> {
   try {
     const client = await clerkClient();
-    await client.users.updateUser(userId, {
+    await client.users.updateUserMetadata(userId, {
       publicMetadata: { role },
     });
   } catch (error) {

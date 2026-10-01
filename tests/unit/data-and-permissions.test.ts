@@ -18,12 +18,21 @@ import {
 
 const mocks = vi.hoisted(() => ({
   clerkClient: vi.fn(),
-  getDb: vi.fn(),
-  findOne: vi.fn(),
+  supabaseFrom: vi.fn(),
+  queryResult: { data: null as any, error: null as any },
 }));
 
 vi.mock("@clerk/nextjs/server", () => ({ clerkClient: mocks.clerkClient }));
-vi.mock("@/lib/supabase", () => ({ getDb: mocks.getDb }));
+vi.mock("@/lib/supabase", () => ({
+  supabase: { from: mocks.supabaseFrom },
+  isValidId: vi.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
+}));
+
+const supabaseQuery = {
+  select: vi.fn(() => supabaseQuery),
+  eq: vi.fn(() => supabaseQuery),
+  maybeSingle: vi.fn(() => Promise.resolve(mocks.queryResult)),
+};
 
 function createStorage() {
   const data = new Map<string, string>();
@@ -85,10 +94,8 @@ describe("authorization helpers", () => {
         getUser: vi.fn().mockResolvedValue({ publicMetadata: { role: "admin" } }),
       },
     });
-    mocks.getDb.mockResolvedValue({
-      collection: () => ({ findOne: mocks.findOne }),
-    });
-    mocks.findOne.mockResolvedValue({ userId: "user-1" });
+    mocks.queryResult = { data: { user_id: "user-1" }, error: null };
+    mocks.supabaseFrom.mockReturnValue(supabaseQuery);
   });
 
   it("defaults to the user role when Clerk has no role metadata", async () => {
@@ -102,26 +109,29 @@ describe("authorization helpers", () => {
     await expect(isAdmin("admin-1")).resolves.toBe(true);
     await expect(canDeleteSubmission("admin-1", "submission-1")).resolves.toBe(true);
     await expect(canDeleteSighting("admin-1", "sighting-1")).resolves.toBe(true);
-    expect(mocks.findOne).not.toHaveBeenCalled();
+    expect(mocks.supabaseFrom).not.toHaveBeenCalled();
   });
 
   it("allows edits only for the record owner", async () => {
-    await expect(canEditSubmission("user-1", "submission-1")).resolves.toBe(true);
-    await expect(canEditSighting("other-user", "sighting-1")).resolves.toBe(false);
+    const validId = "123e4567-e89b-42d3-a456-426614174000";
+    await expect(canEditSubmission("user-1", validId)).resolves.toBe(true);
+    await expect(canEditSighting("other-user", validId)).resolves.toBe(false);
   });
 
   it("denies edits for blank, missing, or legacy records", async () => {
     await expect(canEditSubmission("user-1", " ")).resolves.toBe(false);
-    mocks.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ _id: "legacy" });
-    await expect(canEditSighting("user-1", "missing")).resolves.toBe(false);
-    await expect(canEditSubmission("user-1", "legacy")).resolves.toBe(false);
+    mocks.queryResult = { data: null, error: null };
+    const validId = "123e4567-e89b-42d3-a456-426614174000";
+    await expect(canEditSighting("user-1", validId)).resolves.toBe(false);
+    mocks.queryResult = { data: { user_id: null }, error: null };
+    await expect(canEditSubmission("user-1", validId)).resolves.toBe(false);
   });
 
   it("denies deleting a legacy record for a non-admin", async () => {
     mocks.clerkClient.mockResolvedValue({
       users: { getUser: vi.fn().mockResolvedValue({ publicMetadata: {} }) },
     });
-    mocks.findOne.mockResolvedValue({ _id: "legacy" });
-    await expect(canDeleteSighting("user-1", "sighting-1")).resolves.toBe(false);
+    mocks.queryResult = { data: { user_id: null }, error: null };
+    await expect(canDeleteSighting("user-1", "123e4567-e89b-42d3-a456-426614174000")).resolves.toBe(false);
   });
 });

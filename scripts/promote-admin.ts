@@ -1,4 +1,4 @@
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { createClerkClient } from '@clerk/clerk-sdk-node';
 import { config } from 'dotenv';
 import { resolve } from 'path';
 
@@ -13,8 +13,7 @@ if (!CLERK_SECRET_KEY) {
   process.exit(1);
 }
 
-// Note: clerkClient is already initialized, no need to call it as a function
-const clerk = clerkClient;
+const clerk = createClerkClient({ secretKey: CLERK_SECRET_KEY });
 
 async function promoteToAdmin(emailOrUserId: string) {
   try {
@@ -38,7 +37,7 @@ async function promoteToAdmin(emailOrUserId: string) {
     }
 
     // Update user's public metadata to set role as admin
-    await clerk.users.updateUser(userId, {
+    await clerk.users.updateUserMetadata(userId, {
       publicMetadata: { role: 'admin' },
     });
 

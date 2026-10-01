@@ -1,104 +1,85 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const createClient = vi.hoisted(() => vi.fn());
+const createClient = vi.hoisted(() => vi.fn(() => ({})));
 vi.mock("@supabase/supabase-js", () => ({ createClient }));
 
-const query: any = {
-  data: [],
-  error: null,
-  select: vi.fn(),
-  eq: vi.fn(),
-  order: vi.fn(),
-  limit: vi.fn(),
-  maybeSingle: vi.fn(),
-  insert: vi.fn(),
-  update: vi.fn(),
-  delete: vi.fn(),
-  then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
-    Promise.resolve({ data: query.data, error: query.error }).then(resolve, reject),
-};
-
-const client = { from: vi.fn(() => query) };
-
-async function loadDatabase() {
+async function loadHelpers() {
   vi.resetModules();
-  const { getDb } = await import("@/lib/supabase");
-  return getDb();
+  vi.stubEnv("SUPABASE_URL", "https://database.example.test");
+  vi.stubEnv("SUPABASE_SECRET_KEY", "test-service-key");
+  return import("@/lib/supabase");
 }
 
 beforeEach(() => {
   vi.resetAllMocks();
-  delete globalThis._supabaseClient;
-  vi.stubEnv("SUPABASE_URL", "https://database.example.test");
-  vi.stubEnv("SUPABASE_SECRET_KEY", "test-service-key");
-  query.data = [];
-  query.error = null;
-  query.select.mockImplementation(() => query);
-  query.eq.mockImplementation(() => query);
-  query.order.mockImplementation(() => query);
-  query.limit.mockImplementation(() => query);
-  query.insert.mockImplementation(() => query);
-  query.update.mockImplementation(() => query);
-  query.delete.mockImplementation(() => query);
-  query.maybeSingle.mockImplementation(async () => ({ data: query.data[0] ?? null, error: query.error }));
-  client.from.mockImplementation(() => query);
-  createClient.mockReturnValue(client);
 });
 
-describe("Supabase collection adapter", () => {
-  it("requires database credentials", async () => {
-    vi.stubEnv("SUPABASE_URL", "");
-    vi.stubEnv("SUPABASE_SECRET_KEY", "");
-    const db = await loadDatabase();
+describe("Supabase row helpers", () => {
+  it("validates UUID primary keys", async () => {
+    const { isValidId } = await loadHelpers();
 
-    await expect(db.collection("submissions").find().toArray()).rejects.toThrow(
-      "Please define SUPABASE_URL and SUPABASE_SECRET_KEY"
-    );
-    expect(createClient).not.toHaveBeenCalled();
+    expect(isValidId("123e4567-e89b-42d3-a456-426614174000")).toBe(true);
+    expect(isValidId("not-a-uuid")).toBe(false);
+    expect(isValidId("")).toBe(false);
   });
 
-  it("normalizes filters, sorting, limits, and returned row keys", async () => {
-    query.data = [{ id: "row-1", created_at: "2026-01-02", timestamp_ms: 42, plant_name: "Air Potato" }];
-    const db = await loadDatabase();
-    const rows = await db.collection("submissions")
-      .find({ _id: "row-1", createdAt: "2026-01-02" })
-      .sort({ createdAt: -1, timestamp: 1 })
-      .limit(5)
-      .toArray();
+  it("maps submission rows to the frontend API shape", async () => {
+    const { toSubmission } = await loadHelpers();
+    const row = {
+      id: "123e4567-e89b-42d3-a456-426614174000",
+      plant_name: "Air Potato",
+      scientific_name: "Dioscorea bulbifera",
+      lat: 29.65,
+      lng: -82.32,
+      timestamp_ms: 1_700_000_000_000,
+      notes: "By the trail",
+      image_data: null,
+      user_id: "user-1",
+      created_by: "Observer",
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: null,
+      status: "approved" as const,
+      approved_at: null,
+      approved_by: null,
+    };
 
-    expect(client.from).toHaveBeenCalledWith("submissions");
-    expect(query.eq).toHaveBeenCalledWith("id", "row-1");
-    expect(query.eq).toHaveBeenCalledWith("created_at", "2026-01-02");
-    expect(query.order).toHaveBeenCalledWith("created_at", { ascending: false });
-    expect(query.order).toHaveBeenCalledWith("timestamp_ms", { ascending: true });
-    expect(query.limit).toHaveBeenCalledWith(5);
-    expect(rows[0]).toMatchObject({ id: "row-1", createdAt: "2026-01-02", timestamp: 42 });
-  });
-
-  it("returns null for an absent row and the expected missing-row code", async () => {
-    query.error = { code: "PGRST116" };
-    const db = await loadDatabase();
-    await expect(db.collection("submissions").findOne({ _id: "missing" })).resolves.toBeNull();
-  });
-
-  it("maps write fields and reports insert, update, and delete results", async () => {
-    query.data = [{ id: "inserted-1" }];
-    const db = await loadDatabase();
-    const collection = db.collection("submissions");
-
-    await expect(collection.insertOne({ plantName: "Air Potato", createdAt: "today" })).resolves.toMatchObject({
-      insertedId: "inserted-1",
+    expect(toSubmission(row)).toMatchObject({
+      _id: row.id,
+      plantName: row.plant_name,
+      scientificName: row.scientific_name,
+      timestamp: row.timestamp_ms,
+      userId: row.user_id,
+      createdAt: row.created_at,
+      status: row.status,
     });
-    expect(query.insert).toHaveBeenCalledWith({ plant_name: "Air Potato", created_at: "today" });
+  });
 
-    query.data = [{ id: "row-1" }];
-    await expect(collection.updateOne({ _id: "row-1" }, { $set: { updatedAt: "tomorrow" } })).resolves.toEqual({
-      matchedCount: 1,
-      modifiedCount: 1,
+  it("maps sighting rows to the frontend API shape", async () => {
+    const { toSighting } = await loadHelpers();
+    const row = {
+      id: "123e4567-e89b-42d3-a456-426614174000",
+      species_id: "air_potato",
+      lat: 29.65,
+      lng: -82.32,
+      location_accuracy_m: 5,
+      address_approx: "Trailhead",
+      observed_at: "2026-01-01T00:00:00.000Z",
+      reported_at: "2026-01-01T00:01:00.000Z",
+      notes: "By the trail",
+      status: "pending",
+      user_id: "user-1",
+      created_by: "Observer",
+      updated_at: null,
+    };
+
+    expect(toSighting(row)).toMatchObject({
+      _id: row.id,
+      speciesId: row.species_id,
+      locationAccuracyM: row.location_accuracy_m,
+      addressApprox: row.address_approx,
+      observedAt: row.observed_at,
+      reportedAt: row.reported_at,
+      userId: row.user_id,
     });
-    expect(query.update).toHaveBeenCalledWith({ updated_at: "tomorrow" });
-    expect(query.eq).toHaveBeenCalledWith("id", "row-1");
-
-    await expect(collection.deleteOne({ _id: "row-1" })).resolves.toEqual({ deletedCount: 1 });
   });
 });

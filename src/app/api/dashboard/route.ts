@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getDb } from "@/lib/supabase";
+import { supabase, toSubmission } from "@/lib/supabase";
 
 const DASHBOARD_CACHE_TTL_MS = 60_000;
 const dashboardCache = new Map<string, { expiresAt: number; payload: DashboardPayload }>();
@@ -44,9 +44,11 @@ function writeDashboardCache(userId: string, payload: DashboardPayload) {
   });
 }
 
+
 function invalidateDashboardCache(userId: string) {
   dashboardCache.delete(userId);
 }
+
 
 async function getUserName(userId: string) {
   try {
@@ -180,24 +182,23 @@ export async function GET(request: NextRequest) {
     }
 
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) {
-      const fallbackPayload: DashboardPayload = {
+      return NextResponse.json({
         ...fallbackDashboard,
         user: {
           id: currentUserId,
           name: (await getUserName(currentUserId)) || "Observer",
         },
-      };
-
-      writeDashboardCache(currentUserId, fallbackPayload);
-      return NextResponse.json(fallbackPayload);
+      });
     }
 
-    const db = await getDb();
-    const submissions = await db
-      .collection("submissions")
-      .find({})
-      .sort({ createdAt: -1, timestamp: -1 })
-      .toArray();
+    const { data: submissionRows, error: submissionsError } = await supabase
+      .from("submissions")
+      .select("*")
+      .order("timestamp_ms", { ascending: false });
+
+    if (submissionsError) throw submissionsError;
+
+    const submissions = (submissionRows ?? []).map(toSubmission);
 
     const currentUserSubmissions = submissions.filter((submission) => submission.userId === currentUserId);
     const uniqueObserverIds = Array.from(
@@ -209,11 +210,13 @@ export async function GET(request: NextRequest) {
     ).slice(0, 8);
 
     const userMap = await getUserMap(uniqueObserverIds);
-    const followingDocs = await db
-      .collection("follows")
-      .find({ followerId: currentUserId })
-      .toArray();
-    const followingIds = new Set(followingDocs.map((doc) => doc.followingId));
+    const { data: followingRows, error: followsError } = await supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", currentUserId);
+
+    if (followsError) throw followsError;
+    const followingIds = new Set((followingRows ?? []).map((row) => row.following_id));
 
     const currentTotal = currentUserSubmissions.length;
     const approvedCount = currentUserSubmissions.filter((submission) => submission.status === "approved").length;
@@ -388,23 +391,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "A valid observer ID is required" }, { status: 400 });
     }
 
-    const db = await getDb();
-    const existingFollow = await db.collection("follows").findOne({
-      followerId: currentUserId,
-      followingId: targetUserId,
-    });
+    const { data: existingFollow, error: lookupError } = await supabase
+      .from("follows")
+      .select("id")
+      .eq("follower_id", currentUserId)
+      .eq("following_id", targetUserId)
+      .maybeSingle();
+
+    if (lookupError) throw lookupError;
 
     if (existingFollow) {
-      await db.collection("follows").deleteOne({ _id: existingFollow._id });
+      const { error: deleteError } = await supabase
+        .from("follows")
+        .delete()
+        .eq("id", existingFollow.id);
+
+      if (deleteError) throw deleteError;
       invalidateDashboardCache(currentUserId);
       return NextResponse.json({ following: false });
     }
 
-    await db.collection("follows").insertOne({
-      followerId: currentUserId,
-      followingId: targetUserId,
-      createdAt: new Date(),
+    const { error: insertError } = await supabase.from("follows").insert({
+      follower_id: currentUserId,
+      following_id: targetUserId,
     });
+
+    if (insertError) throw insertError;
 
     invalidateDashboardCache(currentUserId);
     return NextResponse.json({ following: true });
