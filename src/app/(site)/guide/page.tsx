@@ -106,6 +106,7 @@ function InfoModal({
         <div className="grid sm:grid-cols-2">
           <div className="relative bg-slate-100">
             <div className="relative aspect-[16/11] sm:aspect-auto sm:h-full">
+              {/* eslint-disable-next-line @next/next/no-img-element -- plant photos come from many outside sites */}
               <img
                 src={src}
                 alt={name}
@@ -221,6 +222,7 @@ function PlantCard({
       title={`View info about ${name}`}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+        {/* eslint-disable-next-line @next/next/no-img-element -- plant photos come from many outside sites */}
         <img
           src={src}
           alt={name}
@@ -308,6 +310,7 @@ export default function GuidePage() {
               <select
                 value={lang}
                 onChange={(e) => setLang(e.target.value as Language)}
+                aria-label={lang === "en" ? "Language" : "Idioma"}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
               >
                 <option value="en">English</option>
@@ -317,6 +320,7 @@ export default function GuidePage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                aria-label={lang === "en" ? "Search plants" : "Buscar plantas"}
                 placeholder={
                   lang === "en"
                     ? "Search plants (e.g., air potato, Dioscorea)…"
@@ -332,7 +336,8 @@ export default function GuidePage() {
             <div className="flex gap-3">
               <select
                 value={threat}
-                onChange={(e) => setThreat(e.target.value as any)}
+                onChange={(e) => setThreat(e.target.value as "All" | ThreatLevel)}
+                aria-label={lang === "en" ? "Threat level" : "Nivel de amenaza"}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
               >
                 <option value="All">
@@ -347,7 +352,8 @@ export default function GuidePage() {
 
               <select
                 value={sort}
-                onChange={(e) => setSort(e.target.value as any)}
+                onChange={(e) => setSort(e.target.value as "Threat" | "Name")}
+                aria-label={lang === "en" ? "Sort by" : "Ordenar por"}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
               >
                 <option value="Threat">{lang === "en" ? "Sort: Threat" : "Orden: Amenaza"}</option>
