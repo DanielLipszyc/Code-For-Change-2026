@@ -72,11 +72,22 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run build`         | Build for production                                  |
 | `npm start`             | Run the production build                              |
 | `npm test`              | Run the unit tests (`npm run test:watch` to rerun)    |
+| `npm run test:e2e`      | Run the browser tests (see below)                     |
 | `npm run lint`          | Lint with ESLint                                      |
 | `npm run typecheck`     | Type-check with TypeScript                            |
 | `npm run format`        | Format everything with Prettier                       |
 | `npm run check`         | Lint, typecheck, format check and tests in one go     |
 | `npm run promote-admin` | Make a user an admin: `npm run promote-admin <email>` |
+
+### Browser tests
+
+The browser tests start their own dev server with your `.env.local` and only read
+data. Install the browser once, then run them:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
 
 ## Project Structure
 
@@ -85,14 +96,15 @@ src/
 ├── app/
 │   ├── (site)/        # Home, about, guide
 │   ├── (auth)/        # Sign-in, sign-up
-│   ├── (app)/         # Dashboard, log, map, submit
+│   ├── (app)/         # Dashboard, log, map, submit (each page's own UI in _components/)
 │   └── api/           # API routes
 ├── server/            # Server-only code: database, auth checks, rate limits, plant ID
 ├── lib/               # Helpers shared by browser and server
 ├── data/              # Plant list and county boundary
 ├── types/
-├── components/
+├── components/        # Shared UI; ui/ has Dialog, confirm and toast
 └── middleware.ts
+e2e/                   # Browser tests (Playwright)
 services/              # Separate services (plant ID model)
 supabase/              # Database schema
 docs/                  # Architecture notes
