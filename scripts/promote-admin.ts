@@ -22,7 +22,7 @@ async function promoteToAdmin(emailOrUserId: string) {
     // Check if input is an email or userId
     if (emailOrUserId.includes('@')) {
       // It's an email, find the user
-      const users = await clerk.users.getUserList({ emailAddress: [emailOrUserId] });
+      const { data: users } = await clerk.users.getUserList({ emailAddress: [emailOrUserId] });
 
       if (!users || users.length === 0) {
         console.error(`Error: No user found with email: ${emailOrUserId}`);
