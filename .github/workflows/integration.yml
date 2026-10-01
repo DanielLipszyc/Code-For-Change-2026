@@ -16,6 +16,29 @@ permissions:
   pull-requests: read
 
 jobs:
+  branch-lockfiles:
+    name: Install ${{ matrix.branch }} dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [main, UX_dev,Submissions_Migration, feature/sightings-system, vision_model]
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.branch }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install this branch's locked dependencies
+        run: npm ci
+
   integration:
     runs-on: ubuntu-latest
     steps:

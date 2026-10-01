@@ -8,9 +8,7 @@ import {
   SUBMISSIONS_KEY,
 } from "@/types/submissions";
 import {
-  canDeleteSighting,
   canDeleteSubmission,
-  canEditSighting,
   canEditSubmission,
   getUserRole,
   isAdmin,
@@ -108,30 +106,28 @@ describe("authorization helpers", () => {
   it("recognizes admins and grants their delete override", async () => {
     await expect(isAdmin("admin-1")).resolves.toBe(true);
     await expect(canDeleteSubmission("admin-1", "submission-1")).resolves.toBe(true);
-    await expect(canDeleteSighting("admin-1", "sighting-1")).resolves.toBe(true);
     expect(mocks.supabaseFrom).not.toHaveBeenCalled();
   });
 
-  it("allows edits only for the record owner", async () => {
+  it("allows edits only for the submission owner", async () => {
     const validId = "123e4567-e89b-42d3-a456-426614174000";
     await expect(canEditSubmission("user-1", validId)).resolves.toBe(true);
-    await expect(canEditSighting("other-user", validId)).resolves.toBe(false);
   });
 
   it("denies edits for blank, missing, or legacy records", async () => {
     await expect(canEditSubmission("user-1", " ")).resolves.toBe(false);
     mocks.queryResult = { data: null, error: null };
     const validId = "123e4567-e89b-42d3-a456-426614174000";
-    await expect(canEditSighting("user-1", validId)).resolves.toBe(false);
+    await expect(canEditSubmission("user-1", validId)).resolves.toBe(false);
     mocks.queryResult = { data: { user_id: null }, error: null };
     await expect(canEditSubmission("user-1", validId)).resolves.toBe(false);
   });
 
-  it("denies deleting a legacy record for a non-admin", async () => {
+  it("denies deleting a legacy submission for a non-admin", async () => {
     mocks.clerkClient.mockResolvedValue({
       users: { getUser: vi.fn().mockResolvedValue({ publicMetadata: {} }) },
     });
     mocks.queryResult = { data: { user_id: null }, error: null };
-    await expect(canDeleteSighting("user-1", "123e4567-e89b-42d3-a456-426614174000")).resolves.toBe(false);
+    await expect(canDeleteSubmission("user-1", "123e4567-e89b-42d3-a456-426614174000")).resolves.toBe(false);
   });
 });

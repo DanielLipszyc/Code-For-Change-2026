@@ -16,11 +16,12 @@ const mocks = vi.hoisted(() => ({
   limit: vi.fn(),
   maybeSingle: vi.fn(),
   single: vi.fn(),
+  isWithinRateLimit: vi.fn(),
   toSubmission: vi.fn(),
-  toSighting: vi.fn(),
   isValidId: vi.fn(),
   getUserRole: vi.fn(),
   isAdmin: vi.fn(),
+  getPublicDisplayName: vi.fn(),
   canEditSubmission: vi.fn(),
   canDeleteSubmission: vi.fn(),
   canEditSighting: vi.fn(),
@@ -49,15 +50,27 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { from: mocks.supabaseFrom },
   isValidId: mocks.isValidId,
   toSubmission: mocks.toSubmission,
-  toSighting: mocks.toSighting,
 }));
 vi.mock("@/lib/auth", () => ({
   getUserRole: mocks.getUserRole,
   isAdmin: mocks.isAdmin,
+  getPublicDisplayName: mocks.getPublicDisplayName,
   canEditSubmission: mocks.canEditSubmission,
   canDeleteSubmission: mocks.canDeleteSubmission,
-  canEditSighting: mocks.canEditSighting,
-  canDeleteSighting: mocks.canDeleteSighting,
+}));
+vi.mock("@/lib/features", () => ({ PLANT_ID_ENABLED: true }));
+vi.mock("@/lib/rateLimit", () => ({
+  LIMITS: {
+    submitSignedIn: { limit: 30, windowSeconds: 3600 },
+    submitAnonymous: { limit: 10, windowSeconds: 3600 },
+    identifyPlant: { limit: 30, windowSeconds: 3600 },
+  },
+  anonymousKey: vi.fn(() => "submit:ip:test"),
+  isWithinRateLimit: mocks.isWithinRateLimit,
+  tooManyRequests: (windowSeconds: number) => new Response(
+    JSON.stringify({ error: "Too many requests. Please try again later." }),
+    { status: 429, headers: { "Content-Type": "application/json", "Retry-After": String(windowSeconds) } }
+  ),
 }));
 
 import { GET as getDashboard, POST as postDashboard } from "@/app/api/dashboard/route";
@@ -68,12 +81,6 @@ import {
   DELETE as deleteSubmission,
 } from "@/app/api/submissions/[id]/route";
 import { POST as approveSubmission } from "@/app/api/submissions/[id]/approve/route";
-import { GET as getSightings, POST as postSighting } from "@/app/api/sightings/route";
-import {
-  GET as getSighting,
-  PUT as putSighting,
-  DELETE as deleteSighting,
-} from "@/app/api/sightings/[id]/route";
 import { GET as getUser } from "@/app/api/users/me/route";
 import { POST as identifyPlant } from "@/app/api/identify-plant/route";
 
@@ -116,6 +123,7 @@ beforeEach(() => {
   mocks.delete.mockImplementation(() => supabaseQuery);
   mocks.maybeSingle.mockImplementation(() => Promise.resolve(mocks.maybeSingleResult));
   mocks.single.mockImplementation(() => Promise.resolve(mocks.supabaseResult));
+  mocks.isWithinRateLimit.mockResolvedValue(true);
   mocks.toSubmission.mockImplementation((row) => ({
     _id: row.id,
     plantName: row.plant_name,
@@ -131,69 +139,74 @@ beforeEach(() => {
     updatedAt: row.updated_at,
     status: row.status,
   }));
-  mocks.toSighting.mockImplementation((row) => ({
-    _id: row.id,
-    speciesId: row.species_id,
-    lat: row.lat,
-    lng: row.lng,
-    locationAccuracyM: row.location_accuracy_m,
-    addressApprox: row.address_approx,
-    observedAt: row.observed_at,
-    reportedAt: row.reported_at,
-    notes: row.notes,
-    status: row.status,
-    userId: row.user_id,
-    createdBy: row.created_by,
-    updatedAt: row.updated_at,
-  }));
   mocks.isValidId.mockReturnValue(true);
   mocks.getUserRole.mockResolvedValue("user");
   mocks.isAdmin.mockResolvedValue(false);
+  mocks.getPublicDisplayName.mockReturnValue("Field Observer");
   mocks.canEditSubmission.mockResolvedValue(false);
   mocks.canDeleteSubmission.mockResolvedValue(false);
-  mocks.canEditSighting.mockResolvedValue(false);
-  mocks.canDeleteSighting.mockResolvedValue(false);
   vi.stubEnv("GEMINI_API_KEY", "test-gemini-key");
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "log").mockImplementation(() => {});
 });
 
 describe("dashboard API", () => {
-  it("returns the isolated demo dashboard payload", async () => {
-    const response = await getDashboard(new NextRequest("http://localhost/api/dashboard?demo=1"));
-    const body = await responseJson(response);
-
-    expect(response.status).toBe(200);
-    expect(body.user.id).toBe("demo-user");
-    expect(body.stats).toHaveLength(4);
-    expect(body.observers.length).toBeGreaterThan(0);
-    expect(mocks.supabaseFrom).not.toHaveBeenCalled();
-  });
-
   it("rejects an unauthenticated dashboard request", async () => {
     const response = await getDashboard(new NextRequest("http://localhost/api/dashboard"));
     expect(response.status).toBe(401);
   });
 
-  it("toggles demo follows and rejects invalid targets", async () => {
-    const invalidResponse = await postDashboard(
-      jsonRequest("http://localhost/api/dashboard?demo=1", "POST", { targetUserId: "demo-user" })
-    );
-    expect(invalidResponse.status).toBe(400);
+  it("returns the personalized fallback when Supabase is not configured", async () => {
+    mocks.auth.mockResolvedValue({ userId: "fallback-user" });
+    vi.stubEnv("SUPABASE_URL", "");
+    vi.stubEnv("SUPABASE_SECRET_KEY", "");
 
-    const response = await postDashboard(
-      jsonRequest("http://localhost/api/dashboard?demo=1", "POST", { targetUserId: "obs-test" })
-    );
-    expect(await responseJson(response)).toEqual({ following: true });
+    const response = await getDashboard(new NextRequest("http://localhost/api/dashboard"));
+    const payload = await responseJson(response);
+
+    expect(response.status).toBe(200);
+    expect(payload.user).toEqual({ id: "fallback-user", name: "Field Observer" });
+    expect(payload.stats).toHaveLength(4);
+    expect(mocks.supabaseFrom).not.toHaveBeenCalled();
   });
+
+  it("creates and removes follow relationships", async () => {
+    mocks.auth.mockResolvedValue({ userId: "user-1" });
+    mocks.maybeSingleResult = { data: null, error: null };
+
+    const created = await postDashboard(
+      jsonRequest("http://localhost/api/dashboard", "POST", { targetUserId: "observer-1" })
+    );
+    expect(created.status).toBe(200);
+    expect(await responseJson(created)).toEqual({ following: true });
+    expect(mocks.insert).toHaveBeenCalledWith({ follower_id: "user-1", following_id: "observer-1" });
+
+    mocks.maybeSingleResult = { data: { id: "follow-1" }, error: null };
+    const removed = await postDashboard(
+      jsonRequest("http://localhost/api/dashboard", "POST", { targetUserId: "observer-1" })
+    );
+    expect(removed.status).toBe(200);
+    expect(await responseJson(removed)).toEqual({ following: false });
+    expect(mocks.eq).toHaveBeenCalledWith("id", "follow-1");
+  });
+
 });
 
 describe("submission APIs", () => {
   it("lists submissions in timestamp order", async () => {
-    mocks.supabaseResult = { data: [{ id: "row-1", plant_name: "Air Potato" }], error: null };
+    mocks.supabaseResult = {
+      data: [{ id: "row-1", plant_name: "Air Potato", status: "approved", user_id: "owner-1" }],
+      error: null,
+    };
     const response = await getSubmissions();
     expect(response.status).toBe(200);
-    expect(await responseJson(response)).toEqual([{ _id: "row-1", plantName: "Air Potato", timestamp: null }]);
+    expect(await responseJson(response)).toEqual([{
+      _id: "row-1",
+      plantName: "Air Potato",
+      timestamp: null,
+      userId: null,
+      status: "approved",
+    }]);
     expect(mocks.order).toHaveBeenCalledWith("timestamp_ms", { ascending: false });
   });
 
@@ -207,6 +220,15 @@ describe("submission APIs", () => {
       jsonRequest("http://localhost/api/submissions", "POST", { anonymous: true, plantName: "" })
     );
     expect(invalid.status).toBe(400);
+  });
+
+  it("rate-limits anonymous submissions", async () => {
+    mocks.isWithinRateLimit.mockResolvedValue(false);
+    const response = await postSubmission(
+      jsonRequest("http://localhost/api/submissions", "POST", { anonymous: true })
+    );
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("3600");
   });
 
   it("creates anonymous reports with pending moderation", async () => {
@@ -235,7 +257,10 @@ describe("submission APIs", () => {
   });
 
   it("returns a found submission by ID", async () => {
-    mocks.maybeSingleResult = { data: { id: validId, plant_name: "Air Potato" }, error: null };
+    mocks.maybeSingleResult = {
+      data: { id: validId, plant_name: "Air Potato", status: "approved", user_id: "owner-1" },
+      error: null,
+    };
     const response = await getSubmission(
       new NextRequest(`http://localhost/api/submissions/${validId}`),
       context()
@@ -295,89 +320,6 @@ describe("submission APIs", () => {
   });
 });
 
-describe("sighting APIs", () => {
-  it("applies status and limit query parameters", async () => {
-    mocks.supabaseResult = { data: [], error: null };
-    const response = await getSightings(new NextRequest("http://localhost/api/sightings?status=verified&limit=5"));
-    expect(response.status).toBe(200);
-    expect(mocks.eq).toHaveBeenCalledWith("status", "verified");
-    expect(mocks.limit).toHaveBeenCalledWith(5);
-  });
-
-  it("rejects unauthenticated or out-of-county sighting creation", async () => {
-    const denied = await postSighting(
-      jsonRequest("http://localhost/api/sightings", "POST", { lat: 29.6, lng: -82.3 })
-    );
-    expect(denied.status).toBe(401);
-
-    mocks.auth.mockResolvedValue({ userId: "user-1" });
-    const outside = await postSighting(
-      jsonRequest("http://localhost/api/sightings", "POST", { lat: 30, lng: -82.3 })
-    );
-    expect(outside.status).toBe(400);
-  });
-
-  it("creates valid sightings as pending reports", async () => {
-    mocks.auth.mockResolvedValue({ userId: "user-1" });
-    mocks.single.mockResolvedValue({ data: { id: "created-1" }, error: null });
-    const response = await postSighting(
-      jsonRequest("http://localhost/api/sightings", "POST", {
-        speciesId: "air_potato",
-        lat: 29.65,
-        lng: -82.32,
-        notes: "Near trail",
-      })
-    );
-    expect(response.status).toBe(200);
-    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({
-      user_id: "user-1",
-      species_id: "air_potato",
-      status: "pending",
-    }));
-  });
-
-  it("returns 404 for a missing sighting", async () => {
-    const response = await getSighting(
-      new NextRequest(`http://localhost/api/sightings/${validId}`),
-      context()
-    );
-    expect(response.status).toBe(404);
-  });
-
-  it("updates and deletes a sighting only when the owner checks pass", async () => {
-    mocks.auth.mockResolvedValue({ userId: "user-1" });
-    const denied = await putSighting(
-      jsonRequest(`http://localhost/api/sightings/${validId}`, "PUT", { notes: "Updated" }),
-      context()
-    );
-    expect(denied.status).toBe(403);
-
-    mocks.canEditSighting.mockResolvedValue(true);
-    mocks.supabaseResult = { data: [{ id: validId }], error: null };
-    const updated = await putSighting(
-      jsonRequest(`http://localhost/api/sightings/${validId}`, "PUT", { notes: "Updated" }),
-      context()
-    );
-    expect(updated.status).toBe(200);
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ notes: "Updated" }));
-
-    const deleteDenied = await deleteSighting(
-      new NextRequest(`http://localhost/api/sightings/${validId}`, { method: "DELETE" }),
-      context()
-    );
-    expect(deleteDenied.status).toBe(403);
-
-    mocks.canDeleteSighting.mockResolvedValue(true);
-    mocks.supabaseResult = { data: [{ id: validId }], error: null };
-    const deleted = await deleteSighting(
-      new NextRequest(`http://localhost/api/sightings/${validId}`, { method: "DELETE" }),
-      context()
-    );
-    expect(deleted.status).toBe(200);
-    expect(mocks.delete).toHaveBeenCalled();
-  });
-});
-
 describe("user and plant-identification APIs", () => {
   it("returns the current user's profile and role", async () => {
     mocks.auth.mockResolvedValue({ userId: "user-1" });
@@ -396,6 +338,7 @@ describe("user and plant-identification APIs", () => {
   });
 
   it("validates image input and reports missing API configuration", async () => {
+    mocks.auth.mockResolvedValue({ userId: "user-1" });
     const noImage = await identifyPlant(jsonRequest("http://localhost/api/identify-plant", "POST", {}));
     expect(noImage.status).toBe(400);
 
@@ -407,6 +350,7 @@ describe("user and plant-identification APIs", () => {
   });
 
   it("normalizes a known model prediction to catalog data", async () => {
+    mocks.auth.mockResolvedValue({ userId: "user-1" });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       candidates: [{ content: { parts: [{ text: "Air Potato" }] } }],
     }), { status: 200, headers: { "Content-Type": "application/json" } })));
@@ -423,6 +367,7 @@ describe("user and plant-identification APIs", () => {
   });
 
   it("returns a controlled error when the model request fails", async () => {
+    mocks.auth.mockResolvedValue({ userId: "user-1" });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 503 })));
     const response = await identifyPlant(
       jsonRequest("http://localhost/api/identify-plant", "POST", { image: "data:image/png;base64,AAAA" })

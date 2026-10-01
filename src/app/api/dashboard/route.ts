@@ -140,45 +140,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const payload: DashboardPayload = {
-      user: { id: currentUserId, name: "Observer" },
-      stats: [
-        { label: "Observations", value: "12", detail: "3 approved", tone: "emerald" },
-        { label: "Species logged", value: "7", detail: "2 new IDs", tone: "sky" },
-        { label: "Community rank", value: "#12", detail: "Building momentum", tone: "orange" },
-        { label: "Streak", value: "4d", detail: "Active field days", tone: "violet" },
-      ],
-      observers: [
-        { id: "obs-1", name: "Mara Rivers", focus: "Wetland grasses", sightings: 18, following: false, avatar: "MR" },
-        { id: "obs-2", name: "Theo Palm", focus: "Invasive trees", sightings: 13, following: false, avatar: "TP" },
-        { id: "obs-3", name: "Iris North", focus: "Aquatic plants", sightings: 9, following: false, avatar: "IN" },
-      ],
-      achievements: [
-        { title: "Trail Recon", detail: "3 of 5 field checks logged", progress: 60, icon: "🥾" },
-        { title: "Wetland Watcher", detail: "7 of 12 water-site reports", progress: 58, icon: "💧" },
-        { title: "Plant Detective", detail: "7 of 18 species confirmed", progress: 39, icon: "🔍" },
-      ],
-      feed: [
-        { title: "Mara Rivers logged cattail marsh observations", meta: "Today · 3 reports", type: "species" },
-        { title: "Community challenge: map invasive stands", meta: "2 days ago · 18 observers active", type: "challenge" },
-        { title: "You logged a new wetland report", meta: "3 days ago · approved", type: "connection" },
-      ],
-    };
-
-    return NextResponse.json(payload);
-  } catch (error) {
-    console.error("Error fetching dashboard:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
-
-    const authResult = await auth();
-    const currentUserId = authResult.userId;
-
-    if (!currentUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const cachedPayload = readDashboardCache(currentUserId);
     if (cachedPayload) {
       return NextResponse.json(cachedPayload);
@@ -310,7 +271,7 @@ export async function GET(request: NextRequest) {
       },
     ];
 
-    const feed = visibleSubmissions.slice(0, 3).map((submission) => {
+    const feed: DashboardPayload["feed"] = visibleSubmissions.slice(0, 3).map((submission) => {
       const observerName = submission.createdBy || (submission.userId ? "Observer" : "Community");
       const submissionName = submission.plantName || "plant report";
       const eventDate = toSafeDate(submission.createdAt ?? submission.timestamp ?? new Date()) ?? new Date();
@@ -318,7 +279,7 @@ export async function GET(request: NextRequest) {
       return {
         title: `${observerName} logged ${submissionName}`,
         meta: `${eventDate.toLocaleDateString()} · ${submission.status || "pending"}`,
-        type: submission.userId === currentUserId ? "connection" : "species",
+        type: submission.userId === currentUserId ? "connection" as const : "species" as const,
       };
     });
 
