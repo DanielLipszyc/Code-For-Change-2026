@@ -251,10 +251,13 @@ export default function Home() {
                 title="Spot"
                 body="Find a plant and take clear photos of leaves, stem, and fruit/flowers."
               />
-              <img
+              <Image
                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
                 src="/Spot.jpg"
                 alt="Phone taking a picture of a plant"
+                width={1920}
+                height={1080}
+                sizes="100vw"
               />
             </div>
 
@@ -264,10 +267,13 @@ export default function Home() {
                 title="Identify"
                 body="Use the guide to compare key traits and confirm your best match."
               />
-              <img
+              <Image
                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
                 src="/Identify.jpg"
                 alt="Magnifying glass over green question mark"
+                width={1920}
+                height={1080}
+                sizes="100vw"
               />
             </div>
 
@@ -277,10 +283,13 @@ export default function Home() {
                 title="Submit"
                 body="Upload the sighting with location and notes; then it’s ready for review."
               />
-              <img
+              <Image
                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
                 src="/Upload.jpg"
                 alt="Mouse clicking an upload button"
+                width={1920}
+                height={1080}
+                sizes="100vw"
               />
             </div>
           </div>
@@ -306,20 +315,29 @@ export default function Home() {
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-3">
-              <img
+              <Image
                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
                 src="/Spot.jpg"
                 alt="Phone taking a picture of a plant"
+                width={1920}
+                height={1080}
+                sizes="(min-width: 1280px) 400px, 33vw"
               />
-              <img
+              <Image
                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
                 src="/Identify.jpg"
                 alt="Magnifying glass over green question mark"
+                width={1920}
+                height={1080}
+                sizes="(min-width: 1280px) 400px, 33vw"
               />
-              <img
+              <Image
                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
                 src="/Upload.jpg"
                 alt="Mouse clicking an upload button"
+                width={1920}
+                height={1080}
+                sizes="(min-width: 1280px) 400px, 33vw"
               />
             </div>
           </div>

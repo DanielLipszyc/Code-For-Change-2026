@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -27,7 +28,11 @@ export default function Navigation() {
         <div className="flex justify-between items-center py-2">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <img
+              <Image
+                width={500}
+                height={500}
+                sizes="64px"
+                priority
                 style={{
                   width: "10%",
                   height: "auto",
