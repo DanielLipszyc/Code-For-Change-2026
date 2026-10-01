@@ -7,6 +7,7 @@ import { plants } from "@/data/plants";
 import { MAX_NOTES_LENGTH } from "@/lib/limits";
 import { PLANT_ID_ENABLED } from "@/lib/features";
 import { offlineStorage } from "@/lib/offlineStorage";
+import { useToast } from "@/components/ui/Toast";
 
 interface AIPrediction {
   prediction: string;
@@ -49,6 +50,7 @@ export default function SubmitClient() {
   const plantParam = searchParams.get("plant");
   const draftId = searchParams.get("draftId");
   const { user, isLoaded } = useUser();
+  const toast = useToast();
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
@@ -184,7 +186,7 @@ export default function SubmitClient() {
     e.preventDefault();
 
     if (!user && !submitAnonymously) {
-      alert("Please sign in or choose to submit anonymously.");
+      toast.error("Please sign in or choose to submit anonymously.");
       return;
     }
 
@@ -219,7 +221,7 @@ export default function SubmitClient() {
       }
 
       if (!selectedImage) {
-        alert("Please upload an image.");
+        toast.error("Please add a photo of the plant.");
         return;
       }
 
@@ -252,7 +254,7 @@ export default function SubmitClient() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        alert(err?.error || "Unable to submit. Please try again.");
+        toast.error(err?.error || "Unable to submit. Please try again.");
         return;
       }
 
@@ -265,7 +267,7 @@ export default function SubmitClient() {
       setShowSuccess(true);
     } catch (error) {
       console.error("Error submitting plant:", error);
-      alert("Unable to submit. Please check your location services and try again.");
+      toast.error("Unable to submit. Please check your location services and try again.");
     } finally {
       setIsSubmitting(false);
     }

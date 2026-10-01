@@ -2,7 +2,7 @@ import "server-only";
 import { CLERK_USER_ID } from "@/lib/schemas";
 import type { CreateSubmissionInput, UpdateSubmissionInput } from "@/lib/schemas";
 import type { Submission, SubmissionStatus } from "@/types/submission";
-import type { Viewer } from "./authz";
+import type { Viewer } from "@/types/auth";
 import { supabase } from "./db";
 
 /**

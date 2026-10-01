@@ -1,15 +1,9 @@
 import "server-only";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import type { UserRole } from "@/types/auth";
+import type { UserRole, Viewer } from "@/types/auth";
 
-/**
- * Who is making a request: decides what they can see and change.
- * Ownership checks live in the queries themselves (server/submissions.ts).
- */
-export interface Viewer {
-  userId: string | null;
-  isAdmin: boolean;
-}
+// Ownership checks live in the queries themselves (server/submissions.ts)
+export type { Viewer };
 
 /**
  * Name shown to other users. Never falls back to the email address,

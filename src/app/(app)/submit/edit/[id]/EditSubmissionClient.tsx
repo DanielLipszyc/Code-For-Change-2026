@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { plants } from "@/data/plants";
 import { MAX_NOTES_LENGTH } from "@/lib/limits";
 import type { Submission } from "@/types/submission";
+import { useToast } from "@/components/ui/Toast";
 
 interface EditSubmissionClientProps {
   submission: Submission;
@@ -12,6 +13,7 @@ interface EditSubmissionClientProps {
 
 export default function EditSubmissionClient({ submission }: EditSubmissionClientProps) {
   const router = useRouter();
+  const toast = useToast();
   // "Unknown Plant" is stored for unidentified plants; the dropdown option is "Unknown"
   const [plantName, setPlantName] = useState(
     submission.plantName === "Unknown Plant" ? "Unknown" : submission.plantName,
@@ -40,11 +42,11 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
         throw new Error(error.error || "Failed to update submission");
       }
 
-      // Redirect to map on success
+      toast.success("Changes saved.");
       router.push("/map");
     } catch (error) {
       console.error("Error updating submission:", error);
-      alert(
+      toast.error(
         error instanceof Error ? error.message : "Failed to update submission. Please try again.",
       );
     } finally {

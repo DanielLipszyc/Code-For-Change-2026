@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import Navigation from "@/components/Navigation";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+import { ToastProvider } from "@/components/ui/Toast";
 import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -37,8 +39,12 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="light">
         <body className={`${inter.className} antialiased min-h-screen bg-white`}>
-          <Navigation />
-          <main className="safe-top safe-bottom">{children}</main>
+          <ToastProvider>
+            <ConfirmProvider>
+              <Navigation />
+              <main className="safe-top safe-bottom">{children}</main>
+            </ConfirmProvider>
+          </ToastProvider>
         </body>
       </html>
     </ClerkProvider>
