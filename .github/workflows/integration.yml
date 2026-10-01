@@ -57,7 +57,15 @@ jobs:
           if-no-files-found: ignore
 
       - name: Run lint, typecheck, and unit/API tests
-        run: npm run lint && npm run typecheck && npm run test:unit
+        run: npm run lint && npm run typecheck && npm run test:coverage
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-coverage
+          path: coverage/
+          if-no-files-found: ignore
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -93,7 +101,7 @@ jobs:
       - name: Run OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@v0.15.0
         with:
-          target: http://host.docker.internal:3100
+          target: http://127.0.0.1:3100
           fail_action: false
           cmd_options: -a -m 2
 
