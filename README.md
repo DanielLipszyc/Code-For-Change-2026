@@ -15,7 +15,10 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 
 - 📱 Mobile-first responsive design
 - 🎨 Modern UI with Tailwind CSS
-- ⚡ Fast page loads with Next.js App Router
+- ⚡ Faster dashboard data loads through short-lived server-side caching
+- 🌿 Guided dashboard onboarding for new users
+- 🧪 Demo dashboard access for local testing (`/dashboard?demo=1`)
+- 🖼️ Optimized image loading for the home page slideshow
 - 📦 PWA-ready with manifest
 
 ## Pages
@@ -25,7 +28,24 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 3. **Submit** (`/submit`) - Plant sighting submission form
 4. **Invasive Plant Guide** (`/guide`) - Information about each species
 5. **My Log** (`/log`) - Searchable log of user's submissions
-6. **Map** (`/map`) - Interactive invasive plant species map
+6. **Dashboard** (`/dashboard`) - Onboarding-focused activity summary and network overview
+7. **Map** (`/map`) - Interactive invasive plant species map
+
+## Performance Notes
+
+- Dashboard payloads are cached for a short interval to reduce repeated database and Clerk lookups.
+- New users see a guided onboarding section that directs them to report, explore, and track progress.
+- The home page slideshow avoids loading all slide images at once by rendering only the active and adjacent images.
+
+## Demo Access
+
+For local testing without a Clerk account, use the demo login button on the sign-in page or visit:
+
+```text
+/dashboard?demo=1
+```
+
+This enables a local demo user so the dashboard can be tested for onboarding, follow toggles, and summary cards during development.
 
 ## Getting Started
 
@@ -51,6 +71,16 @@ npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Testing
+
+```bash
+npm test
+```
+
+This runs ESLint, TypeScript typechecking, the Vitest API/unit suite, a production build, and Playwright browser workflows. Run the unit/API layer alone with `npm run test:unit`. Browser tests require Chromium, installed with `npx playwright install chromium`.
+
+GitHub Actions runs the same checks, CodeQL SAST, dependency review, a production npm audit report, an OWASP ZAP baseline scan, and a k6 load profile. Add `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` as repository Actions secrets so the production build and browser server can initialize Clerk. Start a higher-volume k6 stress run with **Actions → Integration tests → Run workflow → Run the higher-volume stress profile**. Dependabot checks npm and GitHub Actions dependencies weekly.
 
 ## Project Structure
 

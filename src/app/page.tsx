@@ -150,27 +150,36 @@ export default function Home() {
             <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-2xl">
               {/* Slides */}
               <div className="relative h-[340px] sm:h-[420px] lg:h-[520px]">
-                {slides.map((s, idx) => (
-                  <div
-                    key={s.src}
-                    className={[
-                      "absolute inset-0 transition-opacity duration-700",
-                      idx === active ? "opacity-100" : "opacity-0",
-                    ].join(" ")}
-                    aria-hidden={idx !== active}
-                  >
-                    <Image
-                      src={s.src}
-                      alt={s.alt}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 520px"
-                      priority={idx === 0}
-                    />
-                    {/* overlay gradient for readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                  </div>
-                ))}
+                {slides.map((s, idx) => {
+                  const isVisible =
+                    idx === active ||
+                    idx === (active + 1) % slides.length ||
+                    idx === (active - 1 + slides.length) % slides.length;
+
+                  if (!isVisible) return null;
+
+                  return (
+                    <div
+                      key={s.src}
+                      className={[
+                        "absolute inset-0 transition-opacity duration-700",
+                        idx === active ? "opacity-100" : "opacity-0",
+                      ].join(" ")}
+                      aria-hidden={idx !== active}
+                    >
+                      <Image
+                        src={s.src}
+                        alt={s.alt}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 1024px) 100vw, 520px"
+                        priority={idx === 0}
+                      />
+                      {/* overlay gradient for readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Caption */}

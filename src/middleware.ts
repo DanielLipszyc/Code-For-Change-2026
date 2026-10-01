@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   '/contact',
   '/guide',
   '/map',
+  '/submit',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/submissions(.*)', // GET requests are public, POST will be protected in route handler
@@ -14,6 +15,15 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  const demoCookie = request.cookies.get('demo_user')?.value === '1';
+  const demoQuery = request.nextUrl.searchParams.get('demo') === '1';
+  const isDemoDashboard = request.nextUrl.pathname === '/dashboard' && (demoCookie || demoQuery);
+  const isDemoDashboardApi = request.nextUrl.pathname === '/api/dashboard' && (demoCookie || demoQuery);
+
+  if (isDemoDashboard || isDemoDashboardApi) {
+    return;
+  }
+
   if (!isPublicRoute(request)) {
     await auth.protect();
   }

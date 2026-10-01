@@ -1,0 +1,91 @@
+name: Integration tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      stress:
+        description: Run the higher-volume stress profile
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Review dependency changes
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+      - name: Capture production dependency audit
+        run: npm audit --omit=dev --json > npm-audit.json || true
+
+      - name: Upload dependency audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit.json
+          if-no-files-found: ignore
+
+      - name: Run lint, typecheck, and unit/API tests
+        run: npm run lint && npm run typecheck && npm run test:unit
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+      - name: Run browser integration tests
+        run: npm run test:e2e
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+      - name: Start app for dynamic scans
+        run: |
+          npm start -- --hostname 0.0.0.0 --port 3100 > /tmp/next-start.log 2>&1 &
+          curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-all-errors --retry-delay 2 http://127.0.0.1:3100/ > /dev/null
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+      - name: Run OWASP ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://host.docker.internal:3100
+          fail_action: false
+          cmd_options: -a -m 2
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run load or stress profile
+        run: k6 run tests/performance/app.js
+        env:
+          BASE_URL: http://127.0.0.1:3100
+          STRESS_TEST: ${{ inputs.stress }}
