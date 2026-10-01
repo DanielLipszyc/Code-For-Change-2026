@@ -1,60 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { supabase, isValidId } from "@/server/db";
 import { isAdmin } from "@/server/authz";
+import { jsonError } from "@/server/http";
+import { approveSubmission, isValidId } from "@/server/submissions";
 
 /**
  * POST /api/submissions/[id]/approve
- * Approve a pending submission (admin only)
+ * Approve a pending submission (admins only)
  */
-export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function POST(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
 
-    // Check authentication
-    const authResult = await auth();
-    const userId = authResult.userId;
+    const { userId } = await auth();
+    if (!userId) return jsonError(401, "Unauthorized - Please sign in");
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized - Please sign in" }, { status: 401 });
+    // Checked live with Clerk rather than from the session token
+    if (!(await isAdmin(userId))) {
+      return jsonError(403, "Forbidden - Only admins can approve submissions");
     }
 
-    // Check if user is admin
-    const userIsAdmin = await isAdmin(userId);
-    if (!userIsAdmin) {
-      return NextResponse.json(
-        { error: "Forbidden - Only admins can approve submissions" },
-        { status: 403 },
-      );
+    if (!isValidId(id)) return jsonError(400, "Invalid submission ID");
+
+    if (!(await approveSubmission(id, userId))) {
+      return jsonError(404, "Submission not found");
     }
 
-    // Validate ID
-    if (!isValidId(id)) {
-      return NextResponse.json({ error: "Invalid submission ID" }, { status: 400 });
-    }
-
-    const { data: updated, error } = await supabase
-      .from("submissions")
-      .update({
-        status: "approved",
-        approved_at: new Date().toISOString(),
-        approved_by: userId,
-      })
-      .eq("id", id)
-      .select("id");
-
-    if (error) throw error;
-
-    if (updated.length === 0) {
-      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Submission approved successfully",
-    });
+    return NextResponse.json({ success: true, message: "Submission approved successfully" });
   } catch (error) {
     console.error("Error approving submission:", error);
-    return NextResponse.json({ error: "Failed to approve submission" }, { status: 500 });
+    return jsonError(500, "Failed to approve submission");
   }
 }

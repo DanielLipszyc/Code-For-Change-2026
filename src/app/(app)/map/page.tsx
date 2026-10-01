@@ -6,22 +6,7 @@ import "leaflet/dist/leaflet.css";
 import type { GeoJsonObject } from "geojson";
 import alachuaBoundary from "@/data/alachua-boundary.json";
 import { UserRole } from "@/types/auth";
-
-interface Submission {
-  _id?: string;
-  plantName: string;
-  scientificName?: string;
-  lat: number;
-  lng: number;
-  timestamp: number;
-  notes?: string;
-  imageData?: string;
-  userId?: string;
-  createdBy?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  status?: "pending" | "approved";
-}
+import type { Submission } from "@/types/submission";
 
 const countyBorderStyle = {
   color: "#000000",
@@ -120,6 +105,7 @@ export default function Map() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [missingPhotos, setMissingPhotos] = useState<Set<string>>(new Set());
 
   const { user } = useUser();
   const [userRole, setUserRole] = useState<UserRole>("user");
@@ -184,7 +170,7 @@ export default function Map() {
   // ✅ Export ONLY what's on display (after filters + role visibility)
   const handleExportCsv = useCallback(() => {
     const rows = displayedSubmissions.map((s) => ({
-      id: s._id ?? "",
+      id: s.id,
       plantName: s.plantName ?? "",
       scientificName: s.scientificName ?? "",
       status: s.status ?? "",
@@ -197,7 +183,7 @@ export default function Map() {
       userId: s.userId ?? "",
       createdAtISO: s.createdAt ? new Date(s.createdAt).toISOString() : "",
       updatedAtISO: s.updatedAt ? new Date(s.updatedAt).toISOString() : "",
-      hasImage: s.imageData ? "yes" : "no",
+      photoUrl: new URL(s.photoUrl, window.location.origin).href,
     }));
 
     const stamp = new Date().toISOString().slice(0, 10);
@@ -248,7 +234,7 @@ export default function Map() {
       const response = await fetch(`/api/submissions/${submissionId}`, { method: "DELETE" });
 
       if (response.ok) {
-        setSubmissions((prev) => prev.filter((s) => s._id !== submissionId));
+        setSubmissions((prev) => prev.filter((s) => s.id !== submissionId));
         setSelectedSubmission(null);
         alert("Submission deleted successfully");
       } else {
@@ -276,10 +262,10 @@ export default function Map() {
 
         if (response.ok) {
           setSubmissions((prev) =>
-            prev.map((s) => (s._id === submissionId ? { ...s, status: "approved" as const } : s)),
+            prev.map((s) => (s.id === submissionId ? { ...s, status: "approved" as const } : s)),
           );
 
-          if (selectedSubmission?._id === submissionId) {
+          if (selectedSubmission?.id === submissionId) {
             setSelectedSubmission({ ...selectedSubmission, status: "approved" as const });
           }
 
@@ -586,23 +572,18 @@ export default function Map() {
                 .filter((s) => s.status === "pending")
                 .map((submission) => (
                   <button
-                    key={submission._id}
+                    key={submission.id}
                     onClick={() => setSelectedSubmission(submission)}
                     className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow text-left border-2 border-amber-200 dark:border-amber-700 hover:border-amber-400 dark:hover:border-amber-500"
                   >
                     <div className="flex items-start gap-3">
-                      {submission.imageData ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={submission.imageData}
-                          alt={submission.plantName}
-                          className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <span className="text-2xl">🌿</span>
-                        </div>
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={submission.photoUrl}
+                        alt={submission.plantName}
+                        loading="lazy"
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-gray-200"
+                      />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-gray-900 dark:text-white truncate">
                           {submission.plantName}
@@ -683,10 +664,13 @@ export default function Map() {
 
             <div className="grid md:grid-cols-2">
               <div className="bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
-                {selectedSubmission.imageData ? (
+                {!missingPhotos.has(selectedSubmission.id) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={selectedSubmission.imageData}
+                    src={selectedSubmission.photoUrl}
+                    onError={() =>
+                      setMissingPhotos((prev) => new Set(prev).add(selectedSubmission.id))
+                    }
                     alt={selectedSubmission.plantName}
                     className="w-full h-full object-cover max-h-[420px]"
                   />
@@ -749,7 +733,7 @@ export default function Map() {
                     <div className="pt-4 flex gap-3">
                       {canEdit(selectedSubmission) && (
                         <button
-                          onClick={() => handleEdit(selectedSubmission._id!)}
+                          onClick={() => handleEdit(selectedSubmission.id)}
                           className="flex-1 px-4 py-2 bg-[#136207] text-white rounded-md hover:bg-[#0d4705] transition-colors font-medium"
                         >
                           Edit
@@ -757,7 +741,7 @@ export default function Map() {
                       )}
                       {canDelete(selectedSubmission) && (
                         <button
-                          onClick={() => handleDelete(selectedSubmission._id!)}
+                          onClick={() => handleDelete(selectedSubmission.id)}
                           className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
                         >
                           Delete
@@ -765,7 +749,7 @@ export default function Map() {
                       )}
                       {userRole === "admin" && selectedSubmission.status === "pending" && (
                         <button
-                          onClick={() => handleApprove(selectedSubmission._id!)}
+                          onClick={() => handleApprove(selectedSubmission.id)}
                           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                         >
                           Approve

@@ -4,17 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { plants } from "@/data/plants";
 import { MAX_NOTES_LENGTH } from "@/lib/limits";
-
-interface Submission {
-  _id: string;
-  plantName: string;
-  scientificName?: string;
-  lat: number;
-  lng: number;
-  timestamp: number;
-  notes?: string;
-  imageData?: string;
-}
+import type { Submission } from "@/types/submission";
 
 interface EditSubmissionClientProps {
   submission: Submission;
@@ -28,6 +18,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
   );
   const [notes, setNotes] = useState(submission.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasPhoto, setHasPhoto] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +26,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
 
     try {
       // The server looks up the scientific name from the plant list
-      const response = await fetch(`/api/submissions/${submission._id}`, {
+      const response = await fetch(`/api/submissions/${submission.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -125,15 +116,16 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
             </div>
 
             {/* Image Info (Read-only) */}
-            {submission.imageData && (
+            {hasPhoto && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="font-semibold text-gray-700 mb-2">Photo</h3>
                 <p className="text-sm text-gray-600 mb-2">Current photo (cannot be changed):</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={submission.imageData}
+                  src={submission.photoUrl}
                   alt={submission.plantName}
                   className="w-full max-w-sm rounded-lg"
+                  onError={() => setHasPhoto(false)}
                 />
               </div>
             )}

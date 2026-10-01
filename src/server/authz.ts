@@ -1,7 +1,15 @@
 import "server-only";
-import { clerkClient } from "@clerk/nextjs/server";
-import { supabase, isValidId } from "./db";
-import { UserRole } from "@/types/auth";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import type { UserRole } from "@/types/auth";
+
+/**
+ * Who is making a request: decides what they can see and change.
+ * Ownership checks live in the queries themselves (server/submissions.ts).
+ */
+export interface Viewer {
+  userId: string | null;
+  isAdmin: boolean;
+}
 
 /**
  * Name shown to other users. Never falls back to the email address,
@@ -17,69 +25,51 @@ export function getPublicDisplayName(
   return name || user.username || fallback;
 }
 
+/** Role from a user's Clerk public metadata. Anything but "admin" is a regular user. */
+export function roleOf(user: { publicMetadata: Record<string, unknown> }): UserRole {
+  return user.publicMetadata.role === "admin" ? "admin" : "user";
+}
+
 /**
- * Get user role from Clerk metadata
- * Defaults to 'user' if no role is set
+ * Role from the session token, when the Clerk session token is customized to
+ * include public metadata (see docs/ARCHITECTURE.md). Undefined when it
+ * isn't, so the caller can ask Clerk's API instead.
+ */
+export function roleFromSessionClaims(
+  claims: { metadata?: { role?: unknown } } | null | undefined,
+): UserRole | undefined {
+  if (!claims?.metadata) return undefined;
+  return claims.metadata.role === "admin" ? "admin" : "user";
+}
+
+/**
+ * A user's current role from Clerk's API. Always up to date but costs a
+ * network call, so it's used for admin-only actions (approving, deleting
+ * other people's reports). Falls back to "user", never "admin", on errors.
  */
 export async function getUserRole(userId: string): Promise<UserRole> {
   try {
     const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    return (user.publicMetadata.role as UserRole) || "user";
+    return roleOf(await client.users.getUser(userId));
   } catch (error) {
     console.error("Error fetching user role:", error);
-    return "user"; // Default to user role on error
+    return "user";
   }
 }
 
-/**
- * Check if user has admin role
- */
 export async function isAdmin(userId: string): Promise<boolean> {
-  const role = await getUserRole(userId);
-  return role === "admin";
+  return (await getUserRole(userId)) === "admin";
 }
 
 /**
- * Check whether the given user owns the row with the given ID.
- * Returns false if the row doesn't exist or has no user_id (legacy/anonymous).
+ * The user behind the current request. The role comes from the session token
+ * when it carries one (no network call, but a role change takes effect only
+ * when the token refreshes, within about a minute), otherwise from Clerk's API.
  */
-async function isOwner(table: "submissions", userId: string, rowId: string): Promise<boolean> {
-  try {
-    if (!isValidId(rowId)) {
-      return false;
-    }
+export async function getViewer(): Promise<Viewer> {
+  const { userId, sessionClaims } = await auth();
+  if (!userId) return { userId: null, isAdmin: false };
 
-    const { data, error } = await supabase
-      .from(table)
-      .select("user_id")
-      .eq("id", rowId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    return !!data?.user_id && data.user_id === userId;
-  } catch (error) {
-    console.error(`Error checking ownership of ${table} row:`, error);
-    return false;
-  }
-}
-
-/**
- * Check if user can edit a specific submission
- * Only the owner can edit their own submissions
- */
-export async function canEditSubmission(userId: string, submissionId: string): Promise<boolean> {
-  return isOwner("submissions", userId, submissionId);
-}
-
-/**
- * Check if user can delete a specific submission
- * Owner can delete their own, admins can delete any
- */
-export async function canDeleteSubmission(userId: string, submissionId: string): Promise<boolean> {
-  if (await isAdmin(userId)) {
-    return true;
-  }
-  return isOwner("submissions", userId, submissionId);
+  const role = roleFromSessionClaims(sessionClaims) ?? (await getUserRole(userId));
+  return { userId, isAdmin: role === "admin" };
 }

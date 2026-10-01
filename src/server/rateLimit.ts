@@ -10,6 +10,7 @@ export const LIMITS = {
   submitSignedIn: { limit: 30, windowSeconds: HOUR },
   submitAnonymous: { limit: 10, windowSeconds: HOUR },
   identifyPlant: { limit: 30, windowSeconds: HOUR },
+  follow: { limit: 120, windowSeconds: HOUR },
 } as const;
 
 /**

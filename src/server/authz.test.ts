@@ -1,29 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getUser, maybeSingle } = vi.hoisted(() => ({
-  getUser: vi.fn(),
-  maybeSingle: vi.fn(),
-}));
+const { getUser, auth } = vi.hoisted(() => ({ getUser: vi.fn(), auth: vi.fn() }));
 
 vi.mock("@clerk/nextjs/server", () => ({
+  auth,
   clerkClient: async () => ({ users: { getUser } }),
 }));
 
-vi.mock("./db", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("./db")>()),
-  supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) },
-}));
-
-import { canDeleteSubmission, canEditSubmission, getPublicDisplayName, getUserRole } from "./authz";
-
-const OWNER = "user_owner";
-const OTHER = "user_other";
-const ROW_ID = "3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e";
-
-const asAdmin = () => getUser.mockResolvedValue({ publicMetadata: { role: "admin" } });
-const asRegularUser = () => getUser.mockResolvedValue({ publicMetadata: {} });
-const rowOwnedBy = (userId: string | null) =>
-  maybeSingle.mockResolvedValue({ data: { user_id: userId }, error: null });
+import {
+  getPublicDisplayName,
+  getUserRole,
+  getViewer,
+  roleFromSessionClaims,
+  roleOf,
+} from "./authz";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -42,85 +32,62 @@ describe("getPublicDisplayName", () => {
   });
 
   it("falls back to the username, then to the fallback text", () => {
+    const nameless = { firstName: null, lastName: null, username: null };
     expect(getPublicDisplayName({ ...user, firstName: null })).toBe("ana_l");
-    expect(getPublicDisplayName({ firstName: null, lastName: null, username: null })).toBe(
-      "Observer",
-    );
-    expect(
-      getPublicDisplayName(
-        { firstName: null, lastName: null, username: null },
-        { fallback: "Anonymous" },
-      ),
-    ).toBe("Anonymous");
+    expect(getPublicDisplayName(nameless)).toBe("Observer");
+    expect(getPublicDisplayName(nameless, { fallback: "Anonymous" })).toBe("Anonymous");
+  });
+});
+
+describe("roleOf", () => {
+  it("treats only an exact admin role as admin", () => {
+    expect(roleOf({ publicMetadata: { role: "admin" } })).toBe("admin");
+    for (const role of [undefined, "user", "Admin", "superuser", true]) {
+      expect(roleOf({ publicMetadata: { role } })).toBe("user");
+    }
+  });
+});
+
+describe("roleFromSessionClaims", () => {
+  it("reads the role when the session token carries public metadata", () => {
+    expect(roleFromSessionClaims({ metadata: { role: "admin" } })).toBe("admin");
+    expect(roleFromSessionClaims({ metadata: {} })).toBe("user");
+  });
+
+  it("is undefined when the session token has no metadata", () => {
+    expect(roleFromSessionClaims({})).toBeUndefined();
+    expect(roleFromSessionClaims(null)).toBeUndefined();
   });
 });
 
 describe("getUserRole", () => {
   it("returns the role stored in Clerk public metadata", async () => {
-    asAdmin();
-    await expect(getUserRole(OWNER)).resolves.toBe("admin");
-  });
-
-  it("defaults to user when no role is set", async () => {
-    asRegularUser();
-    await expect(getUserRole(OWNER)).resolves.toBe("user");
+    getUser.mockResolvedValue({ publicMetadata: { role: "admin" } });
+    await expect(getUserRole("user_1")).resolves.toBe("admin");
   });
 
   it("falls back to user, never admin, when Clerk fails", async () => {
     getUser.mockRejectedValue(new Error("Clerk unavailable"));
-    await expect(getUserRole(OWNER)).resolves.toBe("user");
+    await expect(getUserRole("user_1")).resolves.toBe("user");
   });
 });
 
-describe("canEditSubmission", () => {
-  it("allows the owner", async () => {
-    rowOwnedBy(OWNER);
-    await expect(canEditSubmission(OWNER, ROW_ID)).resolves.toBe(true);
+describe("getViewer", () => {
+  it("returns a signed-out viewer without calling Clerk", async () => {
+    auth.mockResolvedValue({ userId: null, sessionClaims: null });
+    await expect(getViewer()).resolves.toEqual({ userId: null, isAdmin: false });
+    expect(getUser).not.toHaveBeenCalled();
   });
 
-  it("refuses everyone else, including admins", async () => {
-    rowOwnedBy(OWNER);
-    asAdmin();
-    await expect(canEditSubmission(OTHER, ROW_ID)).resolves.toBe(false);
+  it("uses the role in the session token when there is one", async () => {
+    auth.mockResolvedValue({ userId: "user_1", sessionClaims: { metadata: { role: "admin" } } });
+    await expect(getViewer()).resolves.toEqual({ userId: "user_1", isAdmin: true });
+    expect(getUser).not.toHaveBeenCalled();
   });
 
-  it("refuses anonymous submissions, which have no owner", async () => {
-    rowOwnedBy(null);
-    await expect(canEditSubmission(OTHER, ROW_ID)).resolves.toBe(false);
-  });
-
-  it("refuses submissions that don't exist", async () => {
-    maybeSingle.mockResolvedValue({ data: null, error: null });
-    await expect(canEditSubmission(OWNER, ROW_ID)).resolves.toBe(false);
-  });
-
-  it("refuses malformed IDs without querying the database", async () => {
-    await expect(canEditSubmission(OWNER, "not-a-uuid")).resolves.toBe(false);
-    expect(maybeSingle).not.toHaveBeenCalled();
-  });
-
-  it("refuses when the database lookup fails", async () => {
-    maybeSingle.mockResolvedValue({ data: null, error: new Error("connection lost") });
-    await expect(canEditSubmission(OWNER, ROW_ID)).resolves.toBe(false);
-  });
-});
-
-describe("canDeleteSubmission", () => {
-  it("lets admins delete any submission", async () => {
-    asAdmin();
-    rowOwnedBy(OWNER);
-    await expect(canDeleteSubmission(OTHER, ROW_ID)).resolves.toBe(true);
-  });
-
-  it("lets owners delete their own", async () => {
-    asRegularUser();
-    rowOwnedBy(OWNER);
-    await expect(canDeleteSubmission(OWNER, ROW_ID)).resolves.toBe(true);
-  });
-
-  it("refuses other users", async () => {
-    asRegularUser();
-    rowOwnedBy(OWNER);
-    await expect(canDeleteSubmission(OTHER, ROW_ID)).resolves.toBe(false);
+  it("asks Clerk when the session token has no role", async () => {
+    auth.mockResolvedValue({ userId: "user_1", sessionClaims: {} });
+    getUser.mockResolvedValue({ publicMetadata: { role: "admin" } });
+    await expect(getViewer()).resolves.toEqual({ userId: "user_1", isAdmin: true });
   });
 });

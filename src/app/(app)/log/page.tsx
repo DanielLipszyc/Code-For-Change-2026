@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
+import type { Submission } from "@/types/submission";
 
 const handleDelete = async (submissionId: string) => {
   if (!confirm("Are you sure you want to delete this submission?")) {
@@ -26,21 +27,6 @@ const handleDelete = async (submissionId: string) => {
     alert("Failed to delete submission");
   }
 };
-
-interface Submission {
-  _id: string;
-  plantName: string;
-  scientificName?: string;
-  lat: number;
-  lng: number;
-  timestamp: number;
-  notes?: string;
-  imageData?: string;
-  userId?: string;
-  createdBy?: string;
-  createdAt?: string;
-  status?: "pending" | "approved";
-}
 
 const FALLBACK_IMG =
   "data:image/svg+xml;utf8," +
@@ -71,7 +57,7 @@ function statusBadgeClasses(status: string) {
 }
 
 function SubmissionCard({ submission }: { submission: Submission }) {
-  const [src, setSrc] = useState(submission.imageData || FALLBACK_IMG);
+  const [src, setSrc] = useState(submission.photoUrl);
   const submittedDate = submission.createdAt
     ? new Date(submission.createdAt).toLocaleDateString()
     : new Date(submission.timestamp).toLocaleDateString();
@@ -111,7 +97,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
           </div>
 
           <Link
-            href={`/submit/edit/${submission._id}`}
+            href={`/submit/edit/${submission.id}`}
             style={{ textAlign: "center" }}
             className="flex-grow rounded-lg bg-[#136207] px-1.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0f5006]"
             title="Edit submission"
@@ -119,7 +105,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
             Edit
           </Link>
           <button
-            onClick={() => handleDelete(submission._id!)}
+            onClick={() => handleDelete(submission.id)}
             className="flex-grow rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-700"
             title="Delete submission"
           >
@@ -151,7 +137,7 @@ export default function LogPage() {
   useEffect(() => {
     async function fetchSubmissions() {
       try {
-        const response = await fetch("/api/submissions");
+        const response = await fetch("/api/submissions?mine=1");
         if (response.ok) {
           const data = await response.json();
           setSubmissions(data);
@@ -174,7 +160,6 @@ export default function LogPage() {
     const q = query.trim().toLowerCase();
 
     return submissions
-      .filter((s) => s.userId === user.id)
       .filter((s) => {
         const matchesStatus = statusFilter === "All" ? true : s.status === statusFilter;
         const matchesQuery =
@@ -289,7 +274,7 @@ export default function LogPage() {
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {userSubmissions.map((s) => (
-                <SubmissionCard key={s._id} submission={s} />
+                <SubmissionCard key={s.id} submission={s} />
               ))}
             </div>
           )}
