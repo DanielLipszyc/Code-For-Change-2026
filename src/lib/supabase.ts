@@ -1,21 +1,37 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const url = process.env.SUPABASE_URL;
-const secretKey = process.env.SUPABASE_SECRET_KEY;
+let client: SupabaseClient | undefined;
 
-if (!url) {
-  throw new Error("Please define SUPABASE_URL in .env.local");
-}
+function getSupabaseClient(): SupabaseClient {
+  if (client) return client;
 
-if (!secretKey) {
-  throw new Error("Please define SUPABASE_SECRET_KEY in .env.local");
+  const url = process.env.SUPABASE_URL;
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
+
+  if (!url) {
+    throw new Error("Please define SUPABASE_URL in .env.local");
+  }
+
+  if (!secretKey) {
+    throw new Error("Please define SUPABASE_SECRET_KEY in .env.local");
+  }
+
+  client = createClient(url, secretKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  return client;
 }
 
 // Server-only client. Auth is handled by Clerk, so all DB access goes through
 // API routes / server components using the secret key (bypasses RLS).
 // Never import this from a client component.
-export const supabase = createClient(url, secretKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, property) {
+    const instance = getSupabaseClient();
+    const value = Reflect.get(instance, property, instance);
+    return typeof value === "function" ? value.bind(instance) : value;
+  },
 });
 
 const UUID_RE =

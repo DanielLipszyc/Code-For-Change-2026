@@ -27,12 +27,13 @@ for (const route of publicRoutes) {
 }
 
 test("filters the plant guide and changes language", async ({ page }) => {
-  await page.goto("/guide", { waitUntil: "domcontentloaded" });
+  await page.route("https://**/*", (route) => route.abort());
+  await page.goto("/guide");
 
   await page.getByPlaceholder(/Search plants/).fill("Dioscorea bulbifera");
   await expect(page.getByRole("heading", { name: "Alachua County Invasive Plant ID Guide" })).toBeVisible();
+  await expect(page.getByText("Showing 1 of 17")).toBeVisible();
   await expect(page.getByText("Air Potato", { exact: true }).first()).toBeVisible();
-  await expect(page.locator('[role="button"][tabindex="0"]')).toHaveCount(1);
 
   await page.locator("select").first().selectOption("es");
   await expect(page.getByRole("heading", { name: /Guía de Identificación/ })).toBeVisible();
