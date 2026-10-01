@@ -1,20 +1,11 @@
+import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { env } from "./env";
 
-const url = process.env.SUPABASE_URL;
-const secretKey = process.env.SUPABASE_SECRET_KEY;
-
-if (!url) {
-  throw new Error("Please define SUPABASE_URL in .env.local");
-}
-
-if (!secretKey) {
-  throw new Error("Please define SUPABASE_SECRET_KEY in .env.local");
-}
-
-// Server-only client. Auth is handled by Clerk, so all DB access goes through
-// API routes / server components using the secret key (bypasses RLS).
-// Never import this from a client component.
-export const supabase = createClient(url, secretKey, {
+// Auth is handled by Clerk, so all DB access goes through API routes and server
+// components using the secret key (bypasses RLS). The "server-only" import makes
+// the build fail if a client component ever imports this file.
+export const supabase = createClient(env.supabaseUrl, env.supabaseSecretKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 

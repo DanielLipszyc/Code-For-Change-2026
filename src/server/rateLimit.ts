@@ -1,3 +1,4 @@
+import "server-only";
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { supabase } from "./db";

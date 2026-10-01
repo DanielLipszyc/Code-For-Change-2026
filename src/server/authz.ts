@@ -1,3 +1,4 @@
+import "server-only";
 import { clerkClient } from "@clerk/nextjs/server";
 import { supabase, isValidId } from "./db";
 import { UserRole } from "@/types/auth";
