@@ -25,6 +25,17 @@ describe("resolvePlant", () => {
     }
   });
 
+  it("maps misspellings from earlier versions of the list to the current name", () => {
+    expect(resolvePlant("Coral Adicea")).toEqual({
+      plantName: "Coral Ardisia",
+      scientificName: "Ardisia crenata",
+    });
+    expect(resolvePlant("Caeser's Weed")).toEqual({
+      plantName: "Caesar's Weed",
+      scientificName: "Urena lobata",
+    });
+  });
+
   it("rejects names that aren't on the list", () => {
     expect(resolvePlant("Definitely Not A Plant")).toBeNull();
     expect(resolvePlant("<script>alert(1)</script>")).toBeNull();

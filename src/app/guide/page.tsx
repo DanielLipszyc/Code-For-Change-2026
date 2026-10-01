@@ -2,212 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { plants, type Plant, type ThreatLevel } from "@/data/plants";
 import { translations } from "@/lib/translation";
 
-type ThreatLevel = "Low" | "Moderate" | "Significant";
 type Language = "en" | "es";
 
-type Plant = {
-  id: number;
-  name: Record<Language, string>;
-  scientificName: string;
-  picUrl: string;
-  threatLevel: Record<"en", ThreatLevel> & Record<"es", string>;
-  tip: Record<Language, string>;
+const THREAT_LABELS: Record<ThreatLevel, Record<Language, string>> = {
+  Low: { en: "Low", es: "Baja" },
+  Moderate: { en: "Moderate", es: "Moderada" },
+  Significant: { en: "Significant", es: "Significativa" },
 };
 
-const PLANTS: Plant[] = [
-  {
-    id: 1,
-    name: { en: "Air Potato", es: "Papa del Aire" },
-    scientificName: "Dioscorea bulbifera",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/9/9b/Chinese_yam_-_air-potato_-_dioscorea_polystachya_IMG_8134.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "pointed, heart-shaped leaves and bulbs growing on the vine.",
-      es: "Hojas puntiagudas en forma de corazón y bulbos creciendo en la enredadera.",
-    },
-  },
-  {
-    id: 2,
-    name: { en: "Coral Adisia", es: "Adisia Coral" },
-    scientificName: "Ardisia crenata",
-    picUrl:
-      "https://www.floridamuseum.ufl.edu/wp-content/uploads/sites/23/2017/03/Ardisia-crenata-mature-fruit.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "wavy (crenate) leaves and small red berries.",
-      es: "Hojas onduladas (crenadas) y pequeñas bayas rojas.",
-    },
-  },
-  {
-    id: 3,
-    name: { en: "Spanish Gold", es: "Oro Español" },
-    scientificName: "Sesbania punicea",
-    picUrl: "https://www.picturethisai.com/wiki-image/1080/215992612534845440.jpeg",
-    threatLevel: { en: "Low", es: "Baja" },
-    tip: {
-      en: "dangling red-orange flowers. Their seed pods may make a rattling sound.",
-      es: "Flores colgantes rojo-naranja. Sus vainas pueden hacer un sonido de traqueteo.",
-    },
-  },
-  {
-    id: 4,
-    name: { en: "Torpedo Grass", es: "Hierba Torpedo" },
-    scientificName: "Panicum repens",
-    picUrl: "https://fsus.ncbg.unc.edu/img/orig/jho/jho_01342f.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "silver-green leaves with defined points.",
-      es: "Hojas verde plateadas con puntas definidas.",
-    },
-  },
-  {
-    id: 5,
-    name: { en: "Wedelia", es: "Wedelia" },
-    scientificName: "Wedelia trilobata",
-    picUrl:
-      "https://apps.lucidcentral.org/pppw_v10/images/entities/wedelia_447/ronggy_sphagneticola_trilobata_in_singapore2017.jpg",
-    threatLevel: { en: "Moderate", es: "Moderada" },
-    tip: {
-      en: "flower heads resembling daisies and waxy, jagged leaves.",
-      es: "Capítulos florales parecidos a margaritas y hojas cerosas y dentadas.",
-    },
-  },
-  {
-    id: 6,
-    name: { en: "Caesar's Weed", es: "Hierba de César" },
-    scientificName: "Urena lobata",
-    picUrl: "https://static.inaturalist.org/photos/163617275/large.jpeg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "pink-purple flowers and small burs covered in hooked bristles.",
-      es: "Flores rosa-púrpura y pequeñas espinas cubiertas de cerdas ganchudas.",
-    },
-  },
-  {
-    id: 7,
-    name: { en: "Small Leaf Spiderwort", es: "Tradescantia de hojas pequeñas" },
-    scientificName: "Tradescantia fluminensis",
-    picUrl:
-      "https://plant-directory.ifas.ufl.edu/site/assets/files/1157/tradescantia_fluminensis_flowers.0x1800.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "white flowers with three petals on hairless green stems.",
-      es: "Flores blancas con tres pétalos sobre tallos verdes sin pelo.",
-    },
-  },
-  {
-    id: 8,
-    name: { en: "Wild Taro", es: "Taro Silvestre" },
-    scientificName: "Colocasia esculenta",
-    picUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a5/Taimo_Okinawa.jpg",
-    threatLevel: { en: "Moderate", es: "Moderada" },
-    tip: {
-      en: "leaves attached at the underside rather than the edge. Stalks can be several feet tall.",
-      es: "Hojas unidas por la parte inferior en lugar de por el borde. Los tallos pueden medir varios pies.",
-    },
-  },
-  {
-    id: 9,
-    name: { en: "Japanese Climbing Fern", es: "Helecho trepador japonés" },
-    scientificName: "Lygodium japonicum",
-    picUrl: "https://fsus.ncbg.unc.edu/img/orig/amc/amc_04402.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: { en: "symmetrical, triangular leaflets.", es: "Foliolos simétricos y triangulares." },
-  },
-  {
-    id: 10,
-    name: { en: "Chinese Tallow", es: "Almacigo Chino" },
-    scientificName: "Sapium sebiferum",
-    picUrl: "https://upload.wikimedia.org/wikipedia/commons/6/66/ChineseTallowSeedpods.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "wide heart shaped leaves with quickly tapering tips.",
-      es: "Hojas anchas en forma de corazón con puntas que se estrechan rápidamente.",
-    },
-  },
-  {
-    id: 11,
-    name: { en: "Camphor", es: "Alcanfor" },
-    scientificName: "Cinnamomum camphora",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/a/a2/Cinnamomum_camphora_Turramurra_railway.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "a distinct camphor smell from the twigs when crushed.",
-      es: "Un olor a alcanfor distintivo de las ramitas al triturarlas.",
-    },
-  },
-  {
-    id: 12,
-    name: { en: "Mimosa", es: "Mimosa" },
-    scientificName: "Albizia julibrissin",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/c/c5/2018-07-08_11_10_27_Rosea_Mimosa_blossoms_along_the_ramp_from_southbound_Interstate_95_(New_Jersey_Turnpike_Eastern_Spur)_to_westbound_Interstate_280_(Essex_Freeway)_in_the_New_Jersey_Meadowlands%2C_within_Kearny%2C_Hudson_County%2C_New_Jersey.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "tree with prominent pink-white flowers over a canopy shaped like an umbrella.",
-      es: "Árbol con flores rosadas-blancas prominentes sobre un dosel con forma de paraguas.",
-    },
-  },
-  {
-    id: 13,
-    name: { en: "Shrub Lantana", es: "Lantana Arbustiva" },
-    scientificName: "Lantana camara",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/a/ae/Starr_070221-4728_Lantana_montevidensis.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "red, orange, pink, or white densely packed flower clusters.",
-      es: "Racimos de flores densamente agrupadas en rojo, naranja, rosa o blanco.",
-    },
-  },
-  {
-    id: 14,
-    name: { en: "Boston Fern", es: "Helecho de Boston" },
-    scientificName: "Nephrolepis cordifolia",
-    picUrl: "https://upload.wikimedia.org/wikipedia/commons/3/30/Boston_Fern_(2873392811).png",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: { en: "potato-like growths on roots.", es: "Crecimientos tipo patata en las raíces." },
-  },
-  {
-    id: 15,
-    name: { en: "Winged Yam", es: "Ñame Alado" },
-    scientificName: "Dioscorea alata",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/9/96/Dioscorea_balcanica_BotGardBln310505.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "rough brown growths growing along the leaves and stem.",
-      es: "Crecimientos marrones rugosos a lo largo de las hojas y el tallo.",
-    },
-  },
-  {
-    id: 16,
-    name: { en: "Tropical Soda Apple", es: "Manzana Soda Tropical" },
-    scientificName: "Solanum viarum",
-    picUrl: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Solanum_viarum_fruit.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "spines growing along stem and fruits resembling miniature yellow or green watermelons.",
-      es: "Espinas a lo largo del tallo y frutos que parecen mini sandías amarillas o verdes.",
-    },
-  },
-  {
-    id: 17,
-    name: { en: "Cogon Grass", es: "Hierba Cogon" },
-    scientificName: "Imperata cylindrica",
-    picUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/5/51/Imperata_cylindrica_tigaya_colony.jpg",
-    threatLevel: { en: "Significant", es: "Significativa" },
-    tip: {
-      en: "large white cylindrical plumes appearing during the spring season.",
-      es: "Grandes penachos cilíndricos blancos que aparecen durante la primavera.",
-    },
-  },
-];
+/** The plant name and tip in the chosen language */
+function localize(plant: Plant, lang: Language) {
+  return lang === "es" ? plant.es : { name: plant.name, tip: plant.tip };
+}
 
 function threatBadgeClasses(level: ThreatLevel) {
   switch (level) {
@@ -258,7 +67,7 @@ function InfoModal({
   lang: Language;
 }) {
   const [src, setSrc] = useState(plant.picUrl);
-  const levelEn = (plant.threatLevel.en as ThreatLevel) || "Low";
+  const { name, tip } = localize(plant, lang);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -282,7 +91,7 @@ function InfoModal({
       <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900">{plant.name[lang]}</p>
+            <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
             <p className="truncate text-xs italic text-slate-600">{plant.scientificName}</p>
           </div>
           <button
@@ -299,7 +108,7 @@ function InfoModal({
             <div className="relative aspect-[16/11] sm:aspect-auto sm:h-full">
               <img
                 src={src}
-                alt={plant.name[lang]}
+                alt={name}
                 className="h-full w-full object-cover"
                 onError={() => setSrc(FALLBACK_IMG)}
               />
@@ -308,13 +117,11 @@ function InfoModal({
             <div className="absolute left-4 top-4">
               <span
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${threatBadgeClasses(
-                  plant.threatLevel.en as ThreatLevel,
+                  plant.threatLevel,
                 )}`}
               >
-                <span
-                  className={`h-2 w-2 rounded-full ${threatDotClasses(plant.threatLevel.en as ThreatLevel)}`}
-                />
-                {plant.threatLevel[lang as keyof typeof plant.threatLevel]}{" "}
+                <span className={`h-2 w-2 rounded-full ${threatDotClasses(plant.threatLevel)}`} />
+                {THREAT_LABELS[plant.threatLevel][lang]}{" "}
                 {translations[lang as Language]?.guide?.threatLevel ?? "Threat level"}
               </span>
             </div>
@@ -330,7 +137,7 @@ function InfoModal({
                 {translations[lang]?.guide?.tip ??
                   (lang === "en" ? "Look for:" : "Identificar por:")}
               </span>{" "}
-              {plant.tip[lang]}
+              {tip}
             </p>
 
             <div className="mt-5 grid gap-3">
@@ -376,7 +183,7 @@ function InfoModal({
 
               <div className="flex flex-wrap gap-2 pt-1">
                 <Link
-                  href={`/submit?plant=${encodeURIComponent(plant.name[lang])}`}
+                  href={`/submit?plant=${encodeURIComponent(plant.name)}`}
                   className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
                   onClick={onClose}
                 >
@@ -402,8 +209,7 @@ function PlantCard({
   lang: Language;
 }) {
   const [src, setSrc] = useState(plant.picUrl);
-  console.log("lang:", lang);
-  console.log("translations[lang]:", translations[lang]);
+  const { name, tip } = localize(plant, lang);
 
   return (
     <div
@@ -412,12 +218,12 @@ function PlantCard({
       onClick={() => onOpenInfo(plant)}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpenInfo(plant)}
       className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-emerald-400"
-      title={`View info about ${plant.name[lang]}`}
+      title={`View info about ${name}`}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         <img
           src={src}
-          alt={plant.name[lang]}
+          alt={name}
           className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
           loading="lazy"
           onError={() => setSrc(FALLBACK_IMG)}
@@ -425,10 +231,10 @@ function PlantCard({
         <div className="absolute left-3 top-3">
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${threatBadgeClasses(
-              plant.threatLevel.en as ThreatLevel,
+              plant.threatLevel,
             )}`}
           >
-            {plant.threatLevel[lang]}{" "}
+            {THREAT_LABELS[plant.threatLevel][lang]}{" "}
             {translations[lang as Language]?.guide?.threatLevel ?? "Threat level"}
           </span>
         </div>
@@ -437,11 +243,11 @@ function PlantCard({
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 leading-snug">{plant.name[lang]}</h3>
+            <h3 className="text-lg font-bold text-slate-900 leading-snug">{name}</h3>
             <p className="text-sm italic text-slate-600">{plant.scientificName}</p>
           </div>
         </div>
-        <p className="mt-3 text-sm text-slate-600">{plant.tip[lang]}</p>
+        <p className="mt-3 text-sm text-slate-600">{tip}</p>
       </div>
     </div>
   );
@@ -462,18 +268,19 @@ export default function GuidePage() {
       Significant: 3,
     };
 
-    return PLANTS.filter((p) => {
-      const matchesThreat = threat === "All" ? true : p.threatLevel.en === threat;
-      const matchesQuery =
-        !q || p.name.en.toLowerCase().includes(q) || p.scientificName.toLowerCase().includes(q);
-      return matchesThreat && matchesQuery;
-    }).sort((a, b) => {
-      if (sort === "Name") return a.name[lang].localeCompare(b.name[lang]);
-      const d =
-        (threatRank[b.threatLevel.en as ThreatLevel] ?? 0) -
-        (threatRank[a.threatLevel.en as ThreatLevel] ?? 0);
-      return d !== 0 ? d : a.name[lang].localeCompare(b.name[lang]);
-    });
+    return plants
+      .filter((p) => {
+        const matchesThreat = threat === "All" ? true : p.threatLevel === threat;
+        const matchesQuery =
+          !q ||
+          [p.name, p.es.name, p.scientificName].some((text) => text.toLowerCase().includes(q));
+        return matchesThreat && matchesQuery;
+      })
+      .sort((a, b) => {
+        if (sort === "Name") return localize(a, lang).name.localeCompare(localize(b, lang).name);
+        const d = (threatRank[b.threatLevel] ?? 0) - (threatRank[a.threatLevel] ?? 0);
+        return d !== 0 ? d : localize(a, lang).name.localeCompare(localize(b, lang).name);
+      });
   }, [query, threat, sort, lang]);
 
   return (
@@ -554,13 +361,13 @@ export default function GuidePage() {
         <div className="mt-8">
           <p className="text-sm text-slate-600">
             {lang === "en"
-              ? `Showing ${filtered.length} of ${PLANTS.length}`
-              : `Mostrando ${filtered.length} de ${PLANTS.length}`}
+              ? `Showing ${filtered.length} of ${plants.length}`
+              : `Mostrando ${filtered.length} de ${plants.length}`}
           </p>
 
           <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (
-              <PlantCard key={p.id} plant={p} onOpenInfo={setActivePlant} lang={lang} />
+              <PlantCard key={p.name} plant={p} onOpenInfo={setActivePlant} lang={lang} />
             ))}
           </div>
 

@@ -40,6 +40,14 @@ drop table if exists public.sightings;
 -- created_by is shown publicly; older rows fell back to the user's email address
 update public.submissions set created_by = 'Observer' where created_by like '%@%';
 
+-- Early versions of the plant list (now src/data/plants.ts) misspelled some names
+update public.submissions set plant_name = 'Coral Ardisia' where plant_name = 'Coral Adicea';
+update public.submissions set plant_name = 'Caesar''s Weed' where plant_name = 'Caeser''s Weed';
+update public.submissions set scientific_name = 'Ardisia crenata' where scientific_name = 'Ardisia Crenata';
+update public.submissions set scientific_name = 'Sesbania punicea' where scientific_name = 'Sesbania Punicea';
+update public.submissions set scientific_name = 'Wedelia trilobata' where scientific_name = 'Wedelia Trilobata';
+update public.submissions set scientific_name = 'Urena lobata' where scientific_name = 'Urena Lobata';
+
 -- ---------------------------------------------------------------------------
 -- follows (observer follow graph used by /api/dashboard)
 -- ---------------------------------------------------------------------------

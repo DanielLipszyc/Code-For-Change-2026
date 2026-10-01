@@ -12,6 +12,15 @@ export const MAX_NOTES_LENGTH = 1000;
 const UNKNOWN_ALIASES = new Set(["unknown", "unknown plant"]);
 
 /**
+ * Misspellings used by earlier versions of the plant list, mapped to the
+ * current name, so editing an older submission still works.
+ */
+const LEGACY_NAMES: Record<string, string> = {
+  "coral adicea": "coral ardisia",
+  "caeser's weed": "caesar's weed",
+};
+
+/**
  * Resolve a client-supplied plant name to a species from the plant list.
  * The scientific name always comes from the list, never from the client.
  * Returns null if the name isn't a known species or "Unknown".
@@ -21,11 +30,12 @@ export function resolvePlant(
 ): { plantName: string; scientificName: string | null } | null {
   if (typeof name !== "string") return null;
 
-  const key = name.trim().toLowerCase();
-  if (UNKNOWN_ALIASES.has(key)) {
+  const trimmed = name.trim().toLowerCase();
+  if (UNKNOWN_ALIASES.has(trimmed)) {
     return { plantName: UNKNOWN_PLANT, scientificName: null };
   }
 
+  const key = LEGACY_NAMES[trimmed] ?? trimmed;
   const plant = plants.find((p) => p.name.toLowerCase() === key);
   return plant ? { plantName: plant.name, scientificName: plant.scientificName } : null;
 }
