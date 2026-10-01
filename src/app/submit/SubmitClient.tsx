@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
+import { MAX_NOTES_LENGTH } from "@/lib/submissionInput";
+import { PLANT_ID_ENABLED } from "@/lib/features";
 
 interface AIPrediction {
   prediction: string;
@@ -43,17 +45,6 @@ const compressImage = (
     img.src = dataUrl;
   });
 };
-
-function toSpeciesId(commonName: string): string | null {
-  const name = commonName.trim();
-  if (!name || name.toLowerCase() === "unknown" || name.toLowerCase() === "unknown plant") {
-    return null;
-  }
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/[^a-z0-9_]/g, "");
-}
 
 export default function SubmitClient() {
   const router = useRouter();
@@ -101,6 +92,8 @@ export default function SubmitClient() {
   }, [showSuccess, router]);
 
   const identifyPlant = async (imageData: string) => {
+    if (!PLANT_ID_ENABLED) return;
+
     setIsIdentifying(true);
     setAiPrediction(null);
 
@@ -114,8 +107,12 @@ export default function SubmitClient() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data: AIPrediction = await response.json();
         setAiPrediction(data);
+        // Pre-select the AI's match only if the user hasn't chosen a species yet
+        if (data.isKnownPlant) {
+          setPlantName((current) => (current && current !== "Unknown" ? current : data.prediction));
+        }
       } else {
         console.error("Failed to identify plant");
       }
@@ -191,31 +188,20 @@ export default function SubmitClient() {
       // (bigger than AI compression is ok, but keep it reasonable)
       const imageData = await compressImage(selectedImage, 800, 0.7);
 
-      const chosenPlantName = aiPrediction?.prediction || plantName || "Unknown Plant";
-
+      // The user's selection is what gets saved; the AI only pre-selects a suggestion.
+      // The server looks up the scientific name from the plant list.
       const submission = {
-        // Your app fields
-        plantName: chosenPlantName,
-        scientificName: aiPrediction?.scientificName || undefined,
-
-        // Optional stable id field (handy for filtering later)
-        speciesId: toSpeciesId(chosenPlantName),
+        plantName: plantName || "Unknown Plant",
 
         // Location
         lat: position.coords.latitude,
         lng: position.coords.longitude,
         locationAccuracyM: position.coords.accuracy,
 
-        // Times
-        observedAt: new Date().toISOString(),
-        reportedAt: new Date().toISOString(),
-
         // Notes + image
         notes: notes || undefined,
         imageData, // ✅ stored in the database as a base64 data URL
 
-        // Moderation default (if you want it)
-        status: "pending",
         anonymous: submitAnonymously,
       };
 
@@ -227,7 +213,8 @@ export default function SubmitClient() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || "Failed to save submission");
+        alert(err?.error || "Unable to submit. Please try again.");
+        return;
       }
 
       // Show success notification, then redirect to map
@@ -373,7 +360,7 @@ export default function SubmitClient() {
           </div>
 
           {/* AI Identification */}
-          {selectedImage && (
+          {PLANT_ID_ENABLED && selectedImage && (
             <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 🤖 AI Plant Identification
@@ -416,10 +403,21 @@ export default function SubmitClient() {
                           ✅ Your selection matches the AI prediction!
                         </p>
                       ) : (
-                        <p className="text-orange-700 font-medium">
-                          ⚠️ Your selection ({plantName}) differs from AI prediction (
-                          {aiPrediction.prediction})
-                        </p>
+                        <div className="space-y-2">
+                          <p className="text-orange-700 font-medium">
+                            ⚠️ Your selection ({plantName}) differs from AI prediction (
+                            {aiPrediction.prediction}). Your selection will be saved.
+                          </p>
+                          {aiPrediction.isKnownPlant && (
+                            <button
+                              type="button"
+                              onClick={() => setPlantName(aiPrediction.prediction)}
+                              className="text-sm font-semibold text-[#136207] underline"
+                            >
+                              Use AI suggestion instead
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -477,6 +475,7 @@ export default function SubmitClient() {
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                maxLength={MAX_NOTES_LENGTH}
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors resize-none"
                 placeholder="Describe the habitat, water conditions, nearby plants..."

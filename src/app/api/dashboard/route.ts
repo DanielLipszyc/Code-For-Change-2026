@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabase, toSubmission } from "@/lib/supabase";
+import { getPublicDisplayName } from "@/lib/auth";
 
 const DASHBOARD_CACHE_TTL_MS = 60_000;
 const dashboardCache = new Map<string, { expiresAt: number; payload: DashboardPayload }>();
-const demoFollowing = new Set(["obs-1", "obs-3"]);
 
 type DashboardPayload = {
   user: { id: string; name: string };
@@ -54,8 +54,7 @@ async function getUserName(userId: string) {
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-    return fullName || user.emailAddresses[0]?.emailAddress || "Observer";
+    return getPublicDisplayName(user, { includeLastName: true });
   } catch {
     return "Observer";
   }
@@ -69,10 +68,9 @@ async function getUserMap(userIds: string[]) {
     userIds.map(async (userId) => {
       try {
         const user = await client.users.getUser(userId);
-        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
         return {
           id: userId,
-          name: fullName || user.emailAddresses[0]?.emailAddress || "Observer",
+          name: getPublicDisplayName(user, { includeLastName: true }),
           imageUrl: user.imageUrl,
         };
       } catch {
@@ -135,39 +133,44 @@ const fallbackDashboard: DashboardPayload = {
 
 export async function GET(request: NextRequest) {
   try {
-    const isDemoMode = request.nextUrl.searchParams.get("demo") === "1" || request.cookies.get("demo_user")?.value === "1";
+    const authResult = await auth();
+    const currentUserId = authResult.userId;
 
-    if (isDemoMode) {
-      const demoUser = { id: "demo-user", name: "Demo Observer" };
-      const demoObservers = [
-        { id: "obs-1", name: "Mara Rivers", focus: "Wetland grasses", sightings: 18, following: demoFollowing.has("obs-1"), avatar: "MR" },
-        { id: "obs-2", name: "Theo Palm", focus: "Invasive trees", sightings: 13, following: false, avatar: "TP" },
-        { id: "obs-3", name: "Iris North", focus: "Aquatic plants", sightings: 9, following: demoFollowing.has("obs-3"), avatar: "IN" },
-      ];
-
-      const demoPayload: DashboardPayload = {
-        user: demoUser,
-        stats: [
-          { label: "Observations", value: "12", detail: "3 approved", tone: "emerald" },
-          { label: "Species logged", value: "7", detail: "2 new IDs", tone: "sky" },
-          { label: "Community rank", value: "#12", detail: "Building momentum", tone: "orange" },
-          { label: "Streak", value: "4d", detail: "Active field days", tone: "violet" },
-        ],
-        observers: demoObservers,
-        achievements: [
-          { title: "Trail Recon", detail: "3 of 5 field checks logged", progress: 60, icon: "🥾" },
-          { title: "Wetland Watcher", detail: "7 of 12 water-site reports", progress: 58, icon: "💧" },
-          { title: "Plant Detective", detail: "7 of 18 species confirmed", progress: 39, icon: "🔍" },
-        ],
-        feed: [
-          { title: "Mara Rivers logged cattail marsh observations", meta: "Today · 3 reports", type: "species" },
-          { title: "Community challenge: map invasive stands", meta: "2 days ago · 18 observers active", type: "challenge" },
-          { title: "You logged a new wetland report", meta: "3 days ago · approved", type: "connection" },
-        ],
-      };
-
-      return NextResponse.json(demoPayload);
+    if (!currentUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const payload: DashboardPayload = {
+      user: { id: currentUserId, name: "Observer" },
+      stats: [
+        { label: "Observations", value: "12", detail: "3 approved", tone: "emerald" },
+        { label: "Species logged", value: "7", detail: "2 new IDs", tone: "sky" },
+        { label: "Community rank", value: "#12", detail: "Building momentum", tone: "orange" },
+        { label: "Streak", value: "4d", detail: "Active field days", tone: "violet" },
+      ],
+      observers: [
+        { id: "obs-1", name: "Mara Rivers", focus: "Wetland grasses", sightings: 18, following: false, avatar: "MR" },
+        { id: "obs-2", name: "Theo Palm", focus: "Invasive trees", sightings: 13, following: false, avatar: "TP" },
+        { id: "obs-3", name: "Iris North", focus: "Aquatic plants", sightings: 9, following: false, avatar: "IN" },
+      ],
+      achievements: [
+        { title: "Trail Recon", detail: "3 of 5 field checks logged", progress: 60, icon: "🥾" },
+        { title: "Wetland Watcher", detail: "7 of 12 water-site reports", progress: 58, icon: "💧" },
+        { title: "Plant Detective", detail: "7 of 18 species confirmed", progress: 39, icon: "🔍" },
+      ],
+      feed: [
+        { title: "Mara Rivers logged cattail marsh observations", meta: "Today · 3 reports", type: "species" },
+        { title: "Community challenge: map invasive stands", meta: "2 days ago · 18 observers active", type: "challenge" },
+        { title: "You logged a new wetland report", meta: "3 days ago · approved", type: "connection" },
+      ],
+    };
+
+    return NextResponse.json(payload);
+  } catch (error) {
+    console.error("Error fetching dashboard:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
 
     const authResult = await auth();
     const currentUserId = authResult.userId;
@@ -201,9 +204,13 @@ export async function GET(request: NextRequest) {
     const submissions = (submissionRows ?? []).map(toSubmission);
 
     const currentUserSubmissions = submissions.filter((submission) => submission.userId === currentUserId);
+    // Other people's pending reports haven't been reviewed; keep them out of the observers list and feed
+    const visibleSubmissions = submissions.filter(
+      (submission) => submission.status === "approved" || submission.userId === currentUserId
+    );
     const uniqueObserverIds = Array.from(
       new Set(
-        submissions
+        visibleSubmissions
           .map((submission) => submission.userId)
           .filter((userId): userId is string => Boolean(userId) && userId !== currentUserId)
       )
@@ -238,7 +245,7 @@ export async function GET(request: NextRequest) {
 
     const observers: DashboardPayload["observers"] = uniqueObserverIds
       .map((observerId) => {
-        const observerEntries = submissions.filter((submission) => submission.userId === observerId);
+        const observerEntries = visibleSubmissions.filter((submission) => submission.userId === observerId);
         const observerInfo = userMap.get(observerId) ?? { id: observerId, name: "Observer", imageUrl: "" };
         const focus = typeof observerEntries[0]?.plantName === "string" ? observerEntries[0].plantName : "Field tracking";
 
@@ -303,7 +310,7 @@ export async function GET(request: NextRequest) {
       },
     ];
 
-    const feed: DashboardPayload["feed"] = submissions.slice(0, 3).map((submission) => {
+    const feed = visibleSubmissions.slice(0, 3).map((submission) => {
       const observerName = submission.createdBy || (submission.userId ? "Observer" : "Community");
       const submissionName = submission.plantName || "plant report";
       const eventDate = toSafeDate(submission.createdAt ?? submission.timestamp ?? new Date()) ?? new Date();
@@ -360,24 +367,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const isDemoMode = request.nextUrl.searchParams.get("demo") === "1" || request.cookies.get("demo_user")?.value === "1";
-
-    if (isDemoMode) {
-      const { targetUserId } = await request.json();
-      if (!targetUserId || targetUserId === "demo-user") {
-        return NextResponse.json({ error: "A valid observer ID is required" }, { status: 400 });
-      }
-
-      const nextFollowing = !demoFollowing.has(targetUserId);
-      if (nextFollowing) {
-        demoFollowing.add(targetUserId);
-      } else {
-        demoFollowing.delete(targetUserId);
-      }
-
-      return NextResponse.json({ following: nextFollowing });
-    }
-
     const authResult = await auth();
     const currentUserId = authResult.userId;
 
