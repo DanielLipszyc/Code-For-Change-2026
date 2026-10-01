@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabase, toSubmission } from "@/lib/supabase";
 import { getPublicDisplayName } from "@/lib/auth";
+import { plants } from "@/data/plants";
 
 async function getUserName(userId: string) {
   try {
@@ -59,60 +60,6 @@ function toSafeDate(value: unknown): Date | null {
   return null;
 }
 
-const fallbackDashboard = {
-  user: { id: "local-user", name: "Observer" },
-  stats: [
-    { label: "Observations", value: "12", detail: "3 approved", tone: "emerald" },
-    { label: "Species logged", value: "7", detail: "2 new IDs", tone: "sky" },
-    { label: "Community rank", value: "#12", detail: "Building momentum", tone: "orange" },
-    { label: "Streak", value: "4d", detail: "Active field days", tone: "violet" },
-  ],
-  observers: [
-    {
-      id: "obs-1",
-      name: "Mara Rivers",
-      focus: "Wetland grasses",
-      sightings: 18,
-      following: true,
-      avatar: "MR",
-    },
-    {
-      id: "obs-2",
-      name: "Theo Palm",
-      focus: "Invasive trees",
-      sightings: 13,
-      following: false,
-      avatar: "TP",
-    },
-    {
-      id: "obs-3",
-      name: "Iris North",
-      focus: "Aquatic plants",
-      sightings: 9,
-      following: true,
-      avatar: "IN",
-    },
-  ],
-  achievements: [
-    { title: "Trail Recon", detail: "3 of 5 field checks logged", progress: 60, icon: "🥾" },
-    { title: "Wetland Watcher", detail: "7 of 12 water-site reports", progress: 58, icon: "💧" },
-    { title: "Plant Detective", detail: "7 of 18 species confirmed", progress: 39, icon: "🔍" },
-  ],
-  feed: [
-    {
-      title: "Mara Rivers logged cattail marsh observations",
-      meta: "Today · 3 reports",
-      type: "species",
-    },
-    {
-      title: "Community challenge: map invasive stands",
-      meta: "2 days ago · 18 observers active",
-      type: "challenge",
-    },
-    { title: "You logged a new wetland report", meta: "3 days ago · approved", type: "connection" },
-  ],
-};
-
 export async function GET() {
   try {
     const authResult = await auth();
@@ -159,12 +106,11 @@ export async function GET() {
     const approvedCount = currentUserSubmissions.filter(
       (submission) => submission.status === "approved",
     ).length;
+    // Listed species only: "Unknown Plant" has no scientific name
     const uniqueSpecies = new Set(
-      currentUserSubmissions
-        .map((submission) => submission.scientificName || submission.plantName)
-        .filter(Boolean),
+      currentUserSubmissions.map((submission) => submission.scientificName).filter(Boolean),
     ).size;
-    const recentDays = new Set(
+    const fieldDays = new Set(
       currentUserSubmissions
         .map((submission) => {
           const createdAt = submission.createdAt ?? submission.timestamp;
@@ -174,6 +120,19 @@ export async function GET() {
         })
         .filter(Boolean),
     ).size;
+
+    // Rank by approved reports: 1 + the number of observers with more than you
+    const approvedByObserver = new Map<string, number>();
+    for (const submission of submissions) {
+      if (submission.status === "approved" && submission.userId) {
+        approvedByObserver.set(
+          submission.userId,
+          (approvedByObserver.get(submission.userId) ?? 0) + 1,
+        );
+      }
+    }
+    const rank =
+      1 + Array.from(approvedByObserver.values()).filter((count) => count > approvedCount).length;
 
     const observers = uniqueObserverIds
       .map((observerId) => {
@@ -209,22 +168,23 @@ export async function GET() {
       {
         label: "Species logged",
         value: uniqueSpecies.toString(),
-        detail: `${Math.max(uniqueSpecies - 2, 0)} new IDs`,
+        detail: `of ${plants.length} tracked species`,
         tone: getActivityTone("Species"),
       },
       {
         label: "Community rank",
-        value: `#${Math.max(8, 30 - Math.min(currentTotal, 22))
-          .toString()
-          .padStart(2, "0")}`,
-        detail: currentTotal >= 10 ? "Top 15%" : "Building momentum",
+        value: approvedCount > 0 ? `#${rank}` : "—",
+        detail:
+          approvedCount > 0
+            ? `of ${approvedByObserver.size} observers`
+            : "Get a report approved to rank",
         tone: getActivityTone("Rank"),
       },
       {
-        label: "Streak",
-        value: `${Math.max(recentDays, 1)}d`,
-        detail: recentDays > 1 ? "Active field days" : "Start your streak",
-        tone: getActivityTone("Streak"),
+        label: "Field days",
+        value: fieldDays.toString(),
+        detail: "Days with a report",
+        tone: getActivityTone("Field days"),
       },
     ];
 
@@ -237,14 +197,14 @@ export async function GET() {
       },
       {
         title: "Wetland Watcher",
-        detail: `${Math.min(approvedCount, 12)} of 12 water-site reports`,
+        detail: `${Math.min(approvedCount, 12)} of 12 approved reports`,
         progress: Math.min((approvedCount / 12) * 100, 100),
         icon: "💧",
       },
       {
         title: "Plant Detective",
-        detail: `${Math.min(uniqueSpecies, 18)} of 18 species confirmed`,
-        progress: Math.min((uniqueSpecies / 18) * 100, 100),
+        detail: `${uniqueSpecies} of ${plants.length} species found`,
+        progress: (uniqueSpecies / plants.length) * 100,
         icon: "🔍",
       },
     ];
@@ -274,28 +234,8 @@ export async function GET() {
       achievements,
       feed,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching dashboard data:", error);
-
-    const isMissingTable =
-      error?.code === "PGRST205" ||
-      error?.code === "42P01" ||
-      error?.code === "42703" ||
-      (typeof error?.message === "string" &&
-        (error.message.includes("Could not find the table") ||
-          error.message.includes("does not exist") ||
-          error.message.includes("schema cache")));
-
-    if (isMissingTable) {
-      return NextResponse.json({
-        ...fallbackDashboard,
-        user: {
-          id: (await auth()).userId || "local-user",
-          name: (await getUserName((await auth()).userId || "local-user")) || "Observer",
-        },
-      });
-    }
-
     return NextResponse.json({ error: "Failed to load dashboard" }, { status: 500 });
   }
 }
