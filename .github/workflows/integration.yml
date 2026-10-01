@@ -31,6 +31,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify Clerk credentials are configured
+        run: |
+          test -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" || { echo "::error::Missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY Actions secret"; exit 1; }
+          test -n "$CLERK_SECRET_KEY" || { echo "::error::Missing CLERK_SECRET_KEY Actions secret"; exit 1; }
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
       - name: Review dependency changes
         if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
