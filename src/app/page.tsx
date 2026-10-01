@@ -58,14 +58,6 @@ export default function Home() {
       <section className="relative overflow-hidden text-white">
         {/* background blobs */}
         <div className="pointer-events-none absolute inset-0 parallax">
-          {/* <img style = {{
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
-            filter: "brightness(.5)"
-          }} src="/forest.jpg" alt="forest"/> */}
           <div className="absolute inset-0 bg-black/30" />
         </div>
 

@@ -21,8 +21,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom stays enabled for accessibility (WCAG 1.4.4); the map handles its own gestures
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f0fdf4" },
     { media: "(prefers-color-scheme: dark)", color: "#14532d" },

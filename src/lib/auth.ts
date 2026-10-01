@@ -82,19 +82,3 @@ export async function canDeleteSubmission(userId: string, submissionId: string):
   }
   return isOwner("submissions", userId, submissionId);
 }
-
-/**
- * Set user role (server-side only, for admin promotion)
- * This should only be called from admin scripts or admin-protected routes
- */
-export async function setUserRole(userId: string, role: UserRole): Promise<void> {
-  try {
-    const client = await clerkClient();
-    await client.users.updateUserMetadata(userId, {
-      publicMetadata: { role },
-    });
-  } catch (error) {
-    console.error("Error setting user role:", error);
-    throw error;
-  }
-}

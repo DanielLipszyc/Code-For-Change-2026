@@ -57,8 +57,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Plant identification is turned off" }, { status: 404 });
   }
 
-  console.log("=== Plant identification API called ===");
-
   // Checked here as well as in middleware, so a middleware bypass can't spend Gemini quota
   const { userId } = await auth();
   if (!userId) {

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import "leaflet/dist/leaflet.css";
+import type { GeoJsonObject } from "geojson";
+import alachuaBoundary from "@/data/alachua-boundary.json";
 import { UserRole } from "@/types/auth";
 
 interface Submission {
@@ -21,8 +23,7 @@ interface Submission {
   status?: "pending" | "approved";
 }
 
-let alachuaJson = require("./alachua.json");
-var mapStyle = {
+const countyBorderStyle = {
   color: "#000000",
   fillOpacity: 0,
 };
@@ -370,7 +371,9 @@ export default function Map() {
           })
           .addTo(map.current);
 
-        L.geoJSON(alachuaJson, { style: mapStyle }).addTo(map.current);
+        L.geoJSON(alachuaBoundary as GeoJsonObject, { style: countyBorderStyle }).addTo(
+          map.current,
+        );
 
         // ✅ Add markers ONLY for displayed submissions
         displayedSubmissions.forEach((submission) => {
