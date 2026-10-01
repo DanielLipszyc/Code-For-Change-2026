@@ -38,7 +38,10 @@ next-env.d.ts
 
 # IDE
 .idea
-.vscode
+# Share the workspace settings and recommended extensions; keep the rest personal
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 *.swp
 *.swo
 
