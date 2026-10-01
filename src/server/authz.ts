@@ -1,5 +1,5 @@
 import { clerkClient } from "@clerk/nextjs/server";
-import { supabase, isValidId } from "./supabase";
+import { supabase, isValidId } from "./db";
 import { UserRole } from "@/types/auth";
 
 /**

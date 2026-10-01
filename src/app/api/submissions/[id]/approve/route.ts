@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { supabase, isValidId } from "@/lib/supabase";
-import { isAdmin } from "@/lib/auth";
+import { supabase, isValidId } from "@/server/db";
+import { isAdmin } from "@/server/authz";
 
 /**
  * POST /api/submissions/[id]/approve

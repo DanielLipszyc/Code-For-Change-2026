@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
-vi.mock("./supabase", () => ({ supabase: { rpc } }));
+vi.mock("./db", () => ({ supabase: { rpc } }));
 
 import { anonymousKey, isWithinRateLimit, tooManyRequests } from "./rateLimit";
 

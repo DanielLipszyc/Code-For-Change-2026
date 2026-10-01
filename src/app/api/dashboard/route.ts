@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { supabase, toSubmission } from "@/lib/supabase";
-import { getPublicDisplayName } from "@/lib/auth";
+import { supabase, toSubmission } from "@/server/db";
+import { getPublicDisplayName } from "@/server/authz";
 import { plants } from "@/data/plants";
 
 async function getUserName(userId: string) {

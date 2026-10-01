@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getUserRole } from "@/lib/auth";
+import { getUserRole } from "@/server/authz";
 
 /**
  * GET /api/users/me

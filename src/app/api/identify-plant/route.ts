@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { plants } from "@/data/plants";
 import { UNKNOWN_PLANT } from "@/lib/submissionInput";
-import { LIMITS, isWithinRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { LIMITS, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
 import { PLANT_ID_ENABLED } from "@/lib/features";
 
 interface ModalScore {

@@ -62,7 +62,7 @@ create table if not exists public.follows (
 create index if not exists follows_follower_id_idx on public.follows (follower_id);
 
 -- ---------------------------------------------------------------------------
--- rate_limits (fixed-window request counters used by src/lib/rateLimit.ts)
+-- rate_limits (fixed-window request counters used by src/server/rateLimit.ts)
 -- key is e.g. "submit:user:<clerk id>" or "submit:ip:<sha256 of IP>"
 -- ---------------------------------------------------------------------------
 create table if not exists public.rate_limits (

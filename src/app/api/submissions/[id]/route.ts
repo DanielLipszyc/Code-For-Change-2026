@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { supabase, isValidId, toSubmission } from "@/lib/supabase";
-import { canEditSubmission, canDeleteSubmission, isAdmin } from "@/lib/auth";
+import { supabase, isValidId, toSubmission } from "@/server/db";
+import { canEditSubmission, canDeleteSubmission, isAdmin } from "@/server/authz";
 import { parseNotes, resolvePlant } from "@/lib/submissionInput";
 
 /**

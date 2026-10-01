@@ -9,12 +9,12 @@ vi.mock("@clerk/nextjs/server", () => ({
   clerkClient: async () => ({ users: { getUser } }),
 }));
 
-vi.mock("./supabase", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("./supabase")>()),
+vi.mock("./db", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./db")>()),
   supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) },
 }));
 
-import { canDeleteSubmission, canEditSubmission, getPublicDisplayName, getUserRole } from "./auth";
+import { canDeleteSubmission, canEditSubmission, getPublicDisplayName, getUserRole } from "./authz";
 
 const OWNER = "user_owner";
 const OTHER = "user_other";

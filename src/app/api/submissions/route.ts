@@ -1,9 +1,9 @@
-import { supabase, toSubmission } from "@/lib/supabase";
+import { supabase, toSubmission } from "@/server/db";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getPublicDisplayName, getUserRole, isAdmin } from "@/lib/auth";
+import { getPublicDisplayName, getUserRole, isAdmin } from "@/server/authz";
 import { parseImageData, parseNotes, resolvePlant } from "@/lib/submissionInput";
-import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
 
 const CLERK_ID = /^[A-Za-z0-9_]+$/;
 

@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { supabase, isValidId, toSubmission } from "@/lib/supabase";
-import { canEditSubmission } from "@/lib/auth";
+import { supabase, isValidId, toSubmission } from "@/server/db";
+import { canEditSubmission } from "@/server/authz";
 import EditSubmissionClient from "./EditSubmissionClient";
 
 interface PageProps {

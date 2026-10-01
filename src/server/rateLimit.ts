@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
-import { supabase } from "./supabase";
+import { supabase } from "./db";
 
 const HOUR = 60 * 60;
 
