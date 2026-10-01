@@ -4,6 +4,9 @@ import { useEffect, useId, useRef } from "react";
 
 const FOCUSABLE = "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
 
+/** Open dialogs, innermost last. Escape closes only the innermost one. */
+const openDialogs: object[] = [];
+
 interface DialogProps {
   open: boolean;
   onClose: () => void;
@@ -18,8 +21,9 @@ interface DialogProps {
 }
 
 /**
- * A modal dialog. Escape or a click outside closes it. Focus moves into the
- * dialog when it opens and returns to where it was when it closes.
+ * A modal dialog. Escape or a click outside closes it (only the innermost one
+ * when dialogs are stacked, e.g. a confirmation over a details view). Focus
+ * moves into the dialog when it opens and returns to where it was when it closes.
  */
 export function Dialog({
   open,
@@ -42,16 +46,19 @@ export function Dialog({
   useEffect(() => {
     if (!open) return;
 
+    const self = {};
+    openDialogs.push(self);
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const panel = panelRef.current;
     (panel?.querySelector<HTMLElement>(FOCUSABLE) ?? panel)?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCloseRef.current();
+      if (event.key === "Escape" && openDialogs.at(-1) === self) onCloseRef.current();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      openDialogs.splice(openDialogs.indexOf(self), 1);
       previouslyFocused?.focus();
     };
   }, [open]);
