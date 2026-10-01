@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
-import { MAX_NOTES_LENGTH } from "@/lib/submissionInput";
+import { MAX_NOTES_LENGTH } from "@/lib/limits";
 import { PLANT_ID_ENABLED } from "@/lib/features";
 import { offlineStorage } from "@/lib/offlineStorage";
 

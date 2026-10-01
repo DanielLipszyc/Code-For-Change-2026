@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase, isValidId, toSubmission } from "@/server/db";
 import { canEditSubmission, canDeleteSubmission, isAdmin } from "@/server/authz";
-import { parseNotes, resolvePlant } from "@/lib/submissionInput";
+import { updateSubmissionSchema } from "@/lib/schemas";
+import { MAX_BODY_BYTES, parseJsonBody } from "@/server/http";
 
 /**
  * GET /api/submissions/[id]
@@ -77,39 +78,21 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       );
     }
 
-    const body = await request.json();
+    // Only the plant and notes can be edited; the photo, location and
+    // scientific name are never taken from the client
+    const parsed = await parseJsonBody(request, updateSubmissionSchema, MAX_BODY_BYTES.small);
+    if (!parsed.ok) return parsed.response;
+    const { plantName, notes } = parsed.data;
 
-    // Build update object (only the plant and notes can be edited; the photo,
-    // location and scientific name are not taken from the client)
     const updateFields: Record<string, string | null> = {
       updated_at: new Date().toISOString(),
     };
-
-    if (body.plantName !== undefined) {
-      const plant = resolvePlant(body.plantName);
-      if (!plant) {
-        return NextResponse.json(
-          { error: "Plant name must be one of the listed species or Unknown" },
-          { status: 400 },
-        );
-      }
-      updateFields.plant_name = plant.plantName;
-      updateFields.scientific_name = plant.scientificName;
+    if (plantName) {
+      updateFields.plant_name = plantName.plantName;
+      updateFields.scientific_name = plantName.scientificName;
     }
-
-    if (body.notes !== undefined) {
-      const notes = parseNotes(body.notes);
-      if ("error" in notes) {
-        return NextResponse.json({ error: notes.error }, { status: 400 });
-      }
-      updateFields.notes = notes.value;
-    }
-
-    if (!("plant_name" in updateFields) && !("notes" in updateFields)) {
-      return NextResponse.json(
-        { error: "Nothing to update: send plantName and/or notes" },
-        { status: 400 },
-      );
+    if (notes !== undefined) {
+      updateFields.notes = notes;
     }
 
     // An edited report must be reviewed again, otherwise an approved report

@@ -2,27 +2,9 @@ import { supabase, toSubmission } from "@/server/db";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getPublicDisplayName, getUserRole, isAdmin } from "@/server/authz";
-import { parseImageData, parseNotes, resolvePlant } from "@/lib/submissionInput";
+import { CLERK_USER_ID, createSubmissionSchema } from "@/lib/schemas";
+import { MAX_BODY_BYTES, parseJsonBody } from "@/server/http";
 import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
-
-const CLERK_ID = /^[A-Za-z0-9_]+$/;
-
-export interface Submission {
-  _id?: string;
-  plantName: string;
-  scientificName?: string;
-  lat: number;
-  lng: number;
-  locationAccuracyM?: number; // GPS accuracy radius in meters
-  timestamp: number;
-  notes?: string;
-  imageData?: string; // Base64 encoded image
-  userId?: string; // Clerk user ID (optional for legacy submissions)
-  createdBy?: string; // User's display name
-  createdAt?: Date;
-  updatedAt?: Date;
-  status?: "pending" | "approved"; // Approval status (pending = red for admins, approved = green for all)
-}
 
 // GET - Fetch submissions from Supabase
 // Admins get everything, including pending reports awaiting review.
@@ -41,7 +23,7 @@ export async function GET() {
     if (!admin) {
       // Clerk IDs are [A-Za-z0-9_]; anything else must not reach the filter string
       query =
-        userId && CLERK_ID.test(userId)
+        userId && CLERK_USER_ID.test(userId)
           ? query.or(`status.eq.approved,user_id.eq.${userId}`)
           : query.eq("status", "approved");
     }
@@ -66,10 +48,13 @@ export async function GET() {
 // Requires authentication unless the submission is marked anonymous
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await auth();
-    const userId = authResult.userId;
-    const data: Submission & { anonymous?: boolean } = await request.json();
-    const isAnonymous = Boolean(data.anonymous);
+    const { userId } = await auth();
+
+    // Only known species (or "Unknown"), bounded notes and inline photos are stored
+    const parsed = await parseJsonBody(request, createSubmissionSchema, MAX_BODY_BYTES.withPhoto);
+    if (!parsed.ok) return parsed.response;
+    const data = parsed.data;
+    const isAnonymous = data.anonymous;
 
     if (!userId && !isAnonymous) {
       return NextResponse.json(
@@ -96,53 +81,18 @@ export async function POST(request: NextRequest) {
       userRole = await getUserRole(userId);
     }
 
-    // Validate required fields
-    if (!data.plantName || typeof data.lat !== "number" || typeof data.lng !== "number") {
-      return NextResponse.json(
-        { error: "Missing required fields: plantName, lat, lng" },
-        { status: 400 },
-      );
-    }
-
-    // Only known species (or "Unknown") and bounded notes are stored
-    const plant = resolvePlant(data.plantName);
-    if (!plant) {
-      return NextResponse.json(
-        { error: "Plant name must be one of the listed species or Unknown" },
-        { status: 400 },
-      );
-    }
-
-    const notes = parseNotes(data.notes);
-    if ("error" in notes) {
-      return NextResponse.json({ error: notes.error }, { status: 400 });
-    }
-
-    const image = parseImageData(data.imageData);
-    if ("error" in image) {
-      return NextResponse.json({ error: image.error }, { status: 400 });
-    }
-
-    // Rough Alachua County bounds check
-    if (data.lat < 29.3 || data.lat > 29.9 || data.lng < -82.7 || data.lng > -82.0) {
-      return NextResponse.json(
-        { error: "Location must be within Alachua County" },
-        { status: 400 },
-      );
-    }
-
     const { data: inserted, error } = await supabase
       .from("submissions")
       .insert({
-        plant_name: plant.plantName,
-        scientific_name: plant.scientificName,
+        plant_name: data.plantName.plantName,
+        scientific_name: data.plantName.scientificName,
         lat: data.lat,
         lng: data.lng,
-        location_accuracy_m:
-          typeof data.locationAccuracyM === "number" ? data.locationAccuracyM : null,
-        timestamp_ms: data.timestamp || Date.now(),
-        notes: notes.value,
-        image_data: image.value,
+        location_accuracy_m: data.locationAccuracyM,
+        // Spotted now: the form submits on the spot, and clients can't backdate reports
+        timestamp_ms: Date.now(),
+        notes: data.notes,
+        image_data: data.imageData,
         user_id: isAnonymous ? null : userId, // Add authenticated user ID
         created_by: displayName, // Add user's display name
         status: userRole === "admin" ? "approved" : "pending", // Auto-approve admin submissions

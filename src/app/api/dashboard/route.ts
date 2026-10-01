@@ -3,6 +3,8 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabase, toSubmission } from "@/server/db";
 import { getPublicDisplayName } from "@/server/authz";
 import { plants } from "@/data/plants";
+import { followSchema } from "@/lib/schemas";
+import { MAX_BODY_BYTES, parseJsonBody } from "@/server/http";
 
 async function getUserName(userId: string) {
   try {
@@ -249,9 +251,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { targetUserId } = await request.json();
+    const parsed = await parseJsonBody(request, followSchema, MAX_BODY_BYTES.small);
+    if (!parsed.ok) return parsed.response;
+    const { targetUserId } = parsed.data;
 
-    if (!targetUserId || targetUserId === currentUserId) {
+    if (targetUserId === currentUserId) {
       return NextResponse.json({ error: "A valid observer ID is required" }, { status: 400 });
     }
 

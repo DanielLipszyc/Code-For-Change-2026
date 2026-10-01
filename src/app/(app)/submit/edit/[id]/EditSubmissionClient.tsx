@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { plants } from "@/data/plants";
-import { MAX_NOTES_LENGTH } from "@/lib/submissionInput";
+import { MAX_NOTES_LENGTH } from "@/lib/limits";
 
 interface Submission {
   _id: string;

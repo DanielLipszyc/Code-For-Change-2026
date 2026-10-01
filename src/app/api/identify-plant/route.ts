@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { UNKNOWN_PLANT } from "@/lib/submissionInput";
+import { UNKNOWN_PLANT } from "@/lib/limits";
+import { identifyPlantSchema } from "@/lib/schemas";
 import { PLANT_ID_ENABLED } from "@/lib/features";
+import { MAX_BODY_BYTES, parseJsonBody } from "@/server/http";
 import { identifyPlant } from "@/server/identify";
 import { LIMITS, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
 
@@ -22,12 +24,10 @@ export async function POST(request: NextRequest) {
       return tooManyRequests(LIMITS.identifyPlant.windowSeconds);
     }
 
-    const { image } = await request.json();
-    if (typeof image !== "string" || !image) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
-    }
+    const parsed = await parseJsonBody(request, identifyPlantSchema, MAX_BODY_BYTES.withPhoto);
+    if (!parsed.ok) return parsed.response;
 
-    const plant = await identifyPlant(image);
+    const plant = await identifyPlant(parsed.data.image);
 
     return NextResponse.json({
       prediction: plant?.name ?? UNKNOWN_PLANT,
