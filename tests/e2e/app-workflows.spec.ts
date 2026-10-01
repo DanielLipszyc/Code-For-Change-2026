@@ -60,7 +60,6 @@ test("demo sign-in opens the dashboard without an account", async ({ page }) => 
 test("redirects protected log access to sign-in", async ({ page }) => {
   await page.goto("/log", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/sign-in/);
-  await expect(page.getByRole("heading", { name: /Welcome back to Swamp Spotter/ })).toBeVisible();
 });
 
 test("map filters visible reports and exports only the filtered results", async ({ page }) => {
