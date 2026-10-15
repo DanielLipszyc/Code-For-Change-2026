@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
+import { MAX_NOTES_LENGTH } from "@/lib/submissionInput";
+import { PLANT_ID_ENABLED } from "@/lib/features";
 
 interface AIPrediction {
   prediction: string;
@@ -43,26 +46,17 @@ const compressImage = (
   });
 };
 
-function toSpeciesId(commonName: string): string | null {
-  const name = commonName.trim();
-  if (!name || name.toLowerCase() === "unknown" || name.toLowerCase() === "unknown plant") {
-    return null;
-  }
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/[^a-z0-9_]/g, "");
-}
-
 export default function SubmitClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
+  const { user, isLoaded } = useUser();
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [plantName, setPlantName] = useState("");
   const [notes, setNotes] = useState("");
+  const [submitAnonymously, setSubmitAnonymously] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
@@ -81,6 +75,12 @@ export default function SubmitClient() {
     setPlantName((current) => (current ? current : value));
   }, [plantParam]);
 
+  useEffect(() => {
+    if (isLoaded) {
+      setSubmitAnonymously(!user);
+    }
+  }, [isLoaded, user]);
+
   // Redirect to map after success notification
   useEffect(() => {
     if (showSuccess) {
@@ -92,6 +92,8 @@ export default function SubmitClient() {
   }, [showSuccess, router]);
 
   const identifyPlant = async (imageData: string) => {
+    if (!PLANT_ID_ENABLED) return;
+
     setIsIdentifying(true);
     setAiPrediction(null);
 
@@ -105,8 +107,12 @@ export default function SubmitClient() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data: AIPrediction = await response.json();
         setAiPrediction(data);
+        // Pre-select the AI's match only if the user hasn't chosen a species yet
+        if (data.isKnownPlant) {
+          setPlantName((current) => (current && current !== "Unknown" ? current : data.prediction));
+        }
       } else {
         console.error("Failed to identify plant");
       }
@@ -152,6 +158,12 @@ export default function SubmitClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user && !submitAnonymously) {
+      alert("Please sign in or choose to submit anonymously.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -176,31 +188,21 @@ export default function SubmitClient() {
       // (bigger than AI compression is ok, but keep it reasonable)
       const imageData = await compressImage(selectedImage, 800, 0.7);
 
-      const chosenPlantName = aiPrediction?.prediction || plantName || "Unknown Plant";
-
+      // The user's selection is what gets saved; the AI only pre-selects a suggestion.
+      // The server looks up the scientific name from the plant list.
       const submission = {
-        // Your app fields
-        plantName: chosenPlantName,
-        scientificName: aiPrediction?.scientificName || undefined,
-
-        // Optional stable id field (handy for filtering later)
-        speciesId: toSpeciesId(chosenPlantName),
+        plantName: plantName || "Unknown Plant",
 
         // Location
         lat: position.coords.latitude,
         lng: position.coords.longitude,
         locationAccuracyM: position.coords.accuracy,
 
-        // Times
-        observedAt: new Date().toISOString(),
-        reportedAt: new Date().toISOString(),
-
         // Notes + image
         notes: notes || undefined,
         imageData, // ✅ stored in the database as a base64 data URL
 
-        // Moderation default (if you want it)
-        status: "pending",
+        anonymous: submitAnonymously,
       };
 
       const response = await fetch("/api/submissions", {
@@ -211,7 +213,8 @@ export default function SubmitClient() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || "Failed to save submission");
+        alert(err?.error || "Unable to submit. Please try again.");
+        return;
       }
 
       // Show success notification, then redirect to map
@@ -248,6 +251,37 @@ export default function SubmitClient() {
             Upload a photo of a plant you spotted in a swamp or wetland
           </p>
         </div>
+        {!user && (
+          <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
+            <label className="flex items-center gap-3 text-sm font-medium text-sky-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={submitAnonymously}
+                onChange={(e) => setSubmitAnonymously(e.target.checked)}
+                className="h-4 w-4 rounded border-sky-300 text-sky-700 focus:ring-sky-500"
+              />
+              Submit anonymously
+            </label>
+            <p className="mt-2 text-sm text-sky-800">
+              Your report will be added without a user profile or name attached.
+            </p>
+          </div>
+        )}
+
+        {user && (
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <label className="flex items-center gap-3 text-sm font-medium text-slate-800 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={submitAnonymously}
+                onChange={(e) => setSubmitAnonymously(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-[#136207] focus:ring-[#136207]"
+              />
+              Submit anonymously instead of using my account name
+            </label>
+          </div>
+        )}
+
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="text-2xl">📍</div>
@@ -326,7 +360,7 @@ export default function SubmitClient() {
           </div>
 
           {/* AI Identification */}
-          {selectedImage && (
+          {PLANT_ID_ENABLED && selectedImage && (
             <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 🤖 AI Plant Identification
@@ -369,10 +403,21 @@ export default function SubmitClient() {
                           ✅ Your selection matches the AI prediction!
                         </p>
                       ) : (
-                        <p className="text-orange-700 font-medium">
-                          ⚠️ Your selection ({plantName}) differs from AI prediction (
-                          {aiPrediction.prediction})
-                        </p>
+                        <div className="space-y-2">
+                          <p className="text-orange-700 font-medium">
+                            ⚠️ Your selection ({plantName}) differs from AI prediction (
+                            {aiPrediction.prediction}). Your selection will be saved.
+                          </p>
+                          {aiPrediction.isKnownPlant && (
+                            <button
+                              type="button"
+                              onClick={() => setPlantName(aiPrediction.prediction)}
+                              className="text-sm font-semibold text-[#136207] underline"
+                            >
+                              Use AI suggestion instead
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -430,6 +475,7 @@ export default function SubmitClient() {
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                maxLength={MAX_NOTES_LENGTH}
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors resize-none"
                 placeholder="Describe the habitat, water conditions, nearby plants..."

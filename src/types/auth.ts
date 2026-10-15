@@ -14,16 +14,6 @@ export interface AuthenticatedSubmission {
 }
 
 /**
- * Extended sighting interface with authentication fields
- */
-export interface AuthenticatedSighting {
-  userId: string;
-  createdBy: string;
-  reportedAt: Date;
-  updatedAt?: Date;
-}
-
-/**
  * User information returned from API
  */
 export interface UserInfo {

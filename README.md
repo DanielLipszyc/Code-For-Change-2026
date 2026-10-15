@@ -48,10 +48,15 @@ CLERK_SECRET_KEY=sk_test_...
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_SECRET_KEY=sb_secret_...   # the "Secret key", server-only, never expose to the browser
 
+<<<<<<< HEAD
 # Modal — Apps -> your app -> Funcitons -> your functions -> copy the URL above "Function call resutls" graph
 MODAL_BIO_CLIP_URL=...
 
 # Optional: enables the photo-based plant ID feature
+=======
+# Optional: only needed if photo-based plant ID is switched on
+# (PLANT_ID_ENABLED in src/lib/features.ts, currently off)
+>>>>>>> d9f8601ae2c7ca79918d5c832e280c6c2e249959
 GEMINI_API_KEY=...
 ```
 
@@ -59,7 +64,8 @@ GEMINI_API_KEY=...
 
 Open the Supabase dashboard, go to **SQL Editor**, paste the contents of
 [`supabase/schema.sql`](supabase/schema.sql), and run it. This creates the
-`submissions` and `sightings` tables.
+`submissions` and `follows` tables. The script is safe to re-run, and re-running
+it is how an existing database picks up schema changes.
 
 ### Installation
 

@@ -36,6 +36,7 @@ export interface SubmissionRow {
   scientific_name: string | null;
   lat: number;
   lng: number;
+  location_accuracy_m: number | null;
   timestamp_ms: number;
   notes: string | null;
   image_data: string | null;
@@ -46,22 +47,6 @@ export interface SubmissionRow {
   status: "pending" | "approved";
   approved_at: string | null;
   approved_by: string | null;
-}
-
-export interface SightingRow {
-  id: string;
-  species_id: string | null;
-  lat: number;
-  lng: number;
-  location_accuracy_m: number | null;
-  address_approx: string | null;
-  observed_at: string;
-  reported_at: string;
-  notes: string;
-  status: string;
-  user_id: string | null;
-  created_by: string | null;
-  updated_at: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,6 +60,7 @@ export function toSubmission(row: SubmissionRow) {
     scientificName: row.scientific_name,
     lat: row.lat,
     lng: row.lng,
+    locationAccuracyM: row.location_accuracy_m,
     timestamp: Number(row.timestamp_ms),
     notes: row.notes,
     imageData: row.image_data,
@@ -85,23 +71,5 @@ export function toSubmission(row: SubmissionRow) {
     status: row.status,
     approvedAt: row.approved_at,
     approvedBy: row.approved_by,
-  };
-}
-
-export function toSighting(row: SightingRow) {
-  return {
-    _id: row.id,
-    speciesId: row.species_id,
-    lat: row.lat,
-    lng: row.lng,
-    locationAccuracyM: row.location_accuracy_m,
-    addressApprox: row.address_approx,
-    observedAt: row.observed_at,
-    reportedAt: row.reported_at,
-    notes: row.notes,
-    status: row.status,
-    userId: row.user_id,
-    createdBy: row.created_by,
-    updatedAt: row.updated_at,
   };
 }

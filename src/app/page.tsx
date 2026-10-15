@@ -79,10 +79,29 @@ export default function Home() {
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              <span className="bg-gradient-to-r from-orange-300 to-sky-300 bg-clip-text text-transparent">
+              <span
+                className="inline-block"
+                style={{
+                  backgroundImage: "linear-gradient(90deg, #fdba74 0%, #7dd3fc 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
                 Swamp
               </span>{" "}
-              Spotter 🌿
+              <span
+                className="ml-1 inline-block"
+                style={{
+                  backgroundImage: "linear-gradient(90deg, #86efac 0%, #4ade80 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                Spotter
+              </span>{" "}
+              🌿
             </h1>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
