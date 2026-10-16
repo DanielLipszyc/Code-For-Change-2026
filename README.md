@@ -48,6 +48,9 @@ CLERK_SECRET_KEY=sk_test_...
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_SECRET_KEY=sb_secret_...   # the "Secret key", server-only, never expose to the browser
 
+# Modal — Apps -> your app -> Funcitons -> your functions -> copy the URL above "Function call resutls" graph
+MODAL_BIO_CLIP_URL=...
+
 # Optional: only needed if photo-based plant ID is switched on
 # (PLANT_ID_ENABLED in src/lib/features.ts, currently off)
 GEMINI_API_KEY=...
