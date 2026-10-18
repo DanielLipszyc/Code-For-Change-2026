@@ -16,7 +16,8 @@ create table if not exists public.submissions (
   location_accuracy_m double precision,        -- GPS accuracy radius reported by the device
   timestamp_ms    bigint not null,             -- when the plant was spotted (epoch ms)
   notes           text,
-  image_data      text,                        -- base64 data URL
+  image_data      text,                        -- older photos: base64 data URL (see photo_path)
+  photo_path      text,                        -- photo in Storage, bucket submission-photos
   user_id         text,                        -- Clerk user ID
   created_by      text,                        -- display name at time of submission
   created_at      timestamptz not null default now(),
@@ -33,6 +34,11 @@ create index if not exists submissions_status_idx       on public.submissions (s
 
 -- Upgrades for databases created before these columns existed
 alter table public.submissions add column if not exists location_accuracy_m double precision;
+alter table public.submissions add column if not exists photo_path text;
+
+-- Lets lists say whether there's a photo without reading the photo itself
+alter table public.submissions add column if not exists has_photo boolean
+  generated always as (photo_path is not null or image_data is not null) stored;
 
 -- The old `sightings` table was a prototype superseded by `submissions`
 drop table if exists public.sightings;
@@ -47,6 +53,18 @@ update public.submissions set scientific_name = 'Ardisia crenata' where scientif
 update public.submissions set scientific_name = 'Sesbania punicea' where scientific_name = 'Sesbania Punicea';
 update public.submissions set scientific_name = 'Wedelia trilobata' where scientific_name = 'Wedelia Trilobata';
 update public.submissions set scientific_name = 'Urena lobata' where scientific_name = 'Urena Lobata';
+
+-- ---------------------------------------------------------------------------
+-- Photos (Supabase Storage, src/server/photos.ts)
+-- <submission id>/photo.jpg and <submission id>/thumb.jpg. Private: with no
+-- storage policies, only the server's secret key can read or write it, and
+-- the app serves photos through /api/submissions/<id>/photo, which applies
+-- the submission's visibility rules. Photos stored before this bucket existed
+-- are in image_data until scripts/move-photos-to-storage.ts moves them.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('submission-photos', 'submission-photos', false, 5242880, array['image/jpeg'])
+on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- follows (observer follow graph used by /api/dashboard)

@@ -31,6 +31,14 @@ vi.mock("./db", () => {
   return { supabase: { from: () => builder } };
 });
 
+// Photos in Storage, tested in photos.test.ts
+const photos = vi.hoisted(() => ({
+  storePhoto: vi.fn(async (id: string) => `${id}/photo.jpg`),
+  readStoredPhoto: vi.fn(async () => Buffer.from("stored jpeg") as Buffer | null),
+  deleteStoredPhotos: vi.fn(async () => {}),
+}));
+vi.mock("./photos", () => photos);
+
 // No Next.js cache in unit tests: cached functions run every time, and
 // invalidations are recorded
 const revalidateTag = vi.hoisted(() => vi.fn());
@@ -67,6 +75,7 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   location_accuracy_m: 8,
   timestamp_ms: 1767225600000,
   notes: null,
+  has_photo: true,
   user_id: OWNER,
   created_by: "Ana",
   created_at: "2026-01-01T00:00:00Z",
@@ -83,6 +92,9 @@ beforeEach(() => {
   state.calls = [];
   respond(null);
   revalidateTag.mockClear();
+  photos.storePhoto.mockClear();
+  photos.readStoredPhoto.mockClear();
+  photos.deleteStoredPhotos.mockClear();
 });
 
 describe("listSubmissions", () => {
@@ -181,6 +193,7 @@ describe("listPublicMapPoints", () => {
         lng: -82.32,
         timestamp: 1767225600000,
         status: "approved",
+        hasPhoto: true,
       },
     ]);
   });
@@ -199,6 +212,24 @@ describe("createSubmission", () => {
   const submitter = { userId: OWNER, displayName: "Ana", autoApprove: false };
   const inserted = () => callsTo("insert")[0][1][0] as Record<string, unknown>;
 
+  it("stores the photo in Storage under the submission's ID, not in the row", async () => {
+    await createSubmission(
+      { ...input, id: ID, imageData: "data:image/jpeg;base64,/9j/" },
+      submitter,
+    );
+    expect(photos.storePhoto).toHaveBeenCalledWith(ID, "data:image/jpeg;base64,/9j/");
+    expect(inserted()).toMatchObject({ photo_path: `${ID}/photo.jpg` });
+    expect(inserted()).not.toHaveProperty("image_data");
+  });
+
+  it("removes the stored photo if the row can't be saved", async () => {
+    state.result = { data: null, error: { code: "08006", message: "connection failure" } };
+    await expect(
+      createSubmission({ ...input, id: ID, imageData: "data:image/jpeg;base64,/9j/" }, submitter),
+    ).rejects.toMatchObject({ code: "08006" });
+    expect(photos.deleteStoredPhotos).toHaveBeenCalledWith(ID);
+  });
+
   it("stores the client's ID and spotted-at time when given", async () => {
     const observedAt = Date.now() - 60_000;
     await expect(createSubmission({ ...input, id: ID, observedAt }, submitter)).resolves.toBe(ID);
@@ -212,11 +243,12 @@ describe("createSubmission", () => {
     expect(inserted().timestamp_ms).toBeGreaterThanOrEqual(before);
   });
 
-  it("reports an ID that's already stored as a duplicate, without clearing caches", async () => {
+  it("reports an ID that's already stored as a duplicate, keeping its photos and caches", async () => {
     state.result = { data: null, error: { code: "23505", message: "duplicate key" } };
-    await expect(createSubmission({ ...input, id: ID }, submitter)).rejects.toEqual(
-      new DuplicateSubmissionError(ID),
-    );
+    await expect(
+      createSubmission({ ...input, id: ID, imageData: "data:image/jpeg;base64,/9j/" }, submitter),
+    ).rejects.toEqual(new DuplicateSubmissionError(ID));
+    expect(photos.deleteStoredPhotos).not.toHaveBeenCalled();
     expect(revalidateTag).not.toHaveBeenCalled();
   });
 
@@ -260,30 +292,62 @@ describe("getSubmission", () => {
 });
 
 describe("getPhoto", () => {
-  it("decodes the stored photo", async () => {
-    respond({ status: "approved", user_id: OWNER, image_data: "data:image/png;base64,iVBORw==" });
+  it("reads a photo from Storage, in the size asked for", async () => {
+    respond({
+      status: "approved",
+      user_id: OWNER,
+      photo_path: `${ID}/photo.jpg`,
+      image_data: null,
+    });
+    const photo = await getPhoto(ID, signedOut, "thumb");
+    expect(photo).toEqual({
+      contentType: "image/jpeg",
+      bytes: Buffer.from("stored jpeg"),
+      isPublic: true,
+    });
+    expect(photos.readStoredPhoto).toHaveBeenCalledWith(ID, "thumb");
+  });
+
+  it("still serves photos stored in the database before the move to Storage", async () => {
+    respond({
+      status: "approved",
+      user_id: OWNER,
+      photo_path: null,
+      image_data: "data:image/png;base64,iVBORw==",
+    });
     const photo = await getPhoto(ID, signedOut);
     expect(photo).toMatchObject({ contentType: "image/png", isPublic: true });
     expect(photo?.bytes).toEqual(Buffer.from("iVBORw==", "base64"));
   });
 
   it("follows the submission's visibility", async () => {
-    respond({ status: "pending", user_id: OWNER, image_data: "data:image/jpeg;base64,/9j/" });
+    respond({ status: "pending", user_id: OWNER, photo_path: `${ID}/photo.jpg`, image_data: null });
     await expect(getPhoto(ID, stranger)).resolves.toBeNull();
     await expect(getPhoto(ID, owner)).resolves.toMatchObject({ isPublic: false });
+    expect(photos.readStoredPhoto).toHaveBeenCalledTimes(1);
   });
 
   it("never serves formats that could run script", async () => {
     respond({
       status: "approved",
       user_id: OWNER,
+      photo_path: null,
       image_data: "data:image/svg+xml;base64,PHN2Zz4=",
     });
     await expect(getPhoto(ID, admin)).resolves.toBeNull();
   });
 
   it("returns null when there's no photo", async () => {
-    respond({ status: "approved", user_id: OWNER, image_data: null });
+    respond({ status: "approved", user_id: OWNER, photo_path: null, image_data: null });
+    await expect(getPhoto(ID, admin)).resolves.toBeNull();
+
+    respond({
+      status: "approved",
+      user_id: OWNER,
+      photo_path: `${ID}/photo.jpg`,
+      image_data: null,
+    });
+    photos.readStoredPhoto.mockResolvedValueOnce(null);
     await expect(getPhoto(ID, admin)).resolves.toBeNull();
   });
 });
@@ -341,5 +405,16 @@ describe("deleteSubmission", () => {
   it("does nothing for signed-out users", async () => {
     await expect(deleteSubmission(ID, signedOut)).resolves.toBe(false);
     expect(state.calls).toEqual([]);
+  });
+
+  it("deletes the photos with the submission, and only then", async () => {
+    respond([{ id: ID }]);
+    await deleteSubmission(ID, owner);
+    expect(photos.deleteStoredPhotos).toHaveBeenCalledWith(ID);
+
+    photos.deleteStoredPhotos.mockClear();
+    respond([]);
+    await deleteSubmission(ID, stranger);
+    expect(photos.deleteStoredPhotos).not.toHaveBeenCalled();
   });
 });

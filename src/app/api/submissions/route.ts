@@ -4,6 +4,7 @@ import { createSubmissionSchema } from "@/lib/schemas";
 import { getPublicDisplayName, getViewer, roleOf } from "@/server/authz";
 import { MAX_BODY_BYTES, jsonError, parseJsonBody } from "@/server/http";
 import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
+import { InvalidPhotoError } from "@/server/photos";
 import { DuplicateSubmissionError, createSubmission, listSubmissions } from "@/server/submissions";
 
 /**
@@ -67,6 +68,9 @@ export async function POST(request: NextRequest) {
     const id = await createSubmission(input, submitter);
     return NextResponse.json({ success: true, id });
   } catch (error) {
+    if (error instanceof InvalidPhotoError) {
+      return jsonError(400, "The photo couldn't be read. Try a JPEG or PNG.");
+    }
     if (error instanceof DuplicateSubmissionError) {
       return NextResponse.json(
         { error: "This report was already submitted", id: error.id },

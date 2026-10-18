@@ -68,7 +68,7 @@ export default function SubmissionDetail({
         <>
           <div className="grid md:grid-cols-2">
             <div className="flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-              {missingPhotoId !== submission.id ? (
+              {submission.hasPhoto && missingPhotoId !== submission.id ? (
                 // eslint-disable-next-line @next/next/no-img-element -- photos come from an API route
                 <img
                   src={submission.photoUrl}

@@ -60,17 +60,24 @@ export default function SightingsList({
               onClick={() => onSelect(point)}
               className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 sm:px-6"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- photos come from an API route */}
-              <img
-                src={photoUrl(point.id)}
-                alt=""
-                loading="lazy"
-                width={64}
-                height={64}
-                className="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-200 object-cover dark:bg-gray-700"
-                // The photo URL answers 404 when a report has no photo
-                onError={(event) => (event.currentTarget.style.visibility = "hidden")}
-              />
+              {point.hasPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element -- photos come from an API route
+                <img
+                  src={photoUrl(point.id, "thumb")}
+                  alt=""
+                  loading="lazy"
+                  width={64}
+                  height={64}
+                  className="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-200 object-cover dark:bg-gray-700"
+                />
+              ) : (
+                <span
+                  className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-2xl dark:bg-gray-700"
+                  aria-hidden="true"
+                >
+                  🌿
+                </span>
+              )}
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold text-gray-900 dark:text-white">
                   {point.plantName}

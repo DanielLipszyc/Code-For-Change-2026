@@ -18,8 +18,9 @@
     "test:e2e": "playwright test --grep-invert @perf",
     "test:perf": "playwright test --grep @perf --workers=1",
     "check": "npm run lint && npm run typecheck && npm run format:check && npm run test",
-    "promote-admin": "ts-node scripts/promote-admin.ts",
-    "plant-id:species": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/plant-id-species.mts"
+    "promote-admin": "tsx scripts/promote-admin.ts",
+    "plant-id:species": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/plant-id-species.mts",
+    "photos:move-to-storage": "tsx --conditions=react-server --env-file=.env.local scripts/move-photos-to-storage.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.7",
@@ -31,6 +32,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -51,7 +53,7 @@
     "prettier": "^3.9.9",
     "serwist": "^9.5.13",
     "tailwindcss": "^3.4.0",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
     "typescript": "^5.0.0",
     "vitest": "^5.0.5"
   },

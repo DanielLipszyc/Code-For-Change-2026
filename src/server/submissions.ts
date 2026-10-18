@@ -7,6 +7,7 @@ import type { CreateSubmissionInput, UpdateSubmissionInput } from "@/lib/schemas
 import type { MapPoint, Submission, SubmissionStatus } from "@/types/submission";
 import type { Viewer } from "@/types/auth";
 import { supabase } from "./db";
+import { deleteStoredPhotos, readStoredPhoto, storePhoto, type PhotoSize } from "./photos";
 
 /**
  * Every read and write of the submissions table. Visibility and ownership
@@ -18,6 +19,8 @@ import { supabase } from "./db";
 
 /** A submissions row as stored in Postgres, minus the photo */
 interface SubmissionRow {
+  /** Generated column: photo_path or the older image_data is set */
+  has_photo: boolean;
   id: string;
   plant_name: string;
   scientific_name: string | null;
@@ -36,7 +39,7 @@ interface SubmissionRow {
 
 /** Everything except image_data: photos are large, so they're served on their own */
 const COLUMNS =
-  "id, plant_name, scientific_name, lat, lng, location_accuracy_m, timestamp_ms, notes, user_id, created_by, created_at, updated_at, status, approved_at";
+  "id, plant_name, scientific_name, lat, lng, location_accuracy_m, timestamp_ms, notes, has_photo, user_id, created_by, created_at, updated_at, status, approved_at";
 
 /**
  * Cache tag for data read from the submissions table. Every write below
@@ -74,6 +77,7 @@ function toSubmission(row: SubmissionRow, viewer: Viewer): Submission {
     locationAccuracyM: row.location_accuracy_m,
     timestamp: Number(row.timestamp_ms),
     notes: row.notes,
+    hasPhoto: row.has_photo,
     photoUrl: photoUrl(row.id),
     // Other people's Clerk IDs are never sent
     userId: viewer.isAdmin || isOwner(row, viewer) ? row.user_id : null,
@@ -122,6 +126,7 @@ export async function listSubmissions(
 
 interface MapPointRow {
   id: string;
+  has_photo: boolean;
   plant_name: string;
   scientific_name: string | null;
   lat: number;
@@ -142,7 +147,7 @@ export const listPublicMapPoints = unstable_cache(
 
     const { data, error } = await supabase
       .from("submissions")
-      .select("id, plant_name, scientific_name, lat, lng, timestamp_ms, status")
+      .select("id, plant_name, scientific_name, lat, lng, timestamp_ms, status, has_photo")
       .eq("status", "approved")
       .order("timestamp_ms", { ascending: false });
     if (error) throw error;
@@ -155,6 +160,7 @@ export const listPublicMapPoints = unstable_cache(
       lng: row.lng,
       timestamp: Number(row.timestamp_ms),
       status: row.status,
+      hasPhoto: row.has_photo,
     }));
   },
   ["public-map-points"],
@@ -176,34 +182,40 @@ export async function getSubmission(id: string, viewer: Viewer): Promise<Submiss
   return row && canSee(row, viewer) ? toSubmission(row, viewer) : null;
 }
 
-// Only raster formats: an SVG served from this origin could run script
-const STORED_PHOTO = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/;
+// Photos stored before they moved to Supabase Storage: a data URL in
+// image_data. Only raster formats: an SVG served from this origin could run script.
+const LEGACY_PHOTO = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/;
 
 /**
- * A submission's photo, decoded from its stored data URL. Null if there is
- * no photo or the viewer can't see the submission.
+ * A submission's photo (or its thumbnail). Null if there is no photo or the
+ * viewer can't see the submission.
  */
 export async function getPhoto(
   id: string,
   viewer: Viewer,
+  size: PhotoSize = "full",
 ): Promise<{ contentType: string; bytes: Buffer; isPublic: boolean } | null> {
   if (!isValidId(id)) return null;
 
   const { data, error } = await supabase
     .from("submissions")
-    .select("status, user_id, image_data")
+    .select("status, user_id, photo_path, image_data")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  if (!data || !canSee(data, viewer) || !data.image_data) return null;
+  if (!data || !canSee(data, viewer)) return null;
+  const isPublic = data.status === "approved";
 
-  const match = STORED_PHOTO.exec(data.image_data);
+  if (data.photo_path) {
+    const bytes = await readStoredPhoto(id, size);
+    return bytes && { contentType: "image/jpeg", bytes, isPublic };
+  }
+
+  // Not moved to Storage yet (scripts/move-photos-to-storage.ts): no
+  // thumbnail, so both sizes get the photo itself
+  const match = data.image_data ? LEGACY_PHOTO.exec(data.image_data) : null;
   if (!match) return null;
-  return {
-    contentType: match[1],
-    bytes: Buffer.from(match[2], "base64"),
-    isPublic: data.status === "approved",
-  };
+  return { contentType: match[1], bytes: Buffer.from(match[2], "base64"), isPublic };
 }
 
 /** A submission with this ID is already stored (usually: the same report, sent again) */
@@ -226,6 +238,10 @@ export async function createSubmission(
   submitter: { userId: string | null; displayName: string; autoApprove: boolean },
 ): Promise<string> {
   const id = input.id ?? randomUUID();
+  // Stored first, under the submission's ID, so the row never points at a
+  // photo that isn't there. Sent again, the photo is already there and isn't
+  // replaced.
+  const photoPath = input.imageData ? await storePhoto(id, input.imageData) : null;
   const { error } = await supabase.from("submissions").insert({
     id,
     plant_name: input.plantName.plantName,
@@ -237,13 +253,17 @@ export async function createSubmission(
     // schema); everything else was spotted just now
     timestamp_ms: input.observedAt ?? Date.now(),
     notes: input.notes,
-    image_data: input.imageData,
+    photo_path: photoPath,
     user_id: submitter.userId,
     created_by: submitter.displayName,
     status: submitter.autoApprove ? "approved" : "pending",
   });
+  // A duplicate keeps its photos: they belong to the submission already stored
   if (error?.code === UNIQUE_VIOLATION) throw new DuplicateSubmissionError(id);
-  if (error) throw error;
+  if (error) {
+    if (photoPath) await deleteStoredPhotos(id).catch(logPhotoCleanupError);
+    throw error;
+  }
   submissionsChanged();
   return id;
 }
@@ -301,8 +321,16 @@ export async function deleteSubmission(id: string, viewer: Viewer): Promise<bool
 
   const { data, error } = await query.select("id");
   if (error) throw error;
-  if (data.length > 0) submissionsChanged();
-  return data.length > 0;
+  if (data.length === 0) return false;
+
+  submissionsChanged();
+  await deleteStoredPhotos(id).catch(logPhotoCleanupError);
+  return true;
+}
+
+/** Photos left behind cost a little storage but nothing else, so a failed cleanup isn't an error */
+function logPhotoCleanupError(error: unknown) {
+  console.error("Couldn't delete a submission's photos:", error);
 }
 
 /** Approve a submission (callers must check the user is an admin) */

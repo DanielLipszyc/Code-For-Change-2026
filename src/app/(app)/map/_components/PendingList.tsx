@@ -1,5 +1,6 @@
 "use client";
 
+import { photoUrl } from "@/lib/photos";
 import type { Submission } from "@/types/submission";
 
 interface PendingListProps {
@@ -31,13 +32,22 @@ export default function PendingList({ submissions, onSelect }: PendingListProps)
             className="rounded-xl border-2 border-amber-200 bg-white p-4 text-left shadow-sm transition-shadow hover:border-amber-400 hover:shadow-md dark:border-amber-700 dark:bg-gray-800 dark:hover:border-amber-500"
           >
             <div className="flex items-start gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element -- photos come from an API route */}
-              <img
-                src={submission.photoUrl}
-                alt={submission.plantName}
-                loading="lazy"
-                className="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-200 object-cover"
-              />
+              {submission.hasPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element -- photos come from an API route
+                <img
+                  src={photoUrl(submission.id, "thumb")}
+                  alt={submission.plantName}
+                  loading="lazy"
+                  className="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-200 object-cover"
+                />
+              ) : (
+                <span
+                  className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-2xl"
+                  aria-hidden="true"
+                >
+                  🌿
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <h3 className="truncate font-bold text-gray-900 dark:text-white">
                   {submission.plantName}

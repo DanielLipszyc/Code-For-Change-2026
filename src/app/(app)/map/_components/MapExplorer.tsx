@@ -25,6 +25,7 @@ const toPoint = (s: Submission): MapPoint => ({
   lng: s.lng,
   timestamp: s.timestamp,
   status: s.status,
+  hasPhoto: s.hasPhoto,
 });
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {

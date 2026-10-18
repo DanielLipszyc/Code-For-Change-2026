@@ -15,7 +15,8 @@ export interface Submission {
   /** When the plant was spotted, in epoch milliseconds */
   timestamp: number;
   notes: string | null;
-  /** Where to load the photo. Answers 404 when the submission has none. */
+  hasPhoto: boolean;
+  /** Where to load the photo (add ?size=thumb for a small one). Answers 404 when there's none. */
   photoUrl: string;
   /** Submitter's Clerk ID. Only sent to the submitter and to admins. */
   userId: string | null;
@@ -34,5 +35,5 @@ export interface Submission {
  */
 export type MapPoint = Pick<
   Submission,
-  "id" | "plantName" | "scientificName" | "lat" | "lng" | "timestamp" | "status"
+  "id" | "plantName" | "scientificName" | "lat" | "lng" | "timestamp" | "status" | "hasPhoto"
 >;

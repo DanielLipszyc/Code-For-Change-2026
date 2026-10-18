@@ -33,8 +33,7 @@ interface SubmissionCardProps {
 }
 
 export default function SubmissionCard({ submission, onDelete }: SubmissionCardProps) {
-  // The photo URL answers 404 when a submission has no photo
-  const [src, setSrc] = useState(submission.photoUrl);
+  const [src, setSrc] = useState(submission.hasPhoto ? submission.photoUrl : FALLBACK_IMG);
 
   return (
     <div className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition hover:shadow-md">
