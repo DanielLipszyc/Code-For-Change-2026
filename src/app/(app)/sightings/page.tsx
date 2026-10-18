@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Submission } from "@/types/submission";
 
-interface Sighting {
-  _id: string;
-  plantName: string;
-  lat: number;
-  lng: number;
-  timestamp: number;
-  notes?: string;
-  imageData?: string;
-  createdAt: string;
-  status?: "pending" | "approved";
-}
+type Sighting = Submission;
 
 export default function SightingsPage() {
   const [sightings, setSightings] = useState<Sighting[]>([]);
@@ -149,18 +140,19 @@ export default function SightingsPage() {
 
               return (
                 <div
-                  key={sighting._id}
+                  key={sighting.id}
                   className="border border-gray-200 rounded-lg p-4 flex gap-4 hover:border-green-300 transition-colors"
                 >
-                  {sighting.imageData && (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={sighting.imageData}
-                        alt={sighting.plantName}
-                        className="w-32 h-32 object-cover rounded-md"
-                      />
-                    </div>
-                  )}
+                  <div className="flex-shrink-0">
+                    <img
+                      src={sighting.photoUrl}
+                      alt={sighting.plantName}
+                      loading="lazy"
+                      className="w-32 h-32 object-cover rounded-md"
+                      // The photo URL answers 404 when a report has no photo
+                      onError={(e) => (e.currentTarget.parentElement!.style.display = "none")}
+                    />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <h3 className="text-xl font-semibold text-gray-900">{sighting.plantName}</h3>
