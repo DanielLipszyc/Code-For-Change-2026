@@ -11,6 +11,11 @@ env_path = root_dir / ".env.local"
 # Load the variables from .env.local into os.environ
 load_dotenv(env_path)
 modal_url = os.getenv("MODAL_BIO_CLIP_URL")
+# The endpoint requires a Modal proxy auth token
+headers = {
+    "Modal-Key": os.getenv("MODAL_PROXY_KEY", ""),
+    "Modal-Secret": os.getenv("MODAL_PROXY_SECRET", ""),
+}
 
 # Test with a local image (the image is an air potato)
 IMAGE_PATH = root_dir / "public" / "slides" / "slide-2.jpg"
@@ -21,6 +26,6 @@ with open(IMAGE_PATH, "rb") as f:
 payload = {"image": f"data:image/jpeg;base64,{b64_str}"}
 
 print("Sending request to Modal...")
-response = requests.post(modal_url, json=payload)
+response = requests.post(modal_url, json=payload, headers=headers)
 print("Status Code:", response.status_code)
 print("Result:\n", response.json())

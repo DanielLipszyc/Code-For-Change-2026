@@ -1,4 +1,6 @@
 import base64
+import json
+from pathlib import Path
 from io import BytesIO
 from PIL import Image
 import modal
@@ -21,28 +23,13 @@ bioclip_image = (
         "fastapi[standard]",
     )
     .run_function(download_model)  # Pre-bakes weights into disk image
+    .add_local_file(Path(__file__).parent / "species.json", "/root/species.json")
 )
 
-# Target species corresponding to your app's catalog
-SPECIES_LIST = [
-    {"name": "Air Potato", "scientific": "Dioscorea bulbifera"},
-    {"name": "Coral Adicea", "scientific": "Ardisia Crenata"},
-    {"name": "Spanish Gold", "scientific": "Sesbania Punicea"},
-    {"name": "Torpedo Grass", "scientific": "Panicum repens"},
-    {"name": "Wedelia", "scientific": "Wedelia Trilobata"},
-    {"name": "Caeser's Weed", "scientific": "Urena Lobata"},
-    {"name": "Small Leaf Spiderwort", "scientific": "Tradescantia fluminensis"},
-    {"name": "Wild Taro", "scientific": "Colocasia esculenta"},
-    {"name": "Japanese Climbing Fern", "scientific": "Lygodium japonicum"},
-    {"name": "Chinese Tallow", "scientific": "Sapium sebiferum"},
-    {"name": "Camphor", "scientific": "Cinnamomum camphora"},
-    {"name": "Mimosa", "scientific": "Albizia julibrissin"},
-    {"name": "Shrub Lantana", "scientific": "Lantana camara"},
-    {"name": "Boston Fern", "scientific": "Nephrolepis cordifolia"},
-    {"name": "Winged Yam", "scientific": "Dioscorea alata"},
-    {"name": "Tropical Soda Apple", "scientific": "Solanum viarum"},
-    {"name": "Cogon Grass", "scientific": "Imperata cylindrica"},
-]
+# The species to score, generated from src/data/plants.ts (npm run plant-id:species).
+# The file sits next to this one locally and in the container.
+SPECIES_FILE = Path(__file__).parent / "species.json"
+SPECIES_LIST = json.loads(SPECIES_FILE.read_text(encoding="utf-8"))
 
 @app.cls(
     image=bioclip_image,
@@ -75,7 +62,9 @@ class PlantClassifier:
             text_features = self.model.encode_text(tokens)
             self.text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
-    @modal.fastapi_endpoint(method="POST")
+    # requires_proxy_auth: callers must send a Modal proxy auth token (Modal-Key and
+    # Modal-Secret headers), so the URL alone can't be used to spend GPU time
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
     def predict(self, payload: dict):
         import torch
 

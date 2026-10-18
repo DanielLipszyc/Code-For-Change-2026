@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run format:check && npm run test",
-    "promote-admin": "ts-node scripts/promote-admin.ts"
+    "promote-admin": "ts-node scripts/promote-admin.ts",
+    "plant-id:species": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/plant-id-species.mts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.7",
