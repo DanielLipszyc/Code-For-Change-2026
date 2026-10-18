@@ -15,11 +15,7 @@ interface AIPrediction {
 }
 
 // Compress image to reduce payload size
-const compressImage = (
-  dataUrl: string,
-  maxSize = 512,
-  quality = 0.5
-): Promise<string> => {
+const compressImage = (dataUrl: string, maxSize = 512, quality = 0.5): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -113,7 +109,7 @@ export default function SubmitClient() {
   useEffect(() => {
     if (showSuccess) {
       const timer = setTimeout(() => {
-        router.push('/map');
+        router.push("/map");
       }, 2000);
       return () => clearTimeout(timer);
     }
@@ -292,9 +288,7 @@ export default function SubmitClient() {
 
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            Submit a Plant 🌱
-          </h1>
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Submit a Plant 🌱</h1>
           <p className="text-xl text-gray-600">
             Upload a photo of a plant you spotted in a swamp or wetland
           </p>
@@ -339,26 +333,22 @@ export default function SubmitClient() {
         )}
 
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
-        <div className="flex items-start gap-3">
-          <div className="text-2xl">📍</div>
-          <div>
-            <p className="font-semibold text-amber-900">
-              Location must be enabled to submit.
-            </p>
-            <p className="text-sm text-amber-800 mt-1">
-              We attach GPS coordinates to every report. Please allow location access in your browser
-              (and turn on Location Services on your device) before submitting.
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">📍</div>
+            <div>
+              <p className="font-semibold text-amber-900">Location must be enabled to submit.</p>
+              <p className="text-sm text-amber-800 mt-1">
+                We attach GPS coordinates to every report. Please allow location access in your
+                browser (and turn on Location Services on your device) before submitting.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload */}
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-            <label className="block text-lg font-semibold text-gray-900 mb-4">
-              Plant Photo *
-            </label>
+            <label className="block text-lg font-semibold text-gray-900 mb-4">Plant Photo *</label>
 
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -424,9 +414,24 @@ export default function SubmitClient() {
 
               {isIdentifying ? (
                 <div className="flex items-center space-x-3 text-gray-600">
-                  <svg className="animate-spin h-5 w-5 text-[#136207]" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <svg
+                    className="animate-spin h-5 w-5 text-[#136207]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   <span>Analyzing image...</span>
                 </div>
@@ -479,7 +484,9 @@ export default function SubmitClient() {
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">Unable to identify plant. Please select manually below.</p>
+                <p className="text-gray-500">
+                  Unable to identify plant. Please select manually below.
+                </p>
               )}
             </div>
           )}
@@ -547,8 +554,19 @@ export default function SubmitClient() {
           >
             {isSubmitting ? (
               <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
                   <path
                     className="opacity-75"
                     fill="currentColor"

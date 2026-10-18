@@ -29,12 +29,8 @@ export default function SignInPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white px-4">
         <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl ring-1 ring-black/5 p-6 text-center animate-fade-in">
           <div className="text-2xl mb-2">🌿</div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            You&apos;re already signed in
-          </h3>
-          <p className="mt-2 text-sm text-gray-600">
-            Redirecting you to Swamp Spotter…
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900">You&apos;re already signed in</h3>
+          <p className="mt-2 text-sm text-gray-600">Redirecting you to Swamp Spotter…</p>
 
           <div className="mt-4 h-1 w-full overflow-hidden rounded bg-gray-100">
             <div className="h-full w-full animate-[loading_1.8s_linear] bg-[#136207]" />
@@ -44,15 +40,25 @@ export default function SignInPage() {
         {/* simple keyframes */}
         <style jsx global>{`
           @keyframes loading {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
+            from {
+              transform: translateX(-100%);
+            }
+            to {
+              transform: translateX(0);
+            }
           }
           .animate-fade-in {
             animation: fadeIn 0.25s ease-out;
           }
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+              opacity: 0;
+              transform: translateY(6px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
         `}</style>
       </div>
@@ -65,12 +71,9 @@ export default function SignInPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back to{" "}
-            <span className="text-[#136207]">Swamp Spotter</span>
+            Welcome back to <span className="text-[#136207]">Swamp Spotter</span>
           </h2>
-          <p className="text-gray-600">
-            Sign in to submit and manage plant sightings
-          </p>
+          <p className="text-gray-600">Sign in to submit and manage plant sightings</p>
         </div>
 
         <SignIn

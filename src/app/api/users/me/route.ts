@@ -13,10 +13,7 @@ export async function GET() {
     const userId = authResult.userId;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized - Please sign in" }, { status: 401 });
     }
 
     // Get user from Clerk
@@ -29,16 +26,13 @@ export async function GET() {
     // Return user info
     return NextResponse.json({
       id: userId,
-      email: user.emailAddresses[0]?.emailAddress || '',
-      name: user.firstName || user.emailAddresses[0]?.emailAddress || 'User',
+      email: user.emailAddresses[0]?.emailAddress || "",
+      name: user.firstName || user.emailAddresses[0]?.emailAddress || "User",
       role,
       imageUrl: user.imageUrl,
     });
   } catch (error) {
     console.error("Error fetching user info:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch user information" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch user information" }, { status: 500 });
   }
 }

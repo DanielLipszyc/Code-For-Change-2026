@@ -33,7 +33,7 @@ async function getUserMap(userIds: string[]) {
           imageUrl: "",
         };
       }
-    })
+    }),
   );
 
   return new Map(userEntries.map((user) => [user.id, user]));
@@ -68,9 +68,30 @@ const fallbackDashboard = {
     { label: "Streak", value: "4d", detail: "Active field days", tone: "violet" },
   ],
   observers: [
-    { id: "obs-1", name: "Mara Rivers", focus: "Wetland grasses", sightings: 18, following: true, avatar: "MR" },
-    { id: "obs-2", name: "Theo Palm", focus: "Invasive trees", sightings: 13, following: false, avatar: "TP" },
-    { id: "obs-3", name: "Iris North", focus: "Aquatic plants", sightings: 9, following: true, avatar: "IN" },
+    {
+      id: "obs-1",
+      name: "Mara Rivers",
+      focus: "Wetland grasses",
+      sightings: 18,
+      following: true,
+      avatar: "MR",
+    },
+    {
+      id: "obs-2",
+      name: "Theo Palm",
+      focus: "Invasive trees",
+      sightings: 13,
+      following: false,
+      avatar: "TP",
+    },
+    {
+      id: "obs-3",
+      name: "Iris North",
+      focus: "Aquatic plants",
+      sightings: 9,
+      following: true,
+      avatar: "IN",
+    },
   ],
   achievements: [
     { title: "Trail Recon", detail: "3 of 5 field checks logged", progress: 60, icon: "🥾" },
@@ -78,8 +99,16 @@ const fallbackDashboard = {
     { title: "Plant Detective", detail: "7 of 18 species confirmed", progress: 39, icon: "🔍" },
   ],
   feed: [
-    { title: "Mara Rivers logged cattail marsh observations", meta: "Today · 3 reports", type: "species" },
-    { title: "Community challenge: map invasive stands", meta: "2 days ago · 18 observers active", type: "challenge" },
+    {
+      title: "Mara Rivers logged cattail marsh observations",
+      meta: "Today · 3 reports",
+      type: "species",
+    },
+    {
+      title: "Community challenge: map invasive stands",
+      meta: "2 days ago · 18 observers active",
+      type: "challenge",
+    },
     { title: "You logged a new wetland report", meta: "3 days ago · approved", type: "connection" },
   ],
 };
@@ -102,17 +131,19 @@ export async function GET() {
     if (submissionsError) throw submissionsError;
     const submissions = submissionRows.map(toSubmission);
 
-    const currentUserSubmissions = submissions.filter((submission) => submission.userId === currentUserId);
+    const currentUserSubmissions = submissions.filter(
+      (submission) => submission.userId === currentUserId,
+    );
     // Other people's pending reports haven't been reviewed; keep them out of the observers list and feed
     const visibleSubmissions = submissions.filter(
-      (submission) => submission.status === "approved" || submission.userId === currentUserId
+      (submission) => submission.status === "approved" || submission.userId === currentUserId,
     );
     const uniqueObserverIds = Array.from(
       new Set(
         visibleSubmissions
           .map((submission) => submission.userId)
-          .filter((userId): userId is string => Boolean(userId) && userId !== currentUserId)
-      )
+          .filter((userId): userId is string => Boolean(userId) && userId !== currentUserId),
+      ),
     ).slice(0, 8);
 
     const userMap = await getUserMap(uniqueObserverIds);
@@ -125,11 +156,13 @@ export async function GET() {
     const followingIds = new Set(followingRows.map((row) => row.following_id));
 
     const currentTotal = currentUserSubmissions.length;
-    const approvedCount = currentUserSubmissions.filter((submission) => submission.status === "approved").length;
+    const approvedCount = currentUserSubmissions.filter(
+      (submission) => submission.status === "approved",
+    ).length;
     const uniqueSpecies = new Set(
       currentUserSubmissions
         .map((submission) => submission.scientificName || submission.plantName)
-        .filter(Boolean)
+        .filter(Boolean),
     ).size;
     const recentDays = new Set(
       currentUserSubmissions
@@ -139,13 +172,19 @@ export async function GET() {
           if (!date) return null;
           return date.toISOString().slice(0, 10);
         })
-        .filter(Boolean)
+        .filter(Boolean),
     ).size;
 
     const observers = uniqueObserverIds
       .map((observerId) => {
-        const observerEntries = visibleSubmissions.filter((submission) => submission.userId === observerId);
-        const observerInfo = userMap.get(observerId) ?? { id: observerId, name: "Observer", imageUrl: "" };
+        const observerEntries = visibleSubmissions.filter(
+          (submission) => submission.userId === observerId,
+        );
+        const observerInfo = userMap.get(observerId) ?? {
+          id: observerId,
+          name: "Observer",
+          imageUrl: "",
+        };
 
         return {
           id: observerId,
@@ -175,7 +214,9 @@ export async function GET() {
       },
       {
         label: "Community rank",
-        value: `#${Math.max(8, 30 - Math.min(currentTotal, 22)).toString().padStart(2, "0")}`,
+        value: `#${Math.max(8, 30 - Math.min(currentTotal, 22))
+          .toString()
+          .padStart(2, "0")}`,
         detail: currentTotal >= 10 ? "Top 15%" : "Building momentum",
         tone: getActivityTone("Rank"),
       },
@@ -211,7 +252,8 @@ export async function GET() {
     const feed = visibleSubmissions.slice(0, 3).map((submission) => {
       const observerName = submission.createdBy || (submission.userId ? "Observer" : "Community");
       const submissionName = submission.plantName || "plant report";
-      const eventDate = toSafeDate(submission.createdAt ?? submission.timestamp ?? new Date()) ?? new Date();
+      const eventDate =
+        toSafeDate(submission.createdAt ?? submission.timestamp ?? new Date()) ?? new Date();
 
       return {
         title: `${observerName} logged ${submissionName}`,

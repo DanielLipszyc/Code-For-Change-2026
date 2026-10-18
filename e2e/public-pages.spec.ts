@@ -52,7 +52,9 @@ test.describe("sign-in pages", () => {
 
 test("map page shows the map, the CSV export and the filters", async ({ page }) => {
   await page.goto("/map");
-  await expect(page.getByRole("heading", { name: "Alachua County Invasive Plant Map" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Alachua County Invasive Plant Map" }),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: /Export CSV/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Filter Sightings/ })).toBeVisible();
 });

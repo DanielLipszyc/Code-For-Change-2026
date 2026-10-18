@@ -17,7 +17,7 @@ const UNKNOWN_ALIASES = new Set(["unknown", "unknown plant"]);
  * Returns null if the name isn't a known species or "Unknown".
  */
 export function resolvePlant(
-  name: unknown
+  name: unknown,
 ): { plantName: string; scientificName: string | null } | null {
   if (typeof name !== "string") return null;
 
@@ -41,9 +41,7 @@ const IMAGE_DATA_URL = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}
  * Validate an optional photo. Only inline JPEG/PNG/WebP data is accepted, so a
  * submission can't point viewers' browsers at an outside URL.
  */
-export function parseImageData(
-  imageData: unknown
-): { value: string | null } | { error: string } {
+export function parseImageData(imageData: unknown): { value: string | null } | { error: string } {
   if (imageData === undefined || imageData === null || imageData === "") {
     return { value: null };
   }
@@ -64,9 +62,7 @@ export function parseImageData(
  * Validate optional notes. Returns the trimmed text (or null when empty),
  * or an error message when the value is the wrong type or too long.
  */
-export function parseNotes(
-  notes: unknown
-): { value: string | null } | { error: string } {
+export function parseNotes(notes: unknown): { value: string | null } | { error: string } {
   if (notes === undefined || notes === null) return { value: null };
   if (typeof notes !== "string") return { error: "Notes must be text" };
 

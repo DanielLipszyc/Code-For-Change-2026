@@ -14,7 +14,7 @@ const navItems = [
   { href: "/sightings", label: "What People Found" },
   { href: "/guide", label: "Invasive Plant Guide" },
   { href: "/log", label: "My Log" },
-  { href: "/map", label: "Map"},
+  { href: "/map", label: "Map" },
 ];
 
 export default function Navigation() {
@@ -27,13 +27,16 @@ export default function Navigation() {
         <div className="flex justify-between items-center py-2">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-            <img style= {{
-                  width: '10%',
-                  height: 'auto',
+              <img
+                style={{
+                  width: "10%",
+                  height: "auto",
                   objectFit: "contain",
-                  display: "block"
-                }} 
-                src="/logo.png" alt="Home"/>
+                  display: "block",
+                }}
+                src="/logo.png"
+                alt="Home"
+              />
               <span className="text-xl font-bold">
                 <span
                   className="inline-block"
@@ -114,11 +117,7 @@ export default function Navigation() {
                   strokeWidth="1.5"
                   stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
                 <svg

@@ -54,16 +54,32 @@ const TEAM: TeamMember[] = [
       { label: "GitHub", href: "https://github.com/Rawanh04" },
       { label: "LinkedIn", href: "https://www.linkedin.com/in/rawan-hussain/" },
     ],
-  }
+  },
 ];
 
 const STACK: StackItem[] = [
-  { name: "Next.js (App Router)", detail: "Routing, server rendering, and deployment-friendly architecture.", badge: "Frontend" },
-  { name: "React + TypeScript", detail: "Type-safe UI components and reliable iteration.", badge: "Frontend" },
-  { name: "Tailwind CSS", detail: "Consistent spacing, typography, and responsive design.", badge: "Frontend" },
+  {
+    name: "Next.js (App Router)",
+    detail: "Routing, server rendering, and deployment-friendly architecture.",
+    badge: "Frontend",
+  },
+  {
+    name: "React + TypeScript",
+    detail: "Type-safe UI components and reliable iteration.",
+    badge: "Frontend",
+  },
+  {
+    name: "Tailwind CSS",
+    detail: "Consistent spacing, typography, and responsive design.",
+    badge: "Frontend",
+  },
   { name: "Clerk", detail: "Authentication for sign-in/sign-up and user sessions.", badge: "Auth" },
   { name: "MongoDB", detail: "Stores submissions and metadata for sightings.", badge: "Database" },
-  { name: "API Routes", detail: "Server endpoints for submissions and user workflows.", badge: "Backend" },
+  {
+    name: "API Routes",
+    detail: "Server endpoints for submissions and user workflows.",
+    badge: "Backend",
+  },
   { name: "Vercel", detail: "Deployments with environment-based configuration.", badge: "Infra" },
   { name: "Git + GitHub", detail: "Version control and team collaboration.", badge: "Tools" },
 ];
@@ -73,17 +89,19 @@ function Badge({ label }: { label: NonNullable<StackItem["badge"]> }) {
     label === "Frontend"
       ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
       : label === "Backend"
-      ? "bg-blue-50 text-blue-700 ring-blue-200"
-      : label === "Database"
-      ? "bg-amber-50 text-amber-800 ring-amber-200"
-      : label === "Infra"
-      ? "bg-slate-50 text-slate-700 ring-slate-200"
-      : label === "Auth"
-      ? "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200"
-      : "bg-gray-50 text-gray-700 ring-gray-200";
+        ? "bg-blue-50 text-blue-700 ring-blue-200"
+        : label === "Database"
+          ? "bg-amber-50 text-amber-800 ring-amber-200"
+          : label === "Infra"
+            ? "bg-slate-50 text-slate-700 ring-slate-200"
+            : label === "Auth"
+              ? "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200"
+              : "bg-gray-50 text-gray-700 ring-gray-200";
 
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${cls}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${cls}`}
+    >
       {label}
     </span>
   );
@@ -94,7 +112,13 @@ function Avatar({ name, src }: { name: string; src?: string }) {
     // Using <img> keeps this file drop-in friendly even if you haven't configured next/image remote patterns.
     // If these are local images in /public, feel free to switch to next/image.
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={name} className="h-12 w-12 rounded-2xl object-cover ring-1 ring-black/5" />;
+    return (
+      <img
+        src={src}
+        alt={name}
+        className="h-12 w-12 rounded-2xl object-cover ring-1 ring-black/5"
+      />
+    );
   }
 
   const initials = name
@@ -171,7 +195,8 @@ export default function About() {
             About <span className="text-[#136207]">Swamp Spotter</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            Making conservation accessible to everyone through simple, community-powered environmental reporting.
+            Making conservation accessible to everyone through simple, community-powered
+            environmental reporting.
           </p>
         </div>
 
@@ -187,16 +212,18 @@ export default function About() {
 
             <div className="space-y-4 text-gray-600 leading-relaxed">
               <p>
-                Swamp Spotter is designed to make environmental reporting accessible to the general public. Anyone in the
-                county can submit plant observations; no scientific or technical background is required.
+                Swamp Spotter is designed to make environmental reporting accessible to the general
+                public. Anyone in the county can submit plant observations; no scientific or
+                technical background is required.
               </p>
               <p>
-                By focusing on a small group of high-impact invasive species within a local area, the app stays simple,
-                approachable, and easy to understand.
+                By focusing on a small group of high-impact invasive species within a local area,
+                the app stays simple, approachable, and easy to understand.
               </p>
               <p>
-                This targeted approach helps communities contribute meaningful data without the complexity of traditional
-                reporting tools, supporting real conservation work through everyday participation.
+                This targeted approach helps communities contribute meaningful data without the
+                complexity of traditional reporting tools, supporting real conservation work through
+                everyday participation.
               </p>
             </div>
           </div>

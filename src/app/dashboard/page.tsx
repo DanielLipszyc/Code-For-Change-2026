@@ -80,7 +80,8 @@ export default function DashboardPage() {
   }, []);
 
   const handleInviteFriend = async () => {
-    const inviteText = "Join me on Swamp Spotter and help log invasive plants across Alachua County.";
+    const inviteText =
+      "Join me on Swamp Spotter and help log invasive plants across Alachua County.";
 
     try {
       if (navigator.clipboard) {
@@ -113,7 +114,7 @@ export default function DashboardPage() {
       return {
         ...current,
         observers: current.observers.map((observer) =>
-          observer.id === observerId ? { ...observer, following: nextFollowing } : observer
+          observer.id === observerId ? { ...observer, following: nextFollowing } : observer,
         ),
       };
     });
@@ -137,7 +138,7 @@ export default function DashboardPage() {
         return {
           ...current,
           observers: current.observers.map((observer) =>
-            observer.id === observerId ? { ...observer, following: result.following } : observer
+            observer.id === observerId ? { ...observer, following: result.following } : observer,
           ),
         };
       });
@@ -149,11 +150,15 @@ export default function DashboardPage() {
         return {
           ...current,
           observers: current.observers.map((observer) =>
-            observer.id === observerId ? { ...observer, following: currentObserver.following } : observer
+            observer.id === observerId
+              ? { ...observer, following: currentObserver.following }
+              : observer,
           ),
         };
       });
-      setFlashMessage("Follow action saved locally. Backend sync will resume when the API is configured.");
+      setFlashMessage(
+        "Follow action saved locally. Backend sync will resume when the API is configured.",
+      );
     }
   };
 
@@ -207,7 +212,8 @@ export default function DashboardPage() {
               Welcome back, {data.user.name.split(" ")[0] || "Observer"}
             </h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-              Track field activity, follow collaborators, and grow your impact across the Alachua County observation network.
+              Track field activity, follow collaborators, and grow your impact across the Alachua
+              County observation network.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -241,15 +247,30 @@ export default function DashboardPage() {
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {data.stats.map((stat) => (
-            <article key={stat.label} className="rounded-2xl border border-white bg-white p-5 shadow-sm">
+            <article
+              key={stat.label}
+              className="rounded-2xl border border-white bg-white p-5 shadow-sm"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{stat.label}</span>
-                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-lg ${toneStyles[stat.tone]}`}>
-                  {stat.tone === "emerald" ? "🌿" : stat.tone === "sky" ? "🌎" : stat.tone === "orange" ? "🏆" : "🔥"}
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  {stat.label}
+                </span>
+                <span
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-lg ${toneStyles[stat.tone]}`}
+                >
+                  {stat.tone === "emerald"
+                    ? "🌿"
+                    : stat.tone === "sky"
+                      ? "🌎"
+                      : stat.tone === "orange"
+                        ? "🏆"
+                        : "🔥"}
                 </span>
               </div>
               <div className="mt-5 flex items-end justify-between gap-3">
-                <span className="text-4xl font-black tracking-tight text-slate-900">{stat.value}</span>
+                <span className="text-4xl font-black tracking-tight text-slate-900">
+                  {stat.value}
+                </span>
                 <span className="text-xs font-semibold text-slate-500">{stat.detail}</span>
               </div>
             </article>
@@ -260,7 +281,9 @@ export default function DashboardPage() {
           <article className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Community map</span>
+                <span className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+                  Community map
+                </span>
                 <h2 className="mt-2 text-2xl font-black text-slate-950">Observation activity</h2>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
@@ -273,9 +296,13 @@ export default function DashboardPage() {
               <div className="rounded-2xl bg-slate-950 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-wide text-emerald-300">Current week</span>
+                    <span className="text-xs font-bold uppercase tracking-wide text-emerald-300">
+                      Current week
+                    </span>
                     <div className="mt-4 flex items-end gap-2">
-                      <span className="text-5xl font-black">{Math.max(data.stats[0]?.value ? Number(data.stats[0].value) : 0, 1)}</span>
+                      <span className="text-5xl font-black">
+                        {Math.max(data.stats[0]?.value ? Number(data.stats[0].value) : 0, 1)}
+                      </span>
                       <span className="pb-2 text-sm text-slate-300">new reports</span>
                     </div>
                   </div>
@@ -292,30 +319,42 @@ export default function DashboardPage() {
 
               <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-emerald-50 to-lime-50 p-6">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wide text-emerald-800">Field milestone</span>
+                  <span className="text-xs font-black uppercase tracking-wide text-emerald-800">
+                    Field milestone
+                  </span>
                   <span className="text-3xl">🏆</span>
                 </div>
                 <div className="mt-10">
-                  <div className="text-5xl font-black text-slate-900">Level {Math.min(12, Math.max(3, Number(data.stats[0]?.value || 1) / 2 + 2))}</div>
+                  <div className="text-5xl font-black text-slate-900">
+                    Level {Math.min(12, Math.max(3, Number(data.stats[0]?.value || 1) / 2 + 2))}
+                  </div>
                   <div className="mt-2 text-sm font-semibold text-slate-600">Observer tier</div>
                 </div>
                 <div className="mt-6 h-2 rounded-full bg-emerald-100">
                   <div className="h-full w-[88%] rounded-full bg-emerald-600" />
                 </div>
-                <div className="mt-3 text-xs font-bold text-emerald-800">{Math.max(3, 12 - Number(data.stats[0]?.value || 0))} points to next badge</div>
+                <div className="mt-3 text-xs font-bold text-emerald-800">
+                  {Math.max(3, 12 - Number(data.stats[0]?.value || 0))} points to next badge
+                </div>
               </div>
             </div>
 
             <div className="mt-8">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black text-slate-900">Recent field activity</h3>
-                <Link href="/log" className="text-sm font-bold text-emerald-700 hover:text-emerald-800">
+                <Link
+                  href="/log"
+                  className="text-sm font-bold text-emerald-700 hover:text-emerald-800"
+                >
                   View log →
                 </Link>
               </div>
               <div className="mt-4 space-y-3">
                 {data.feed.map((item, index) => (
-                  <div key={`${item.title}-${index}`} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+                  <div
+                    key={`${item.title}-${index}`}
+                    className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4"
+                  >
                     <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-sm">
                       {item.type === "connection" ? "👥" : item.type === "species" ? "🌱" : "🎯"}
                     </span>
@@ -333,10 +372,15 @@ export default function DashboardPage() {
           </article>
 
           <aside className="space-y-6">
-            <article id="observer-network" className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+            <article
+              id="observer-network"
+              className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">Observers</span>
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">
+                    Observers
+                  </span>
                   <h2 className="mt-2 text-2xl font-black text-slate-950">Your network</h2>
                 </div>
                 <button
@@ -350,7 +394,10 @@ export default function DashboardPage() {
 
               <div className="mt-5 space-y-4">
                 {data.observers.map((observer) => (
-                  <div key={observer.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 p-3">
+                  <div
+                    key={observer.id}
+                    className="flex items-center gap-3 rounded-2xl border border-slate-100 p-3"
+                  >
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-700 font-black text-white">
                       {observer.avatar}
                     </div>
@@ -358,7 +405,9 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <div className="font-black text-slate-900">{observer.name}</div>
-                          <div className="text-xs font-semibold text-slate-500">{observer.focus}</div>
+                          <div className="text-xs font-semibold text-slate-500">
+                            {observer.focus}
+                          </div>
                         </div>
                         <button
                           type="button"
@@ -368,7 +417,9 @@ export default function DashboardPage() {
                           {observer.following ? "Following" : "Follow"}
                         </button>
                       </div>
-                      <div className="mt-2 text-xs font-semibold text-slate-500">{observer.sightings} reports</div>
+                      <div className="mt-2 text-xs font-semibold text-slate-500">
+                        {observer.sightings} reports
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -378,7 +429,9 @@ export default function DashboardPage() {
             <article className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-700">Contribution path</span>
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-700">
+                    Contribution path
+                  </span>
                   <h2 className="mt-2 text-2xl font-black text-slate-950">Impact ladder</h2>
                 </div>
                 <span className="text-3xl">⚡</span>
@@ -392,11 +445,18 @@ export default function DashboardPage() {
                         <span>{achievement.icon}</span>
                         <span>{achievement.title}</span>
                       </span>
-                      <span className="text-xs font-bold text-slate-500">{Math.min(100, Math.round(achievement.progress))}%</span>
+                      <span className="text-xs font-bold text-slate-500">
+                        {Math.min(100, Math.round(achievement.progress))}%
+                      </span>
                     </div>
-                    <div className="mt-2 text-xs font-semibold text-slate-500">{achievement.detail}</div>
+                    <div className="mt-2 text-xs font-semibold text-slate-500">
+                      {achievement.detail}
+                    </div>
                     <div className="mt-2 h-2 rounded-full bg-slate-100">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-500" style={{ width: `${Math.min(100, Math.round(achievement.progress))}%` }} />
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-500"
+                        style={{ width: `${Math.min(100, Math.round(achievement.progress))}%` }}
+                      />
                     </div>
                   </div>
                 ))}

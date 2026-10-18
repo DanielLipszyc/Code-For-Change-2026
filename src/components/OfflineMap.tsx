@@ -23,9 +23,10 @@ export default function OfflineMap({ onMapClick, initialLat, initialLng }: Offli
       if (!mapContainerRef.current) return;
 
       try {
-        const initialPosition = initialLat && initialLng 
-          ? [initialLat, initialLng] as [number, number]
-          : [29.6516, -82.3248] as [number, number];
+        const initialPosition =
+          initialLat && initialLng
+            ? ([initialLat, initialLng] as [number, number])
+            : ([29.6516, -82.3248] as [number, number]);
 
         const map = L.map(mapContainerRef.current, {
           center: initialPosition,
@@ -33,12 +34,13 @@ export default function OfflineMap({ onMapClick, initialLat, initialLng }: Offli
         });
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         }).addTo(map);
 
         // Create custom icon for the marker
         const customIcon = L.divIcon({
-          className: 'custom-marker',
+          className: "custom-marker",
           html: '<div style="background-color: #16a34a; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 10px rgba(0,0,0,0.3);"></div>',
           iconSize: [30, 30],
           iconAnchor: [15, 30],
@@ -53,7 +55,7 @@ export default function OfflineMap({ onMapClick, initialLat, initialLng }: Offli
         markerRef.current = marker;
 
         // Handle marker drag end
-        marker.on('dragend', (e) => {
+        marker.on("dragend", (e) => {
           const position = marker.getLatLng();
           onMapClick(position.lat, position.lng);
         });
@@ -95,10 +97,10 @@ export default function OfflineMap({ onMapClick, initialLat, initialLng }: Offli
   }, [initialLat, initialLng]);
 
   return (
-    <div 
-      ref={mapContainerRef} 
+    <div
+      ref={mapContainerRef}
       className="h-full w-full"
-      style={{ minHeight: '384px', zIndex: 1 }}
+      style={{ minHeight: "384px", zIndex: 1 }}
     />
   );
 }

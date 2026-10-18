@@ -9,11 +9,11 @@ export interface PlantSubmission {
 }
 
 // LocalStorage key for plant submissions
-export const SUBMISSIONS_KEY = 'swamp-spotter-submissions';
+export const SUBMISSIONS_KEY = "swamp-spotter-submissions";
 
 // Get all submissions from localStorage
 export function getSubmissions(): PlantSubmission[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === "undefined") return [];
   const data = localStorage.getItem(SUBMISSIONS_KEY);
   return data ? JSON.parse(data) : [];
 }
@@ -27,6 +27,6 @@ export function addSubmission(submission: PlantSubmission): void {
 
 // Clear all submissions from localStorage
 export function clearSubmissions(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   localStorage.removeItem(SUBMISSIONS_KEY);
 }

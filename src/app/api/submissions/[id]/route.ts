@@ -9,19 +9,13 @@ import { parseNotes, resolvePlant } from "@/lib/submissionInput";
  * Fetch a single submission by ID. Approved submissions are public;
  * pending ones are visible only to their owner and admins.
  */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
 
     // Validate ID
     if (!isValidId(id)) {
-      return NextResponse.json(
-        { error: "Invalid submission ID" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid submission ID" }, { status: 400 });
     }
 
     const { data: submission, error } = await supabase
@@ -33,10 +27,7 @@ export async function GET(
     if (error) throw error;
 
     if (!submission) {
-      return NextResponse.json(
-        { error: "Submission not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
     const { userId } = await auth();
@@ -45,20 +36,14 @@ export async function GET(
 
     // Pending reports answer 404 to everyone else, so their existence isn't revealed
     if (submission.status !== "approved" && !canSeeAll) {
-      return NextResponse.json(
-        { error: "Submission not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
     const result = toSubmission(submission);
     return NextResponse.json(canSeeAll ? result : { ...result, userId: null });
   } catch (error) {
     console.error("Error fetching submission:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch submission" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch submission" }, { status: 500 });
   }
 }
 
@@ -66,10 +51,7 @@ export async function GET(
  * PUT /api/submissions/[id]
  * Update a submission (requires ownership)
  */
-export async function PUT(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
 
@@ -78,18 +60,12 @@ export async function PUT(
     const userId = authResult.userId;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized - Please sign in" }, { status: 401 });
     }
 
     // Validate ID
     if (!isValidId(id)) {
-      return NextResponse.json(
-        { error: "Invalid submission ID" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid submission ID" }, { status: 400 });
     }
 
     // Check if user can edit this submission
@@ -97,7 +73,7 @@ export async function PUT(
     if (!canEdit) {
       return NextResponse.json(
         { error: "Forbidden - You can only edit your own submissions" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -114,7 +90,7 @@ export async function PUT(
       if (!plant) {
         return NextResponse.json(
           { error: "Plant name must be one of the listed species or Unknown" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       updateFields.plant_name = plant.plantName;
@@ -132,7 +108,7 @@ export async function PUT(
     if (!("plant_name" in updateFields) && !("notes" in updateFields)) {
       return NextResponse.json(
         { error: "Nothing to update: send plantName and/or notes" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -153,10 +129,7 @@ export async function PUT(
     if (error) throw error;
 
     if (updated.length === 0) {
-      return NextResponse.json(
-        { error: "Submission not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -165,10 +138,7 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Error updating submission:", error);
-    return NextResponse.json(
-      { error: "Failed to update submission" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update submission" }, { status: 500 });
   }
 }
 
@@ -176,10 +146,7 @@ export async function PUT(
  * DELETE /api/submissions/[id]
  * Delete a submission (requires ownership or admin role)
  */
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
 
@@ -188,18 +155,12 @@ export async function DELETE(
     const userId = authResult.userId;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized - Please sign in" }, { status: 401 });
     }
 
     // Validate ID
     if (!isValidId(id)) {
-      return NextResponse.json(
-        { error: "Invalid submission ID" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid submission ID" }, { status: 400 });
     }
 
     // Check if user can delete this submission
@@ -207,7 +168,7 @@ export async function DELETE(
     if (!canDelete) {
       return NextResponse.json(
         { error: "Forbidden - You can only delete your own submissions" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -220,10 +181,7 @@ export async function DELETE(
     if (error) throw error;
 
     if (deleted.length === 0) {
-      return NextResponse.json(
-        { error: "Submission not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -232,9 +190,6 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error deleting submission:", error);
-    return NextResponse.json(
-      { error: "Failed to delete submission" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to delete submission" }, { status: 500 });
   }
 }

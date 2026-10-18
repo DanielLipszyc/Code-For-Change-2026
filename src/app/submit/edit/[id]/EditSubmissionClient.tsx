@@ -24,7 +24,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
   const router = useRouter();
   // "Unknown Plant" is stored for unidentified plants; the dropdown option is "Unknown"
   const [plantName, setPlantName] = useState(
-    submission.plantName === "Unknown Plant" ? "Unknown" : submission.plantName
+    submission.plantName === "Unknown Plant" ? "Unknown" : submission.plantName,
   );
   const [notes, setNotes] = useState(submission.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,8 +36,8 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
     try {
       // The server looks up the scientific name from the plant list
       const response = await fetch(`/api/submissions/${submission._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plantName,
           notes,
@@ -46,14 +46,16 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to update submission');
+        throw new Error(error.error || "Failed to update submission");
       }
 
       // Redirect to map on success
-      router.push('/map');
+      router.push("/map");
     } catch (error) {
-      console.error('Error updating submission:', error);
-      alert(error instanceof Error ? error.message : 'Failed to update submission. Please try again.');
+      console.error("Error updating submission:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to update submission. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -64,12 +66,8 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Edit Submission
-            </h2>
-            <p className="text-gray-600">
-              Update the details of your plant sighting
-            </p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Edit Submission</h2>
+            <p className="text-gray-600">Update the details of your plant sighting</p>
             <p className="text-sm text-amber-700 mt-2">
               Saving changes sends your report back to an admin for review.
             </p>
@@ -144,7 +142,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
             <div className="flex gap-4">
               <button
                 type="button"
-                onClick={() => router.push('/map')}
+                onClick={() => router.push("/map")}
                 className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                 disabled={isSubmitting}
               >
@@ -155,7 +153,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
                 disabled={isSubmitting}
                 className="flex-1 px-6 py-3 bg-[#136207] text-white rounded-lg font-medium hover:bg-[#0d4705] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>

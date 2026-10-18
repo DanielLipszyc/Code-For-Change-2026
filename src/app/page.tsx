@@ -37,7 +37,7 @@ export default function Home() {
         body: "Help create a clearer picture of biodiversity by contributing sightings to a shared view.",
       },
     ],
-    []
+    [],
   );
 
   const [active, setActive] = useState(0);
@@ -54,7 +54,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-
       {/* HERO + SLIDESHOW */}
       <section className="relative overflow-hidden text-white">
         {/* background blobs */}
@@ -106,7 +105,8 @@ export default function Home() {
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-green-100/90 sm:text-lg">
               Discover, identify, and document plants in swamps and wetlands; then submit sightings
-              that help teams and communities understand what&apos;s spreading and what&apos;s thriving.
+              that help teams and communities understand what&apos;s spreading and what&apos;s
+              thriving.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -232,9 +232,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                <p className="mt-3 text-xs text-white/60">
-                  Tip: hover to pause the slideshow.
-                </p>
+                <p className="mt-3 text-xs text-white/60">Tip: hover to pause the slideshow.</p>
               </div>
             </div>
           </div>
@@ -261,7 +259,11 @@ export default function Home() {
                 title="Spot"
                 body="Find a plant and take clear photos of leaves, stem, and fruit/flowers."
               />
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
+              <img
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                src="/Spot.jpg"
+                alt="Phone taking a picture of a plant"
+              />
             </div>
 
             <div className="space-y-4">
@@ -270,7 +272,11 @@ export default function Home() {
                 title="Identify"
                 body="Use the guide to compare key traits and confirm your best match."
               />
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
+              <img
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                src="/Identify.jpg"
+                alt="Magnifying glass over green question mark"
+              />
             </div>
 
             <div className="space-y-4">
@@ -279,7 +285,11 @@ export default function Home() {
                 title="Submit"
                 body="Upload the sighting with location and notes; then it’s ready for review."
               />
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
+              <img
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                src="/Upload.jpg"
+                alt="Mouse clicking an upload button"
+              />
             </div>
           </div>
 
@@ -304,16 +314,25 @@ export default function Home() {
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-3">
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Spot.jpg" alt="Phone taking a picture of a plant"/>
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Identify.jpg" alt="Magnifying glass over green question mark"/>
-              <img className = "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" src="/Upload.jpg" alt="Mouse clicking an upload button"/>
+              <img
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                src="/Spot.jpg"
+                alt="Phone taking a picture of a plant"
+              />
+              <img
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                src="/Identify.jpg"
+                alt="Magnifying glass over green question mark"
+              />
+              <img
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                src="/Upload.jpg"
+                alt="Mouse clicking an upload button"
+              />
             </div>
           </div>
         </div>
       </section>
-
-
-
 
       {/* CTA */}
       <section className="bg-slate-950 py-16 text-white">
@@ -324,7 +343,8 @@ export default function Home() {
                 Ready to explore the swamp?
               </h2>
               <p className="mt-3 text-white/75">
-                Create an account to submit sightings, track your reports, and help contribute to an ongoing citizen science effort.
+                Create an account to submit sightings, track your reports, and help contribute to an
+                ongoing citizen science effort.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -353,17 +373,17 @@ export default function Home() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p>© {new Date().getFullYear()} Swamp Spotter</p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/about" className="hover:text-white">About</Link>
+                <Link href="/about" className="hover:text-white">
+                  About
+                </Link>
               </div>
             </div>
           </footer>
         </div>
       </section>
-
     </main>
   );
 }
-
 
 function StepCard({ n, title, body }: { n: string; title: string; body: string }) {
   return (

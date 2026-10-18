@@ -48,9 +48,7 @@ export default function DraftsPage() {
       <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Drafts</h1>
-          <p className="mt-2 text-gray-600">
-            Complete and submit your saved offline observations
-          </p>
+          <p className="mt-2 text-gray-600">Complete and submit your saved offline observations</p>
         </div>
 
         <div className="mb-6 flex flex-wrap gap-3">
@@ -84,10 +82,7 @@ export default function DraftsPage() {
         ) : (
           <div className="space-y-3">
             {drafts.map((draft) => (
-              <div
-                key={draft.id}
-                className="border border-gray-200 rounded-lg p-4"
-              >
+              <div key={draft.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -97,7 +92,9 @@ export default function DraftsPage() {
                     </div>
 
                     <div className="space-y-1 text-sm text-gray-600">
-                      <p>Location: {draft.lat.toFixed(6)}, {draft.lng.toFixed(6)}</p>
+                      <p>
+                        Location: {draft.lat.toFixed(6)}, {draft.lng.toFixed(6)}
+                      </p>
                       {draft.imageData && <p>Photo attached</p>}
                     </div>
                   </div>

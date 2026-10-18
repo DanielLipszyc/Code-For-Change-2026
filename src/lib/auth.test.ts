@@ -14,12 +14,7 @@ vi.mock("./supabase", async (importOriginal) => ({
   supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) },
 }));
 
-import {
-  canDeleteSubmission,
-  canEditSubmission,
-  getPublicDisplayName,
-  getUserRole,
-} from "./auth";
+import { canDeleteSubmission, canEditSubmission, getPublicDisplayName, getUserRole } from "./auth";
 
 const OWNER = "user_owner";
 const OTHER = "user_other";

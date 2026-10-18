@@ -21,7 +21,7 @@ export interface Submission {
   createdBy?: string; // User's display name
   createdAt?: Date;
   updatedAt?: Date;
-  status?: 'pending' | 'approved'; // Approval status (pending = red for admins, approved = green for all)
+  status?: "pending" | "approved"; // Approval status (pending = red for admins, approved = green for all)
 }
 
 // GET - Fetch submissions from Supabase
@@ -49,9 +49,11 @@ export async function GET() {
     const { data, error } = await query;
     if (error) throw error;
 
-    const submissions = data.map(toSubmission).map((submission) =>
-      admin || submission.userId === userId ? submission : { ...submission, userId: null }
-    );
+    const submissions = data
+      .map(toSubmission)
+      .map((submission) =>
+        admin || submission.userId === userId ? submission : { ...submission, userId: null },
+      );
 
     return NextResponse.json(submissions);
   } catch (error) {
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (!userId && !isAnonymous) {
       return NextResponse.json(
         { error: "Unauthorized - Please sign in to submit" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -83,14 +85,14 @@ export async function POST(request: NextRequest) {
       return tooManyRequests(rateLimit.windowSeconds);
     }
 
-    let displayName = 'Anonymous';
-    let userRole: 'user' | 'admin' = 'user';
+    let displayName = "Anonymous";
+    let userRole: "user" | "admin" = "user";
 
     // Anonymous submissions get no user attached and are never auto-approved
     if (userId && !isAnonymous) {
       const client = await clerkClient();
       const user = await client.users.getUser(userId);
-      displayName = getPublicDisplayName(user, { fallback: 'Anonymous' });
+      displayName = getPublicDisplayName(user, { fallback: "Anonymous" });
       userRole = await getUserRole(userId);
     }
 
@@ -98,7 +100,7 @@ export async function POST(request: NextRequest) {
     if (!data.plantName || typeof data.lat !== "number" || typeof data.lng !== "number") {
       return NextResponse.json(
         { error: "Missing required fields: plantName, lat, lng" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -107,7 +109,7 @@ export async function POST(request: NextRequest) {
     if (!plant) {
       return NextResponse.json(
         { error: "Plant name must be one of the listed species or Unknown" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -122,13 +124,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Rough Alachua County bounds check
-    if (
-      data.lat < 29.3 || data.lat > 29.9 ||
-      data.lng < -82.7 || data.lng > -82.0
-    ) {
+    if (data.lat < 29.3 || data.lat > 29.9 || data.lng < -82.7 || data.lng > -82.0) {
       return NextResponse.json(
         { error: "Location must be within Alachua County" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -146,7 +145,7 @@ export async function POST(request: NextRequest) {
         image_data: image.value,
         user_id: isAnonymous ? null : userId, // Add authenticated user ID
         created_by: displayName, // Add user's display name
-        status: userRole === 'admin' ? 'approved' : 'pending', // Auto-approve admin submissions
+        status: userRole === "admin" ? "approved" : "pending", // Auto-approve admin submissions
       })
       .select("id")
       .single();
@@ -155,7 +154,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      id: inserted.id
+      id: inserted.id,
     });
   } catch (error) {
     console.error("Error creating submission:", error);

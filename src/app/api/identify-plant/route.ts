@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     const matchedPlant = plants.find(
       (plant) =>
         plant.name.toLowerCase() === topName ||
-        plant.scientificName.toLowerCase() === topScientificName
+        plant.scientificName.toLowerCase() === topScientificName,
     );
 
     const finalPrediction = matchedPlant ? matchedPlant.name : UNKNOWN_PLANT;

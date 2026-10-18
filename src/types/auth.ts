@@ -1,7 +1,7 @@
 /**
  * User role types for authorization
  */
-export type UserRole = 'user' | 'admin';
+export type UserRole = "user" | "admin";
 
 /**
  * Extended submission interface with authentication fields

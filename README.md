@@ -1,4 +1,5 @@
 # Swamp Spotter
+
 ## Code For Change 2026
 
 A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, Supabase, and Tailwind CSS.

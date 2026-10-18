@@ -5,27 +5,27 @@ import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 
 const handleDelete = async (submissionId: string) => {
-    if (!confirm('Are you sure you want to delete this submission?')) {
-      return;
-    }
+  if (!confirm("Are you sure you want to delete this submission?")) {
+    return;
+  }
 
-    try {
-      const response = await fetch(`/api/submissions/${submissionId}`, {
-        method: 'DELETE',
-      });
+  try {
+    const response = await fetch(`/api/submissions/${submissionId}`, {
+      method: "DELETE",
+    });
 
-      if (response.ok) {
-        alert('Submission deleted successfully');
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Failed to delete submission');
-      }
-    } catch (error) {
-      console.error('Error deleting submission:', error);
-      alert('Failed to delete submission');
+    if (response.ok) {
+      alert("Submission deleted successfully");
+      window.location.reload();
+    } else {
+      const error = await response.json();
+      alert(error.error || "Failed to delete submission");
     }
-  };
+  } catch (error) {
+    console.error("Error deleting submission:", error);
+    alert("Failed to delete submission");
+  }
+};
 
 interface Submission {
   _id: string;
@@ -90,7 +90,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         <div className="absolute left-3 top-3">
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusBadgeClasses(
-              submission.status || "pending"
+              submission.status || "pending",
             )}`}
           >
             {submission.status === "approved" ? "✓ Approved" : "⏳ Pending"}
@@ -105,18 +105,14 @@ function SubmissionCard({ submission }: { submission: Submission }) {
               {submission.plantName}
             </h3>
             {submission.scientificName && (
-              <p className="text-sm italic text-slate-600">
-                {submission.scientificName}
-              </p>
+              <p className="text-sm italic text-slate-600">{submission.scientificName}</p>
             )}
-            <p className="text-xs text-slate-500 mt-1">
-              Submitted: {submittedDate}
-            </p>
+            <p className="text-xs text-slate-500 mt-1">Submitted: {submittedDate}</p>
           </div>
 
           <Link
             href={`/submit/edit/${submission._id}`}
-            style={{textAlign: "center"}}
+            style={{ textAlign: "center" }}
             className="flex-grow rounded-lg bg-[#136207] px-1.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0f5006]"
             title="Edit submission"
           >
@@ -132,13 +128,13 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         </div>
 
         {submission.notes && (
-          <p className="mt-3 text-sm text-slate-600 line-clamp-2">
-            {submission.notes}
-          </p>
+          <p className="mt-3 text-sm text-slate-600 line-clamp-2">{submission.notes}</p>
         )}
 
         <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-          <span>📍 {submission.lat.toFixed(4)}, {submission.lng.toFixed(4)}</span>
+          <span>
+            📍 {submission.lat.toFixed(4)}, {submission.lng.toFixed(4)}
+          </span>
         </div>
       </div>
     </div>
@@ -212,9 +208,7 @@ export default function LogPage() {
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-6xl mb-4">🔒</div>
           <h1 className="text-3xl font-bold text-slate-900 mb-4">Sign In Required</h1>
-          <p className="text-slate-600 mb-6">
-            Please sign in to view your submission log.
-          </p>
+          <p className="text-slate-600 mb-6">Please sign in to view your submission log.</p>
           <Link
             href="/sign-in"
             className="inline-block px-6 py-3 bg-[#136207] text-white font-semibold rounded-lg hover:bg-[#0f5006] transition-colors"
@@ -234,9 +228,7 @@ export default function LogPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
               My Submission Log
             </h1>
-            <p className="mt-2 text-slate-600">
-              View and manage all your plant submissions
-            </p>
+            <p className="mt-2 text-slate-600">View and manage all your plant submissions</p>
           </div>
 
           <div className="grid w-full gap-3 sm:w-auto sm:min-w-[420px]">
@@ -276,9 +268,7 @@ export default function LogPage() {
                 <>
                   <div className="text-4xl mb-4">🔍</div>
                   <p className="font-semibold mb-2">No matches found</p>
-                  <p className="text-sm text-slate-600">
-                    Try adjusting your search or filter
-                  </p>
+                  <p className="text-sm text-slate-600">Try adjusting your search or filter</p>
                 </>
               ) : (
                 <>

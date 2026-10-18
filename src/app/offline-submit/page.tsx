@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import { offlineStorage } from "@/lib/offlineStorage";
 import dynamic from "next/dynamic";
 
-const MapWithNoSSR = dynamic(
-  () => import("@/components/OfflineMap"),
-  { ssr: false }
-);
+const MapWithNoSSR = dynamic(() => import("@/components/OfflineMap"), { ssr: false });
 
 export default function OfflineSubmitPage() {
   const { user } = useUser();
@@ -61,7 +58,8 @@ export default function OfflineSubmitPage() {
         let errorMessage = "Unable to get location";
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = "Location permission denied. Please allow location access in your browser settings.";
+            errorMessage =
+              "Location permission denied. Please allow location access in your browser settings.";
             break;
           case error.POSITION_UNAVAILABLE:
             errorMessage = "Location information is unavailable.";
@@ -79,7 +77,7 @@ export default function OfflineSubmitPage() {
         enableHighAccuracy: true,
         timeout: 15000,
         maximumAge: 0,
-      }
+      },
     );
   };
 
@@ -126,9 +124,7 @@ export default function OfflineSubmitPage() {
     <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-primary-50">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            Offline Mode
-          </h1>
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Offline Mode</h1>
           <p className="text-xl text-gray-600">
             Save location and photo when you&apos;re out in the field
           </p>
@@ -165,8 +161,8 @@ export default function OfflineSubmitPage() {
             )}
 
             <div className="h-96 w-full rounded-lg overflow-hidden border border-gray-300 relative">
-              <MapWithNoSSR 
-                onMapClick={handleMapClick} 
+              <MapWithNoSSR
+                onMapClick={handleMapClick}
                 initialLat={lat || undefined}
                 initialLng={lng || undefined}
               />
@@ -196,9 +192,7 @@ export default function OfflineSubmitPage() {
                   <p className="text-lg font-medium text-gray-700 mb-2">
                     Click to upload or drag and drop
                   </p>
-                  <p className="text-sm text-gray-500">
-                    PNG, JPG, or GIF (max 2MB)
-                  </p>
+                  <p className="text-sm text-gray-500">PNG, JPG, or GIF (max 2MB)</p>
                 </div>
               )}
             </div>

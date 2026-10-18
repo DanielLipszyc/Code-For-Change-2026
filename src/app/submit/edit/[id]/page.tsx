@@ -1,8 +1,8 @@
-import { auth } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
-import { supabase, isValidId, toSubmission } from '@/lib/supabase';
-import { canEditSubmission } from '@/lib/auth';
-import EditSubmissionClient from './EditSubmissionClient';
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { supabase, isValidId, toSubmission } from "@/lib/supabase";
+import { canEditSubmission } from "@/lib/auth";
+import EditSubmissionClient from "./EditSubmissionClient";
 
 interface PageProps {
   params: Promise<{
@@ -18,29 +18,29 @@ export default async function EditSubmissionPage({ params }: PageProps) {
   const userId = authResult.userId;
 
   if (!userId) {
-    redirect('/sign-in');
+    redirect("/sign-in");
   }
 
   // Validate ID
   if (!isValidId(id)) {
-    redirect('/map');
+    redirect("/map");
   }
 
   // Check if user can edit this submission
   const canEdit = await canEditSubmission(userId, id);
   if (!canEdit) {
-    redirect('/map');
+    redirect("/map");
   }
 
   // Fetch submission data
   const { data: row, error } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('id', id)
+    .from("submissions")
+    .select("*")
+    .eq("id", id)
     .maybeSingle();
 
   if (error || !row) {
-    redirect('/map');
+    redirect("/map");
   }
 
   const s = toSubmission(row);

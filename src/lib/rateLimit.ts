@@ -18,7 +18,7 @@ export const LIMITS = {
  */
 export async function isWithinRateLimit(
   key: string,
-  { limit, windowSeconds }: { limit: number; windowSeconds: number }
+  { limit, windowSeconds }: { limit: number; windowSeconds: number },
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc("hit_rate_limit", {
     p_key: key,
@@ -28,7 +28,7 @@ export async function isWithinRateLimit(
 
   if (error) {
     throw new Error(
-      `Rate limit check failed (has supabase/schema.sql been re-run?): ${error.message}`
+      `Rate limit check failed (has supabase/schema.sql been re-run?): ${error.message}`,
     );
   }
   return data === true;
@@ -50,6 +50,6 @@ export function anonymousKey(prefix: string, request: Request): string {
 export function tooManyRequests(windowSeconds: number) {
   return NextResponse.json(
     { error: "Too many requests. Please try again later." },
-    { status: 429, headers: { "Retry-After": String(windowSeconds) } }
+    { status: 429, headers: { "Retry-After": String(windowSeconds) } },
   );
 }

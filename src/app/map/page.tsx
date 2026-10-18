@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useUser } from '@clerk/nextjs';
-import 'leaflet/dist/leaflet.css';
-import { UserRole } from '@/types/auth';
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useUser } from "@clerk/nextjs";
+import "leaflet/dist/leaflet.css";
+import { UserRole } from "@/types/auth";
 
 interface Submission {
   _id?: string;
@@ -18,17 +18,17 @@ interface Submission {
   createdBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  status?: 'pending' | 'approved';
+  status?: "pending" | "approved";
 }
 
-let alachuaJson = require('./alachua.json');
+let alachuaJson = require("./alachua.json");
 var mapStyle = {
-  color: '#000000',
+  color: "#000000",
   fillOpacity: 0,
 };
 
 function escapeCsvValue(value: unknown) {
-  if (value === null || value === undefined) return '';
+  if (value === null || value === undefined) return "";
   const s = String(value);
   const needsQuotes = /[",\n\r]/.test(s);
   const escaped = s.replace(/"/g, '""');
@@ -44,17 +44,17 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
     safeRows.reduce((set, row) => {
       Object.keys(row).forEach((k) => set.add(k));
       return set;
-    }, new Set<string>())
+    }, new Set<string>()),
   );
 
-  const header = columns.map(escapeCsvValue).join(',');
-  const lines = safeRows.map((row) => columns.map((col) => escapeCsvValue(row[col])).join(','));
+  const header = columns.map(escapeCsvValue).join(",");
+  const lines = safeRows.map((row) => columns.map((col) => escapeCsvValue(row[col])).join(","));
 
-  const csv = [header, ...lines].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const csv = [header, ...lines].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -71,41 +71,41 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
 function buildPopupContent(
   submission: Submission,
   showPending: boolean,
-  onShowDetails: () => void
+  onShowDetails: () => void,
 ): HTMLElement {
-  const root = document.createElement('div');
-  root.style.minWidth = '150px';
+  const root = document.createElement("div");
+  root.style.minWidth = "150px";
 
   const addLine = (tag: string, text: string, cssText: string) => {
-    if (root.childNodes.length > 0) root.appendChild(document.createElement('br'));
+    if (root.childNodes.length > 0) root.appendChild(document.createElement("br"));
     const el = document.createElement(tag);
     el.style.cssText = cssText;
     el.textContent = text;
     root.appendChild(el);
   };
 
-  addLine('b', `🌿 ${submission.plantName}`, 'font-size: 14px; color: #136207;');
+  addLine("b", `🌿 ${submission.plantName}`, "font-size: 14px; color: #136207;");
   if (submission.scientificName) {
-    addLine('i', submission.scientificName, 'color: #666; font-size: 12px;');
+    addLine("i", submission.scientificName, "color: #666; font-size: 12px;");
   }
   if (submission.notes) {
-    addLine('span', submission.notes, 'font-size: 12px;');
+    addLine("span", submission.notes, "font-size: 12px;");
   }
   addLine(
-    'span',
+    "span",
     `Spotted: ${new Date(submission.timestamp).toLocaleDateString()}`,
-    'font-size: 11px; color: #888;'
+    "font-size: 11px; color: #888;",
   );
   if (showPending) {
-    addLine('span', '⏳ Pending Approval', 'font-size: 11px; color: #dc2626; font-weight: 600;');
+    addLine("span", "⏳ Pending Approval", "font-size: 11px; color: #dc2626; font-weight: 600;");
   }
 
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = 'More details';
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "More details";
   button.style.cssText =
-    'display: block; margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;';
-  button.addEventListener('click', onShowDetails);
+    "display: block; margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;";
+  button.addEventListener("click", onShowDetails);
   root.appendChild(button);
 
   return root;
@@ -121,12 +121,12 @@ export default function Map() {
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const { user } = useUser();
-  const [userRole, setUserRole] = useState<UserRole>('user');
+  const [userRole, setUserRole] = useState<UserRole>("user");
   const [roleLoaded, setRoleLoaded] = useState(false);
 
   const [selectedPlants, setSelectedPlants] = useState<string[]>([]);
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Unique plant list for filter UI
@@ -135,7 +135,7 @@ export default function Map() {
       submissions.reduce((set, s) => {
         if (s.plantName) set.add(s.plantName);
         return set;
-      }, new Set<string>())
+      }, new Set<string>()),
     ).sort();
   }, [submissions]);
 
@@ -146,7 +146,7 @@ export default function Map() {
 
       if (dateFrom || dateTo) {
         // compare date strings to avoid timezone issues
-        const submissionDateStr = new Date(s.timestamp).toISOString().split('T')[0];
+        const submissionDateStr = new Date(s.timestamp).toISOString().split("T")[0];
         if (dateFrom && submissionDateStr < dateFrom) return false;
         if (dateTo && submissionDateStr > dateTo) return false;
       }
@@ -161,14 +161,14 @@ export default function Map() {
    * - Also applies role visibility (non-admin: hide pending)
    */
   const displayedSubmissions = useMemo(() => {
-    if (userRole === 'admin') return filteredSubmissions;
-    return filteredSubmissions.filter((s) => s.status !== 'pending');
+    if (userRole === "admin") return filteredSubmissions;
+    return filteredSubmissions.filter((s) => s.status !== "pending");
   }, [filteredSubmissions, userRole]);
 
   const handleClearFilters = () => {
     setSelectedPlants([]);
-    setDateFrom('');
-    setDateTo('');
+    setDateFrom("");
+    setDateTo("");
   };
 
   const handleSelectAllPlants = () => setSelectedPlants(uniquePlants);
@@ -176,27 +176,27 @@ export default function Map() {
 
   const handlePlantToggle = (plantName: string) => {
     setSelectedPlants((prev) =>
-      prev.includes(plantName) ? prev.filter((p) => p !== plantName) : [...prev, plantName]
+      prev.includes(plantName) ? prev.filter((p) => p !== plantName) : [...prev, plantName],
     );
   };
 
   // ✅ Export ONLY what's on display (after filters + role visibility)
   const handleExportCsv = useCallback(() => {
     const rows = displayedSubmissions.map((s) => ({
-      id: s._id ?? '',
-      plantName: s.plantName ?? '',
-      scientificName: s.scientificName ?? '',
-      status: s.status ?? '',
-      latitude: s.lat ?? '',
-      longitude: s.lng ?? '',
-      spottedAtISO: s.timestamp ? new Date(s.timestamp).toISOString() : '',
-      spottedAtLocal: s.timestamp ? new Date(s.timestamp).toLocaleString() : '',
-      notes: s.notes ?? '',
-      createdBy: s.createdBy ?? '',
-      userId: s.userId ?? '',
-      createdAtISO: s.createdAt ? new Date(s.createdAt).toISOString() : '',
-      updatedAtISO: s.updatedAt ? new Date(s.updatedAt).toISOString() : '',
-      hasImage: s.imageData ? 'yes' : 'no',
+      id: s._id ?? "",
+      plantName: s.plantName ?? "",
+      scientificName: s.scientificName ?? "",
+      status: s.status ?? "",
+      latitude: s.lat ?? "",
+      longitude: s.lng ?? "",
+      spottedAtISO: s.timestamp ? new Date(s.timestamp).toISOString() : "",
+      spottedAtLocal: s.timestamp ? new Date(s.timestamp).toLocaleString() : "",
+      notes: s.notes ?? "",
+      createdBy: s.createdBy ?? "",
+      userId: s.userId ?? "",
+      createdAtISO: s.createdAt ? new Date(s.createdAt).toISOString() : "",
+      updatedAtISO: s.updatedAt ? new Date(s.updatedAt).toISOString() : "",
+      hasImage: s.imageData ? "yes" : "no",
     }));
 
     const stamp = new Date().toISOString().slice(0, 10);
@@ -206,14 +206,14 @@ export default function Map() {
   // Fetch user role when user is authenticated
   useEffect(() => {
     if (user) {
-      fetch('/api/users/me')
+      fetch("/api/users/me")
         .then((res) => res.json())
         .then((data) => {
           setUserRole(data.role);
           setRoleLoaded(true);
         })
         .catch((err) => {
-          console.error('Error fetching user role:', err);
+          console.error("Error fetching user role:", err);
           setRoleLoaded(true);
         });
     } else {
@@ -225,13 +225,13 @@ export default function Map() {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await fetch('/api/submissions');
+        const response = await fetch("/api/submissions");
         if (response.ok) {
           const data = await response.json();
           setSubmissions(data);
         }
       } catch (error) {
-        console.error('Error fetching submissions:', error);
+        console.error("Error fetching submissions:", error);
       } finally {
         setDataLoaded(true);
       }
@@ -241,22 +241,22 @@ export default function Map() {
 
   // Handle delete submission
   const handleDelete = async (submissionId: string) => {
-    if (!confirm('Are you sure you want to delete this submission?')) return;
+    if (!confirm("Are you sure you want to delete this submission?")) return;
 
     try {
-      const response = await fetch(`/api/submissions/${submissionId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/submissions/${submissionId}`, { method: "DELETE" });
 
       if (response.ok) {
         setSubmissions((prev) => prev.filter((s) => s._id !== submissionId));
         setSelectedSubmission(null);
-        alert('Submission deleted successfully');
+        alert("Submission deleted successfully");
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to delete submission');
+        alert(error.error || "Failed to delete submission");
       }
     } catch (error) {
-      console.error('Error deleting submission:', error);
-      alert('Failed to delete submission');
+      console.error("Error deleting submission:", error);
+      alert("Failed to delete submission");
     }
   };
 
@@ -269,28 +269,30 @@ export default function Map() {
   const handleApprove = useCallback(
     async (submissionId: string) => {
       try {
-        const response = await fetch(`/api/submissions/${submissionId}/approve`, { method: 'POST' });
+        const response = await fetch(`/api/submissions/${submissionId}/approve`, {
+          method: "POST",
+        });
 
         if (response.ok) {
           setSubmissions((prev) =>
-            prev.map((s) => (s._id === submissionId ? { ...s, status: 'approved' as const } : s))
+            prev.map((s) => (s._id === submissionId ? { ...s, status: "approved" as const } : s)),
           );
 
           if (selectedSubmission?._id === submissionId) {
-            setSelectedSubmission({ ...selectedSubmission, status: 'approved' as const });
+            setSelectedSubmission({ ...selectedSubmission, status: "approved" as const });
           }
 
-          alert('Submission approved successfully');
+          alert("Submission approved successfully");
         } else {
           const error = await response.json();
-          alert(error.error || 'Failed to approve submission');
+          alert(error.error || "Failed to approve submission");
         }
       } catch (error) {
-        console.error('Error approving submission:', error);
-        alert('Failed to approve submission');
+        console.error("Error approving submission:", error);
+        alert("Failed to approve submission");
       }
     },
-    [selectedSubmission]
+    [selectedSubmission],
   );
 
   // Check if user can edit submission
@@ -302,13 +304,13 @@ export default function Map() {
   // Check if user can delete submission
   const canDelete = (submission: Submission): boolean => {
     if (!user) return false;
-    if (userRole === 'admin') return true;
+    if (userRole === "admin") return true;
     if (!submission.userId) return false;
     return submission.userId === user.id;
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     if (!dataLoaded) return;
     if (!roleLoaded) return;
 
@@ -321,22 +323,24 @@ export default function Map() {
 
     const initializeMap = async () => {
       try {
-        const L = await import('leaflet');
+        const L = await import("leaflet");
         if (!mapContainer.current) return;
 
         // Fix leaflet default icon issue
         delete (L.default.Icon.Default.prototype as any)._getIconUrl;
         L.default.Icon.Default.mergeOptions({
           iconRetinaUrl:
-            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+          iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+          shadowUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
         });
 
         const approvedPlantIcon = L.default.icon({
           iconUrl:
-            'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+          shadowUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
@@ -345,8 +349,9 @@ export default function Map() {
 
         const pendingPlantIcon = L.default.icon({
           iconUrl:
-            'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+          shadowUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
@@ -359,8 +364,8 @@ export default function Map() {
         map.current = L.default.map(mapContainer.current as HTMLElement).setView(startLocation, 10);
 
         L.default
-          .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
+          .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors",
             maxZoom: 19,
           })
           .addTo(map.current);
@@ -369,14 +374,14 @@ export default function Map() {
 
         // ✅ Add markers ONLY for displayed submissions
         displayedSubmissions.forEach((submission) => {
-          const isPending = submission.status === 'pending';
+          const isPending = submission.status === "pending";
           const markerIcon =
-            isPending && userRole === 'admin' ? pendingPlantIcon : approvedPlantIcon;
+            isPending && userRole === "admin" ? pendingPlantIcon : approvedPlantIcon;
 
           const popupContent = buildPopupContent(
             submission,
-            isPending && userRole === 'admin',
-            () => setSelectedSubmission(submission)
+            isPending && userRole === "admin",
+            () => setSelectedSubmission(submission),
           );
 
           L.default
@@ -390,7 +395,7 @@ export default function Map() {
 
         setIsLoading(false);
       } catch (error) {
-        console.error('Error initializing map:', error);
+        console.error("Error initializing map:", error);
         setIsLoading(false);
       }
     };
@@ -451,15 +456,17 @@ export default function Map() {
           >
             <div className="flex items-center gap-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Filter Sightings</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Filter Sightings
+                </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {filtersExpanded ? 'Click to collapse' : 'Click to expand filters'}
+                  {filtersExpanded ? "Click to collapse" : "Click to expand filters"}
                 </p>
               </div>
             </div>
             <div
               className={`text-2xl text-gray-500 transition-transform ${
-                filtersExpanded ? 'rotate-180' : ''
+                filtersExpanded ? "rotate-180" : ""
               }`}
             >
               ▼
@@ -528,7 +535,9 @@ export default function Map() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">To</label>
+                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                      To
+                    </label>
                     <input
                       type="date"
                       value={dateTo}
@@ -558,12 +567,12 @@ export default function Map() {
         </div>
 
         {/* Admin Pending Submissions Section */}
-        {userRole === 'admin' && submissions.filter((s) => s.status === 'pending').length > 0 && (
+        {userRole === "admin" && submissions.filter((s) => s.status === "pending").length > 0 && (
           <div className="mt-8 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">⏳</span>
               <h2 className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                Pending Submissions ({submissions.filter((s) => s.status === 'pending').length})
+                Pending Submissions ({submissions.filter((s) => s.status === "pending").length})
               </h2>
             </div>
             <p className="text-amber-800 dark:text-amber-200 mb-4">
@@ -571,7 +580,7 @@ export default function Map() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {submissions
-                .filter((s) => s.status === 'pending')
+                .filter((s) => s.status === "pending")
                 .map((submission) => (
                   <button
                     key={submission._id}
@@ -733,7 +742,7 @@ export default function Map() {
                 {user &&
                   (canEdit(selectedSubmission) ||
                     canDelete(selectedSubmission) ||
-                    (userRole === 'admin' && selectedSubmission.status === 'pending')) && (
+                    (userRole === "admin" && selectedSubmission.status === "pending")) && (
                     <div className="pt-4 flex gap-3">
                       {canEdit(selectedSubmission) && (
                         <button
@@ -751,7 +760,7 @@ export default function Map() {
                           Delete
                         </button>
                       )}
-                      {userRole === 'admin' && selectedSubmission.status === 'pending' && (
+                      {userRole === "admin" && selectedSubmission.status === "pending" && (
                         <button
                           onClick={() => handleApprove(selectedSubmission._id!)}
                           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
@@ -775,11 +784,10 @@ function getLocation(): Promise<[number, number]> {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => resolve([position.coords.latitude, position.coords.longitude]),
-        () => resolve([29.652, -82.325])
+        () => resolve([29.652, -82.325]),
       );
     } else {
       resolve([29.652, -82.325]);
     }
   });
 }
-
