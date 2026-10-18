@@ -44,3 +44,12 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# python (services/)
+__pycache__/
+*.py[cod]
+.venv/
+
+# playwright
+/test-results/
+/playwright-report/
