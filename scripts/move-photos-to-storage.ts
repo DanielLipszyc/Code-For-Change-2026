@@ -22,7 +22,9 @@ async function main() {
     .is("photo_path", null);
   if (error) throw error;
 
-  console.log(`${rows.length} photo(s) to move${apply ? "" : " (dry run: add --apply to move them)"}`);
+  console.log(
+    `${rows.length} photo(s) to move${apply ? "" : " (dry run: add --apply to move them)"}`,
+  );
   let moved = 0;
   let failed = 0;
 
