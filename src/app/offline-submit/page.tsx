@@ -130,7 +130,7 @@ export default function OfflineSubmitPage() {
             Offline Mode
           </h1>
           <p className="text-xl text-gray-600">
-            Save location and photo when you're out in the field
+            Save location and photo when you&apos;re out in the field
           </p>
         </div>
 
