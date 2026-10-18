@@ -20,7 +20,7 @@ export default function EditSubmissionClient({ submission }: EditSubmissionClien
   );
   const [notes, setNotes] = useState(submission.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasPhoto, setHasPhoto] = useState(true);
+  const [hasPhoto, setHasPhoto] = useState(submission.hasPhoto);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
