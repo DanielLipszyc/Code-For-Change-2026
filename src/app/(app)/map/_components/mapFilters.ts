@@ -21,7 +21,11 @@ export function localDay(timestamp: number): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-export function applyFilters(submissions: Submission[], filters: MapFilters): Submission[] {
+/** Sightings that pass the filters, in the same order */
+export function applyFilters<T extends Pick<Submission, "plantName" | "timestamp">>(
+  submissions: T[],
+  filters: MapFilters,
+): T[] {
   return submissions.filter((submission) => {
     if (filters.plants.length > 0 && !filters.plants.includes(submission.plantName)) return false;
 

@@ -22,6 +22,12 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    return [
+      // "What People Found" became the map's List view
+      { source: "/sightings", destination: "/map?view=list", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

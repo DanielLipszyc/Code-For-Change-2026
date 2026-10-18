@@ -31,10 +31,20 @@ vi.mock("./db", () => {
   return { supabase: { from: () => builder } };
 });
 
+// No Next.js cache in unit tests: cached functions run every time, and
+// invalidations are recorded
+const revalidateTag = vi.hoisted(() => vi.fn());
+vi.mock("next/cache", () => ({
+  revalidateTag,
+  unstable_cache: <T>(fn: T) => fn,
+}));
+
 import {
+  approveSubmission,
   deleteSubmission,
   getPhoto,
   getSubmission,
+  listPublicMapPoints,
   listSubmissions,
   updateOwnSubmission,
 } from "./submissions";
@@ -70,6 +80,7 @@ const respond = (data: unknown) => (state.result = { data, error: null });
 beforeEach(() => {
   state.calls = [];
   respond(null);
+  revalidateTag.mockClear();
 });
 
 describe("listSubmissions", () => {
@@ -107,6 +118,17 @@ describe("listSubmissions", () => {
     expect(callsTo("or")).toEqual([]);
   });
 
+  it("with status, adds that filter on top of the visibility rules", async () => {
+    respond([]);
+    await listSubmissions(admin, { status: "pending" });
+    expect(callsTo("eq")).toEqual([["eq", ["status", "pending"]]]);
+
+    state.calls = [];
+    await listSubmissions(owner, { status: "pending" });
+    expect(callsTo("eq")).toEqual([["eq", ["status", "pending"]]]);
+    expect(callsTo("or")).toEqual([["or", [`status.eq.approved,user_id.eq.${OWNER}`]]]);
+  });
+
   it("with mine, returns only the viewer's own and nothing when signed out", async () => {
     respond([]);
     await listSubmissions(owner, { mine: true });
@@ -137,6 +159,46 @@ describe("listSubmissions", () => {
       photoUrl: `/api/submissions/${ID}/photo`,
       userId: null,
     });
+  });
+});
+
+describe("listPublicMapPoints", () => {
+  it("selects only what the map draws, from approved submissions", async () => {
+    respond([row({ timestamp_ms: "1767225600000" })]);
+    const points = await listPublicMapPoints();
+
+    const [[, [columns]]] = callsTo("select");
+    expect(columns).not.toMatch(/image_data|notes|user_id|created_by/);
+    expect(callsTo("eq")).toEqual([["eq", ["status", "approved"]]]);
+    expect(points).toEqual([
+      {
+        id: ID,
+        plantName: "Air Potato",
+        scientificName: "Dioscorea bulbifera",
+        lat: 29.65,
+        lng: -82.32,
+        timestamp: 1767225600000,
+        status: "approved",
+      },
+    ]);
+  });
+});
+
+describe("cache invalidation", () => {
+  it("clears cached lists after a change", async () => {
+    respond([{ id: ID }]);
+    await approveSubmission(ID, "user_admin");
+    await deleteSubmission(ID, admin);
+    await updateOwnSubmission(ID, OWNER, { notes: "x" }, { keepApproval: false });
+    expect(revalidateTag).toHaveBeenCalledTimes(3);
+    expect(revalidateTag).toHaveBeenCalledWith("submissions");
+  });
+
+  it("leaves them alone when nothing changed", async () => {
+    respond([]);
+    await approveSubmission(ID, "user_admin");
+    await deleteSubmission(ID, owner);
+    expect(revalidateTag).not.toHaveBeenCalled();
   });
 });
 

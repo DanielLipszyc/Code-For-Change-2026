@@ -1,15 +1,22 @@
-import { getViewer } from "@/server/authz";
-import { listSubmissions } from "@/server/submissions";
+import { preconnect } from "react-dom";
+import { listPublicMapPoints } from "@/server/submissions";
 import CountyInfo from "./_components/CountyInfo";
 import MapExplorer from "./_components/MapExplorer";
+import { TILE_ORIGIN } from "./_components/tiles";
 
 /**
- * /map: public. Sightings are loaded here on the server, already limited to
- * what this visitor may see, so the page arrives with its data.
+ * /map: public, and the same for every visitor, so it's built ahead of time
+ * from the approved sightings and served from cache. Any change to a
+ * submission clears that cache (server/submissions.ts) and the next visit
+ * rebuilds the page. The hourly rebuild only catches edits made outside the
+ * app, such as in the Supabase dashboard.
  */
+export const revalidate = 3600;
+
 export default async function MapPage() {
-  const viewer = await getViewer();
-  const submissions = await listSubmissions(viewer);
+  // Start connecting to the tile server while the page's scripts load
+  preconnect(TILE_ORIGIN);
+  const approvedPoints = await listPublicMapPoints();
 
   return (
     <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
@@ -20,7 +27,7 @@ export default async function MapPage() {
           </h1>
         </div>
 
-        <MapExplorer initialSubmissions={submissions} viewer={viewer} />
+        <MapExplorer approvedPoints={approvedPoints} />
         <CountyInfo />
       </div>
     </div>

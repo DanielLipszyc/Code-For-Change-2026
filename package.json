@@ -15,7 +15,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --grep-invert @perf",
+    "test:perf": "playwright test --grep @perf --workers=1",
     "check": "npm run lint && npm run typecheck && npm run format:check && npm run test",
     "promote-admin": "ts-node scripts/promote-admin.ts",
     "plant-id:species": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/plant-id-species.mts"

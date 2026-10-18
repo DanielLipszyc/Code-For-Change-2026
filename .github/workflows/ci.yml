@@ -43,4 +43,6 @@ jobs:
           CLERK_SECRET_KEY: sk_test_placeholder
           SUPABASE_URL: https://placeholder.supabase.co
           SUPABASE_SECRET_KEY: placeholder
+          # /map is built ahead of time from the database; CI has none
+          BUILD_WITHOUT_DATABASE: 1
           NEXT_TELEMETRY_DISABLED: 1

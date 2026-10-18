@@ -1,7 +1,9 @@
 import "server-only";
+import { revalidateTag, unstable_cache } from "next/cache";
+import { photoUrl } from "@/lib/photos";
 import { CLERK_USER_ID } from "@/lib/schemas";
 import type { CreateSubmissionInput, UpdateSubmissionInput } from "@/lib/schemas";
-import type { Submission, SubmissionStatus } from "@/types/submission";
+import type { MapPoint, Submission, SubmissionStatus } from "@/types/submission";
 import type { Viewer } from "@/types/auth";
 import { supabase } from "./db";
 
@@ -35,6 +37,17 @@ interface SubmissionRow {
 const COLUMNS =
   "id, plant_name, scientific_name, lat, lng, location_accuracy_m, timestamp_ms, notes, user_id, created_by, created_at, updated_at, status, approved_at";
 
+/**
+ * Cache tag for data read from the submissions table. Every write below
+ * clears it, so cached lists (and the pages built from them, like /map) are
+ * rebuilt on their next request.
+ */
+const SUBMISSIONS_TAG = "submissions";
+
+function submissionsChanged() {
+  revalidateTag(SUBMISSIONS_TAG);
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** Submission IDs are UUIDs */
@@ -60,7 +73,7 @@ function toSubmission(row: SubmissionRow, viewer: Viewer): Submission {
     locationAccuracyM: row.location_accuracy_m,
     timestamp: Number(row.timestamp_ms),
     notes: row.notes,
-    photoUrl: `/api/submissions/${row.id}/photo`,
+    photoUrl: photoUrl(row.id),
     // Other people's Clerk IDs are never sent
     userId: viewer.isAdmin || isOwner(row, viewer) ? row.user_id : null,
     createdBy: row.created_by,
@@ -73,11 +86,12 @@ function toSubmission(row: SubmissionRow, viewer: Viewer): Submission {
 
 /**
  * Submissions the viewer can see, most recently spotted first. With `mine`,
- * only the viewer's own submissions (any status).
+ * only the viewer's own submissions (any status); with `status`, only
+ * submissions in that state.
  */
 export async function listSubmissions(
   viewer: Viewer,
-  { mine = false }: { mine?: boolean } = {},
+  { mine = false, status }: { mine?: boolean; status?: SubmissionStatus } = {},
 ): Promise<Submission[]> {
   if (mine && !viewer.userId) return [];
 
@@ -85,6 +99,10 @@ export async function listSubmissions(
     .from("submissions")
     .select(COLUMNS)
     .order("timestamp_ms", { ascending: false });
+
+  if (status) {
+    query = query.eq("status", status);
+  }
 
   if (mine && viewer.userId) {
     query = query.eq("user_id", viewer.userId);
@@ -100,6 +118,47 @@ export async function listSubmissions(
   if (error) throw error;
   return (data as SubmissionRow[]).map((row) => toSubmission(row, viewer));
 }
+
+interface MapPointRow {
+  id: string;
+  plant_name: string;
+  scientific_name: string | null;
+  lat: number;
+  lng: number;
+  timestamp_ms: number;
+  status: SubmissionStatus;
+}
+
+/**
+ * Every approved sighting, with only what the map draws. The same for every
+ * visitor, so it's cached until a submission changes and /map can be built
+ * once and served to everyone.
+ */
+export const listPublicMapPoints = unstable_cache(
+  async (): Promise<MapPoint[]> => {
+    // CI builds the app without a database (see .github/workflows/ci.yml)
+    if (process.env.BUILD_WITHOUT_DATABASE === "1") return [];
+
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("id, plant_name, scientific_name, lat, lng, timestamp_ms, status")
+      .eq("status", "approved")
+      .order("timestamp_ms", { ascending: false });
+    if (error) throw error;
+
+    return (data as MapPointRow[]).map((row) => ({
+      id: row.id,
+      plantName: row.plant_name,
+      scientificName: row.scientific_name,
+      lat: row.lat,
+      lng: row.lng,
+      timestamp: Number(row.timestamp_ms),
+      status: row.status,
+    }));
+  },
+  ["public-map-points"],
+  { tags: [SUBMISSIONS_TAG] },
+);
 
 /** One submission, or null if it doesn't exist or the viewer can't see it */
 export async function getSubmission(id: string, viewer: Viewer): Promise<Submission | null> {
@@ -170,6 +229,7 @@ export async function createSubmission(
     .select("id")
     .single();
   if (error) throw error;
+  submissionsChanged();
   return data.id;
 }
 
@@ -208,6 +268,7 @@ export async function updateOwnSubmission(
     .eq("user_id", userId)
     .select("id");
   if (error) throw error;
+  if (data.length > 0) submissionsChanged();
   return data.length > 0;
 }
 
@@ -225,6 +286,7 @@ export async function deleteSubmission(id: string, viewer: Viewer): Promise<bool
 
   const { data, error } = await query.select("id");
   if (error) throw error;
+  if (data.length > 0) submissionsChanged();
   return data.length > 0;
 }
 
@@ -238,5 +300,6 @@ export async function approveSubmission(id: string, adminId: string): Promise<bo
     .eq("id", id)
     .select("id");
   if (error) throw error;
+  if (data.length > 0) submissionsChanged();
   return data.length > 0;
 }

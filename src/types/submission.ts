@@ -26,3 +26,13 @@ export interface Submission {
   status: SubmissionStatus;
   approvedAt: string | null;
 }
+
+/**
+ * The little the map needs to draw a sighting. The rest (notes, submitter,
+ * photo) loads when someone opens it, so the map's data stays small: about
+ * 150 bytes per sighting instead of a whole submission.
+ */
+export type MapPoint = Pick<
+  Submission,
+  "id" | "plantName" | "scientificName" | "lat" | "lng" | "timestamp" | "status"
+>;

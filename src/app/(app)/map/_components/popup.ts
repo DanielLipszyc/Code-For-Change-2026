@@ -1,11 +1,11 @@
-import type { Submission } from "@/types/submission";
+import type { MapPoint } from "@/types/submission";
 
 /**
  * Build a marker popup from DOM nodes. User-supplied fields are only ever set
  * through textContent, so submitted text can't inject HTML or script.
  */
 export function buildPopupContent(
-  submission: Submission,
+  point: MapPoint,
   showPending: boolean,
   onShowDetails: () => void,
 ): HTMLElement {
@@ -20,16 +20,13 @@ export function buildPopupContent(
     root.appendChild(el);
   };
 
-  addLine("b", `🌿 ${submission.plantName}`, "font-size: 14px; color: #136207;");
-  if (submission.scientificName) {
-    addLine("i", submission.scientificName, "color: #666; font-size: 12px;");
-  }
-  if (submission.notes) {
-    addLine("span", submission.notes, "font-size: 12px;");
+  addLine("b", `🌿 ${point.plantName}`, "font-size: 14px; color: #136207;");
+  if (point.scientificName) {
+    addLine("i", point.scientificName, "color: #666; font-size: 12px;");
   }
   addLine(
     "span",
-    `Spotted: ${new Date(submission.timestamp).toLocaleDateString()}`,
+    `Spotted: ${new Date(point.timestamp).toLocaleDateString()}`,
     "font-size: 11px; color: #888;",
   );
   if (showPending) {

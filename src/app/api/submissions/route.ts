@@ -9,13 +9,19 @@ import { createSubmission, listSubmissions } from "@/server/submissions";
 /**
  * GET /api/submissions
  * Admins get everything; everyone else gets approved reports plus their own
- * pending ones. With ?mine=1, only the caller's own submissions.
+ * pending ones. With ?mine=1, only the caller's own submissions; with
+ * ?status=pending or ?status=approved, only those (still limited to what the
+ * caller may see).
  */
 export async function GET(request: NextRequest) {
   try {
     const viewer = await getViewer();
-    const mine = request.nextUrl.searchParams.get("mine") === "1";
-    return NextResponse.json(await listSubmissions(viewer, { mine }));
+    const params = request.nextUrl.searchParams;
+    const mine = params.get("mine") === "1";
+    const statusParam = params.get("status");
+    const status =
+      statusParam === "pending" || statusParam === "approved" ? statusParam : undefined;
+    return NextResponse.json(await listSubmissions(viewer, { mine, status }));
   } catch (error) {
     console.error("Error fetching submissions:", error);
     return jsonError(500, "Failed to fetch submissions");
