@@ -1,3 +1,4 @@
+import Image from "next/image";
 // About page with Team Member cards + Tech Stack section
 
 type TeamMember = {
@@ -109,13 +110,12 @@ function Badge({ label }: { label: NonNullable<StackItem["badge"]> }) {
 
 function Avatar({ name, src }: { name: string; src?: string }) {
   if (src) {
-    // Using <img> keeps this file drop-in friendly even if you haven't configured next/image remote patterns.
-    // If these are local images in /public, feel free to switch to next/image.
-    // eslint-disable-next-line @next/next/no-img-element
     return (
-      <img
+      <Image
         src={src}
         alt={name}
+        width={48}
+        height={48}
         className="h-12 w-12 rounded-2xl object-cover ring-1 ring-black/5"
       />
     );
