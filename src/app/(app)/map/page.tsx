@@ -2,7 +2,7 @@ import { preconnect } from "react-dom";
 import { listPublicMapPoints } from "@/server/submissions";
 import CountyInfo from "./_components/CountyInfo";
 import MapExplorer from "./_components/MapExplorer";
-import { TILE_ORIGIN } from "./_components/tiles";
+import { TILE_ORIGIN } from "@/lib/mapTiles";
 
 /**
  * /map: public, and the same for every visitor, so it's built ahead of time

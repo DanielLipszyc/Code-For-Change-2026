@@ -1,520 +1,374 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
-import { plants } from "@/data/plants";
-import { MAX_NOTES_LENGTH } from "@/lib/limits";
-import { PLANT_ID_ENABLED } from "@/lib/features";
-import { offlineStorage } from "@/lib/offlineStorage";
 import { useToast } from "@/components/ui/Toast";
+import { useOnline } from "@/client/offline/hooks";
+import { getSavedReport, saveReport, type SavedReport } from "@/client/offline/reports";
+import { sendSavedReport } from "@/client/offline/send";
+import { PHOTO_MAX_SIZE, PHOTO_QUALITY, compressImage, readFileAsDataUrl } from "@/client/images";
+import { plants } from "@/data/plants";
+import { PLANT_ID_ENABLED } from "@/lib/features";
+import { MAX_NOTES_LENGTH } from "@/lib/limits";
+import LocationField, { type ReportLocation } from "./_components/LocationField";
+import PhotoPicker from "./_components/PhotoPicker";
+import PlantIdSuggestion, { type PlantIdResult } from "./_components/PlantIdSuggestion";
 
-interface AIPrediction {
-  prediction: string;
-  scientificName: string | null;
-  isKnownPlant: boolean;
-}
-
-// Compress image to reduce payload size
-const compressImage = (dataUrl: string, maxSize = 512, quality = 0.5): Promise<string> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height && width > maxSize) {
-        height = (height * maxSize) / width;
-        width = maxSize;
-      } else if (height > maxSize) {
-        width = (width * maxSize) / height;
-        height = maxSize;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext("2d");
-      ctx?.drawImage(img, 0, 0, width, height);
-
-      resolve(canvas.toDataURL("image/jpeg", quality));
-    };
-    img.src = dataUrl;
-  });
+const GPS_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  timeout: 15_000,
+  maximumAge: 30_000,
 };
 
+function getGpsLocation(): Promise<ReportLocation> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("This browser can't share its location"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) =>
+        resolve({
+          lat: coords.latitude,
+          lng: coords.longitude,
+          accuracyM: coords.accuracy,
+          source: "gps",
+        }),
+      reject,
+      GPS_OPTIONS,
+    );
+  });
+}
+
+/**
+ * /submit: report a sighting. Works offline: every report is saved on the
+ * device first and then sent, so nothing is lost to a dropped connection.
+ * Without a connection it waits in Drafts and sends itself later
+ * (components/SavedReportsSync). "Save as draft" keeps it to finish later,
+ * e.g. to get an AI suggestion once back online. /submit?draft=<id> opens one.
+ */
 export default function SubmitClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
-  const draftId = searchParams.get("draftId");
+  // draftId: links from the earlier offline mode
+  const draftParam = searchParams.get("draft") ?? searchParams.get("draftId");
   const { user, isLoaded } = useUser();
   const toast = useToast();
+  const online = useOnline();
 
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>("");
+  const [draft, setDraft] = useState<SavedReport | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [fileName, setFileName] = useState("");
   const [plantName, setPlantName] = useState("");
   const [notes, setNotes] = useState("");
-  const [submitAnonymously, setSubmitAnonymously] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isIdentifying, setIsIdentifying] = useState(false);
-  const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
+  const [anonymous, setAnonymous] = useState(false);
+  const [location, setLocation] = useState<ReportLocation | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
+  const [plantId, setPlantId] = useState<PlantIdResult | null>(null);
+  const [compare, setCompare] = useState(false);
+  const [saving, setSaving] = useState<"send" | "draft" | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [draftLat, setDraftLat] = useState<number | null>(null);
-  const [draftLng, setDraftLng] = useState<number | null>(null);
-  const [draftLocationAccuracyM, setDraftLocationAccuracyM] = useState<number | undefined>();
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // The report's ID from the moment it's first saved, so saving or sending it
+  // again updates the same report instead of making another
+  const reportIdRef = useRef<string | null>(null);
 
-  // Prefill from /submit?plant=...
-  useEffect(() => {
-    if (!plantParam) return;
-
-    const exists = plants.some((p) => p.name === plantParam);
-    const value = exists ? plantParam : "Unknown";
-
-    setPlantName((current) => (current ? current : value));
-  }, [plantParam]);
-
-  // Load draft from /submit?draftId=...
-  useEffect(() => {
-    if (!draftId) return;
-
-    const loadDraft = async () => {
-      try {
-        const draft = await offlineStorage.getDraft(draftId);
-        if (draft) {
-          setSelectedImage(draft.imageData);
-          setDraftLat(draft.lat);
-          setDraftLng(draft.lng);
-          setDraftLocationAccuracyM(draft.locationAccuracyM);
-          setCurrentDraftId(draftId);
-        }
-      } catch (error) {
-        console.error("Error loading draft:", error);
-      }
-    };
-
-    loadDraft();
-  }, [draftId]);
-
-  useEffect(() => {
-    if (isLoaded) {
-      setSubmitAnonymously(!user);
-    }
-  }, [isLoaded, user]);
-
-  // Redirect to map after success notification
-  useEffect(() => {
-    if (showSuccess) {
-      const timer = setTimeout(() => {
-        router.push("/map");
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [showSuccess, router]);
-
-  const identifyPlant = async (imageData: string) => {
-    if (!PLANT_ID_ENABLED) return;
-
-    setIsIdentifying(true);
-    setAiPrediction(null);
-
+  const identifyPlant = useCallback(async (image: string) => {
+    if (!PLANT_ID_ENABLED || !navigator.onLine) return;
+    setIdentifying(true);
+    setPlantId(null);
     try {
-      const compressedImage = await compressImage(imageData, 512, 0.5);
-
       const response = await fetch("/api/identify-plant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: compressedImage }),
+        body: JSON.stringify({ image: await compressImage(image, 512, 0.5) }),
       });
-
-      if (response.ok) {
-        const data: AIPrediction = await response.json();
-        setAiPrediction(data);
-        // Pre-select the AI's match only if the user hasn't chosen a species yet
-        if (data.isKnownPlant) {
-          setPlantName((current) => (current && current !== "Unknown" ? current : data.prediction));
-        }
-      } else {
-        console.error("Failed to identify plant");
+      if (!response.ok) return;
+      const result: PlantIdResult = await response.json();
+      setPlantId(result);
+      // Pre-select the AI's match only if the user hasn't chosen a species yet
+      if (result.isKnownPlant) {
+        setPlantName((current) => (current && current !== "Unknown" ? current : result.prediction));
       }
     } catch (error) {
       console.error("Error identifying plant:", error);
     } finally {
-      setIsIdentifying(false);
+      setIdentifying(false);
     }
-  };
+  }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Prefill from /submit?plant=... (the guide's "Report this plant")
+  useEffect(() => {
+    if (!plantParam) return;
+    const value = plants.some((p) => p.name === plantParam) ? plantParam : "Unknown";
+    setPlantName((current) => current || value);
+  }, [plantParam]);
 
-    setFileName(file.name);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const imageData = reader.result as string;
-      setSelectedImage(imageData);
-      identifyPlant(imageData);
+  // Open a saved report from /submit?draft=...
+  useEffect(() => {
+    if (!draftParam) return;
+    let cancelled = false;
+    (async () => {
+      const saved = await getSavedReport(draftParam);
+      if (cancelled) return;
+      if (!saved) {
+        toast.error("That draft isn't saved on this device.");
+        return;
+      }
+      reportIdRef.current = saved.id;
+      setDraft(saved);
+      setPlantName(saved.plantName ?? "");
+      setNotes(saved.notes);
+      setAnonymous(saved.anonymous);
+      setLocation({
+        lat: saved.lat,
+        lng: saved.lng,
+        accuracyM: saved.locationAccuracyM,
+        source: "saved",
+      });
+      // Drafts from the earlier offline mode kept the photo at full size
+      const image = await compressImage(saved.photo, PHOTO_MAX_SIZE, PHOTO_QUALITY).catch(
+        () => saved.photo,
+      );
+      if (cancelled) return;
+      setPhoto(image);
+      if (!saved.plantName) identifyPlant(image);
+    })().catch(() => toast.error("Couldn't open that draft."));
+    return () => {
+      cancelled = true;
     };
-    reader.readAsDataURL(file);
-  };
+  }, [draftParam, identifyPlant, toast]);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
+  // Signed-out visitors can only submit anonymously
+  useEffect(() => {
+    if (isLoaded && !user) setAnonymous(true);
+  }, [isLoaded, user]);
 
+  useEffect(() => {
+    if (!showSuccess) return;
+    const timer = setTimeout(() => router.push("/map"), 2000);
+    return () => clearTimeout(timer);
+  }, [showSuccess, router]);
+
+  async function handlePhoto(file: File) {
     setFileName(file.name);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const imageData = reader.result as string;
-      setSelectedImage(imageData);
-      identifyPlant(imageData);
-    };
-    reader.readAsDataURL(file);
-  };
+    try {
+      const image = await compressImage(
+        await readFileAsDataUrl(file),
+        PHOTO_MAX_SIZE,
+        PHOTO_QUALITY,
+      );
+      setPhoto(image);
+      setPlantId(null);
+      setCompare(false);
+      identifyPlant(image);
+    } catch (error) {
+      setFileName("");
+      toast.error(error instanceof Error ? error.message : "Couldn't read that photo.");
+    }
+  }
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
+  async function locateWithGps(): Promise<ReportLocation | null> {
+    setLocating(true);
+    try {
+      const where = await getGpsLocation();
+      setLocation(where);
+      return where;
+    } catch {
+      setShowMap(true);
+      toast.error("Couldn't get your location. Tap the spot on the map instead.");
+      return null;
+    } finally {
+      setLocating(false);
+    }
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user && !submitAnonymously) {
-      toast.error("Please sign in or choose to submit anonymously.");
+  async function handleSave(mode: "send" | "draft") {
+    if (!photo) {
+      toast.error("Please add a photo of the plant.");
+      return;
+    }
+    if (mode === "send" && !plantName) {
+      toast.error("Please choose the plant, or Unknown / Other.");
       return;
     }
 
-    setIsSubmitting(true);
-
+    setSaving(mode);
     try {
-      let lat: number;
-      let lng: number;
-      let locationAccuracyM: number | undefined;
+      const where = location ?? (await locateWithGps());
+      if (!where) return;
 
-      // Use draft location if completing a draft, otherwise get GPS
-      if (draftLat !== null && draftLng !== null) {
-        lat = draftLat;
-        lng = draftLng;
-        locationAccuracyM = draftLocationAccuracyM;
-      } else {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error("Geolocation not supported"));
-            return;
-          }
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
-          });
-        });
-
-        lat = position.coords.latitude;
-        lng = position.coords.longitude;
-        locationAccuracyM = position.coords.accuracy;
-      }
-
-      if (!selectedImage) {
-        toast.error("Please add a photo of the plant.");
-        return;
-      }
-
-      // Compress image again specifically for storage in the database
-      // (bigger than AI compression is ok, but keep it reasonable)
-      const imageData = await compressImage(selectedImage, 800, 0.7);
-
-      // The user's selection is what gets saved; the AI only pre-selects a suggestion.
-      // The server looks up the scientific name from the plant list.
-      const submission = {
-        plantName: plantName || "Unknown Plant",
-
-        // Location
-        lat,
-        lng,
-        locationAccuracyM,
-
-        // Notes + image
-        notes: notes || undefined,
-        imageData, // ✅ stored in the database as a base64 data URL
-
-        anonymous: submitAnonymously,
+      reportIdRef.current ??= crypto.randomUUID();
+      const report: SavedReport = {
+        id: reportIdRef.current,
+        status: mode === "draft" ? "draft" : "queued",
+        ownerId: user?.id ?? draft?.ownerId ?? null,
+        savedAt: Date.now(),
+        observedAt: draft?.observedAt ?? Date.now(),
+        photo,
+        lat: where.lat,
+        lng: where.lng,
+        locationAccuracyM: where.accuracyM,
+        plantName: plantName || null,
+        notes,
+        anonymous,
+        lastError: null,
       };
 
-      const response = await fetch("/api/submissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submission),
-      });
+      try {
+        // Kept on the device until the server has it
+        await saveReport(report);
+      } catch {
+        // Storage unavailable (some private windows): a draft can't be kept,
+        // but a report can still be sent directly
+        if (mode === "draft" || !navigator.onLine) {
+          toast.error("This browser won't let the app save reports on the device.");
+          return;
+        }
+      }
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        toast.error(err?.error || "Unable to submit. Please try again.");
+      if (mode === "draft") {
+        toast.success("Draft saved. Finish it from Drafts.");
+        router.push("/drafts");
         return;
       }
 
-      // Delete draft if completing one
-      if (currentDraftId) {
-        await offlineStorage.deleteDraft(currentDraftId);
+      const result = navigator.onLine
+        ? await sendSavedReport(report)
+        : ({ status: "offline" } as const);
+      if (result.status === "sent") {
+        setShowSuccess(true);
+      } else if (result.status === "offline") {
+        toast.success(
+          "No connection right now. Your report is saved and will be sent automatically.",
+        );
+        router.push("/drafts");
+      } else {
+        toast.error(result.error);
       }
-
-      // Show success notification, then redirect to map
-      setShowSuccess(true);
     } catch (error) {
-      console.error("Error submitting plant:", error);
-      toast.error("Unable to submit. Please check your location services and try again.");
+      console.error("Error saving report:", error);
+      toast.error("Something went wrong. Please try again.");
     } finally {
-      setIsSubmitting(false);
+      setSaving(null);
     }
-  };
+  }
+
+  const busy = saving !== null;
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-primary-50">
-      {/* Success Notification */}
+    <div className="min-h-screen bg-primary-50 px-4 py-12 sm:px-6 lg:px-8">
       {showSuccess && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-[#136207] text-white px-12 py-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-fade-in-out">
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+          <div className="animate-fade-in-out flex flex-col items-center gap-4 rounded-2xl bg-[#136207] px-12 py-8 text-white shadow-2xl">
             <div className="text-6xl">✅</div>
             <div className="text-center">
-              <p className="font-bold text-3xl mb-2">Success!</p>
+              <p className="mb-2 text-3xl font-bold">Success!</p>
               <p className="text-lg opacity-90">Plant submitted successfully</p>
             </div>
           </div>
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Submit a Plant 🌱</h1>
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-8 text-center">
+          <h1 className="mb-4 text-4xl font-bold text-gray-900 sm:text-5xl">
+            {draft ? "Finish your report 🌱" : "Submit a Plant 🌱"}
+          </h1>
           <p className="text-xl text-gray-600">
             Upload a photo of a plant you spotted in a swamp or wetland
           </p>
-          <div className="mt-4">
-            <button
-              onClick={() => router.push("/offline-submit")}
-              className="text-sm text-green-600 hover:text-green-700 font-medium underline"
-            >
-              Or use Offline Mode
-            </button>
-          </div>
         </div>
-        {!user && (
-          <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
-            <label className="flex items-center gap-3 text-sm font-medium text-sky-900 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={submitAnonymously}
-                onChange={(e) => setSubmitAnonymously(e.target.checked)}
-                className="h-4 w-4 rounded border-sky-300 text-sky-700 focus:ring-sky-500"
-              />
-              Submit anonymously
-            </label>
-            <p className="mt-2 text-sm text-sky-800">
-              Your report will be added without a user profile or name attached.
+
+        {!online && (
+          <div
+            className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 px-6 py-4 text-amber-900 shadow-sm"
+            role="status"
+          >
+            <p className="font-semibold">You&apos;re offline.</p>
+            <p className="mt-1 text-sm">
+              You can still fill this in. Your report is saved on this device and sent automatically
+              when you&apos;re back online.
             </p>
           </div>
         )}
 
-        {user && (
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <label className="flex items-center gap-3 text-sm font-medium text-slate-800 cursor-pointer">
+        {isLoaded && (
+          <div
+            className={`mb-6 rounded-2xl border px-4 py-3 shadow-sm ${
+              user ? "border-slate-200 bg-white" : "border-sky-200 bg-sky-50"
+            }`}
+          >
+            <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-slate-800">
               <input
                 type="checkbox"
-                checked={submitAnonymously}
-                onChange={(e) => setSubmitAnonymously(e.target.checked)}
+                checked={anonymous}
+                disabled={!user}
+                onChange={(event) => setAnonymous(event.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-[#136207] focus:ring-[#136207]"
               />
-              Submit anonymously instead of using my account name
+              {user ? "Submit anonymously instead of using my account name" : "Submit anonymously"}
             </label>
+            {!user && (
+              <p className="mt-2 text-sm text-sky-800">
+                Your report will be added without a user profile or name attached.
+              </p>
+            )}
           </div>
         )}
 
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">📍</div>
-            <div>
-              <p className="font-semibold text-amber-900">Location must be enabled to submit.</p>
-              <p className="text-sm text-amber-800 mt-1">
-                We attach GPS coordinates to every report. Please allow location access in your
-                browser (and turn on Location Services on your device) before submitting.
-              </p>
-            </div>
-          </div>
-        </div>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSave("send");
+          }}
+          className="space-y-6"
+        >
+          <PhotoPicker
+            photo={photo}
+            fileName={fileName}
+            onPick={handlePhoto}
+            onRemove={() => {
+              setPhoto(null);
+              setFileName("");
+              setPlantId(null);
+              setCompare(false);
+            }}
+          />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-            <label className="block text-lg font-semibold text-gray-900 mb-4">Plant Photo *</label>
-
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                selectedImage
-                  ? "border-[#136207] bg-primary-50"
-                  : "border-gray-300 hover:border-[#136207] hover:bg-primary-50"
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-
-              {selectedImage ? (
-                <div className="space-y-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={selectedImage}
-                    alt="Preview"
-                    className="max-h-64 mx-auto rounded-lg shadow-md"
-                  />
-                  <p className="text-sm text-gray-600">{fileName}</p>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedImage(null);
-                      setFileName("");
-                      setAiPrediction(null);
-                      setShowComparison(false);
-                    }}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                  >
-                    Remove image
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="text-5xl">📷</div>
-                  <div>
-                    <p className="text-lg font-medium text-gray-700">
-                      Click to upload or drag and drop
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">PNG, JPG, HEIC up to 10MB</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* AI Identification */}
-          {PLANT_ID_ENABLED && selectedImage && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                🤖 AI Plant Identification
-              </h3>
-
-              {isIdentifying ? (
-                <div className="flex items-center space-x-3 text-gray-600">
-                  <svg
-                    className="animate-spin h-5 w-5 text-[#136207]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  <span>Analyzing image...</span>
-                </div>
-              ) : aiPrediction ? (
-                <div className="space-y-3">
-                  <div className="p-4 rounded-xl bg-primary-50 border border-primary-200">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-[#136207]">
-                      AI Identification
-                    </span>
-                    <p className="text-xl font-bold text-gray-900 mt-1">
-                      {aiPrediction.prediction}
-                      {aiPrediction.scientificName && (
-                        <span className="text-base font-normal text-gray-600 ml-2">
-                          ({aiPrediction.scientificName})
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  {showComparison && plantName && (
-                    <div
-                      className={`p-4 rounded-lg ${
-                        plantName.toLowerCase() === aiPrediction.prediction.toLowerCase()
-                          ? "bg-primary-100 border border-primary-300"
-                          : "bg-orange-100 border border-orange-300"
-                      }`}
-                    >
-                      {plantName.toLowerCase() === aiPrediction.prediction.toLowerCase() ? (
-                        <p className="text-[#136207] font-medium">
-                          ✅ Your selection matches the AI prediction!
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-orange-700 font-medium">
-                            ⚠️ Your selection ({plantName}) differs from AI prediction (
-                            {aiPrediction.prediction}). Your selection will be saved.
-                          </p>
-                          {aiPrediction.isKnownPlant && (
-                            <button
-                              type="button"
-                              onClick={() => setPlantName(aiPrediction.prediction)}
-                              className="text-sm font-semibold text-[#136207] underline"
-                            >
-                              Use AI suggestion instead
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-500">
-                  Unable to identify plant. Please select manually below.
-                </p>
-              )}
-            </div>
+          {PLANT_ID_ENABLED && photo && (
+            <PlantIdSuggestion
+              online={online}
+              identifying={identifying}
+              result={plantId}
+              chosen={plantName}
+              compare={compare}
+              onUseSuggestion={setPlantName}
+            />
           )}
 
-          {/* Plant Details */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
+          <div className="space-y-6 rounded-2xl bg-white p-6 shadow-lg sm:p-8">
             <div>
-              <label htmlFor="plantName" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="plantName" className="mb-2 block text-sm font-medium text-gray-700">
                 Select Plant Species *
               </label>
-
               {plantParam && (
-                <p className="text-sm text-emerald-700 mb-2">
+                <p className="mb-2 text-sm text-emerald-700">
                   Prefilled from guide: <b>{plantParam}</b>
                 </p>
               )}
-
               <select
                 id="plantName"
                 value={plantName}
-                onChange={(e) => {
-                  setPlantName(e.target.value);
-                  if (aiPrediction && e.target.value) setShowComparison(true);
+                onChange={(event) => {
+                  setPlantName(event.target.value);
+                  if (plantId && event.target.value) setCompare(true);
                 }}
-                required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-transparent focus:ring-2 focus:ring-[#136207]"
               >
                 <option value="">-- Select a plant --</option>
                 {plants.map((plant) => (
@@ -524,63 +378,59 @@ export default function SubmitClient() {
                 ))}
                 <option value="Unknown">Unknown / Other</option>
               </select>
-
-              {aiPrediction?.isKnownPlant && !plantName && (
-                <p className="text-sm text-[#136207] mt-2">
-                  💡 AI suggests: {aiPrediction.prediction}
-                </p>
+              {plantId?.isKnownPlant && !plantName && (
+                <p className="mt-2 text-sm text-[#136207]">💡 AI suggests: {plantId.prediction}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
                 Additional Notes
               </label>
               <textarea
                 id="notes"
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(event) => setNotes(event.target.value)}
                 maxLength={MAX_NOTES_LENGTH}
                 rows={4}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors resize-none"
+                className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-transparent focus:ring-2 focus:ring-[#136207]"
                 placeholder="Describe the habitat, water conditions, nearby plants..."
               />
             </div>
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={!selectedImage || !plantName || isSubmitting}
-            className="w-full py-4 px-6 bg-[#136207] hover:bg-[#0f5006] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg transition-colors flex items-center justify-center text-lg"
-          >
-            {isSubmitting ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Submitting...
-              </>
-            ) : (
-              <>🌿 Submit Plant</>
-            )}
-          </button>
+          <LocationField
+            value={location}
+            onChange={setLocation}
+            locating={locating}
+            onUseGps={locateWithGps}
+            showMap={showMap}
+            onShowMap={setShowMap}
+          />
+
+          <div className="space-y-3">
+            <button
+              type="submit"
+              disabled={!photo || !plantName || busy}
+              className="flex w-full items-center justify-center rounded-xl bg-[#136207] px-6 py-4 text-lg font-semibold text-white shadow-lg transition-colors hover:bg-[#0f5006] disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {saving === "send"
+                ? online
+                  ? "Submitting…"
+                  : "Saving…"
+                : online
+                  ? "🌿 Submit Plant"
+                  : "💾 Save, and send when I'm back online"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave("draft")}
+              disabled={!photo || busy}
+              className="w-full rounded-xl border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving === "draft" ? "Saving…" : "Save as draft, finish later"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

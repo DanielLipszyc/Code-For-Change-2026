@@ -8,7 +8,7 @@ import alachuaBoundary from "@/data/alachua-boundary.json";
 import { isInAlachua } from "@/lib/limits";
 import type { MapPoint } from "@/types/submission";
 import { buildPopupContent } from "./popup";
-import { TILE_ATTRIBUTION, TILE_URL } from "./tiles";
+import { TILE_ATTRIBUTION, TILE_URL } from "@/lib/mapTiles";
 
 /** Gainesville, where the map opens before (or without) the user's location */
 const COUNTY_CENTER: [number, number] = [29.652, -82.325];

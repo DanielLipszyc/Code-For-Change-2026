@@ -56,3 +56,8 @@ __pycache__/
 # playwright
 /test-results/
 /playwright-report/
+
+# service worker, built from src/app/sw.ts
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js

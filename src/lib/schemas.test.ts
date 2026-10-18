@@ -135,6 +135,31 @@ describe("createSubmissionSchema", () => {
     expect(result.error?.issues.map((issue) => issue.message)).toEqual(["Photo is too large"]);
   });
 
+  it("accepts a client-chosen UUID as the submission's ID, and nothing else", () => {
+    const id = "3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e";
+    expect(createSubmissionSchema.parse({ ...valid, id }).id).toBe(id);
+    expect(firstError(createSubmissionSchema.safeParse({ ...valid, id: "1 or 1=1" }))).toBe(
+      "id must be a UUID",
+    );
+  });
+
+  it("accepts when a report was made, within the last 30 days and not in the future", () => {
+    const day = 24 * 60 * 60 * 1000;
+    const lastWeek = Date.now() - 7 * day;
+    expect(createSubmissionSchema.parse({ ...valid, observedAt: lastWeek }).observedAt).toBe(
+      lastWeek,
+    );
+    expect(
+      firstError(createSubmissionSchema.safeParse({ ...valid, observedAt: Date.now() + day })),
+    ).toBe("observedAt can't be in the future");
+    expect(
+      firstError(createSubmissionSchema.safeParse({ ...valid, observedAt: Date.now() - 31 * day })),
+    ).toBe("Reports older than 30 days can't be submitted");
+    expect(createSubmissionSchema.safeParse({ ...valid, observedAt: "yesterday" }).success).toBe(
+      false,
+    );
+  });
+
   it("bounds the reported GPS accuracy", () => {
     expect(
       createSubmissionSchema.parse({ ...valid, locationAccuracyM: 12.5 }).locationAccuracyM,

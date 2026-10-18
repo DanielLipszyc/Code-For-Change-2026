@@ -14,6 +14,15 @@ export const MAX_NOTES_LENGTH = 1000;
  */
 export const MAX_IMAGE_DATA_LENGTH = 2_000_000;
 
+/**
+ * How old a report's "spotted at" time may be. Reports saved offline are sent
+ * later with the time they were made; older than this, they're refused.
+ */
+export const MAX_OBSERVATION_AGE_DAYS = 30;
+
+/** Allowance for a phone's clock running ahead of the server's */
+export const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
+
 /** Rough Alachua County bounds. Sightings outside them are rejected. */
 export const ALACHUA_BOUNDS = { minLat: 29.3, maxLat: 29.9, minLng: -82.7, maxLng: -82.0 };
 

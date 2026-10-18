@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { plants } from "@/data/plants";
-import { MAX_IMAGE_DATA_LENGTH, MAX_NOTES_LENGTH, UNKNOWN_PLANT, isInAlachua } from "./limits";
+import {
+  MAX_CLOCK_SKEW_MS,
+  MAX_IMAGE_DATA_LENGTH,
+  MAX_NOTES_LENGTH,
+  MAX_OBSERVATION_AGE_DAYS,
+  UNKNOWN_PLANT,
+  isInAlachua,
+} from "./limits";
 
 /**
  * What each API endpoint accepts. Every string stored from here is later shown
@@ -82,9 +89,31 @@ const imageDataSchema = z
 
 const coordinateSchema = z.number({ error: "lat and lng must be numbers" });
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * When the plant was spotted, in epoch milliseconds. Sent by reports saved
+ * offline; checked against the server's clock when the request arrives.
+ */
+const observedAtSchema = z
+  .number({ error: "observedAt must be a time in milliseconds" })
+  .int({ error: "observedAt must be a time in milliseconds" })
+  .refine((time) => time <= Date.now() + MAX_CLOCK_SKEW_MS, {
+    error: "observedAt can't be in the future",
+  })
+  .refine((time) => time >= Date.now() - MAX_OBSERVATION_AGE_DAYS * DAY_MS, {
+    error: `Reports older than ${MAX_OBSERVATION_AGE_DAYS} days can't be submitted`,
+  });
+
 /** POST /api/submissions */
 export const createSubmissionSchema = z
   .object({
+    /**
+     * Chosen by the client so a report sent twice (a retry after a dropped
+     * connection) is stored once. The second request gets 409.
+     */
+    id: z.uuid({ error: "id must be a UUID" }).optional(),
+    observedAt: observedAtSchema.optional(),
     plantName: plantSchema,
     lat: coordinateSchema,
     lng: coordinateSchema,

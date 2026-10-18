@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import "leaflet/dist/leaflet.css";
 import Navigation from "@/components/Navigation";
+import SavedReportsSync from "@/components/SavedReportsSync";
 import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -41,6 +41,7 @@ export default function RootLayout({
         <body className={`${inter.className} antialiased min-h-screen bg-white`}>
           <ToastProvider>
             <ConfirmProvider>
+              <SavedReportsSync />
               <Navigation />
               <main className="safe-top safe-bottom">{children}</main>
             </ConfirmProvider>

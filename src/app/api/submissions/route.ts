@@ -4,7 +4,7 @@ import { createSubmissionSchema } from "@/lib/schemas";
 import { getPublicDisplayName, getViewer, roleOf } from "@/server/authz";
 import { MAX_BODY_BYTES, jsonError, parseJsonBody } from "@/server/http";
 import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
-import { createSubmission, listSubmissions } from "@/server/submissions";
+import { DuplicateSubmissionError, createSubmission, listSubmissions } from "@/server/submissions";
 
 /**
  * GET /api/submissions
@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/submissions
- * Requires sign-in unless the submission is marked anonymous.
+ * Requires sign-in unless the submission is marked anonymous. A report sent
+ * again with the same id gets 409 and isn't stored twice.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +67,12 @@ export async function POST(request: NextRequest) {
     const id = await createSubmission(input, submitter);
     return NextResponse.json({ success: true, id });
   } catch (error) {
+    if (error instanceof DuplicateSubmissionError) {
+      return NextResponse.json(
+        { error: "This report was already submitted", id: error.id },
+        { status: 409 },
+      );
+    }
     console.error("Error creating submission:", error);
     return jsonError(500, "Failed to create submission");
   }

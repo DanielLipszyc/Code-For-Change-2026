@@ -40,7 +40,9 @@ vi.mock("next/cache", () => ({
 }));
 
 import {
+  DuplicateSubmissionError,
   approveSubmission,
+  createSubmission,
   deleteSubmission,
   getPhoto,
   getSubmission,
@@ -181,6 +183,46 @@ describe("listPublicMapPoints", () => {
         status: "approved",
       },
     ]);
+  });
+});
+
+describe("createSubmission", () => {
+  const input = {
+    plantName: { plantName: "Air Potato", scientificName: "Dioscorea bulbifera" },
+    lat: 29.65,
+    lng: -82.32,
+    locationAccuracyM: null,
+    notes: null,
+    imageData: null,
+    anonymous: false,
+  };
+  const submitter = { userId: OWNER, displayName: "Ana", autoApprove: false };
+  const inserted = () => callsTo("insert")[0][1][0] as Record<string, unknown>;
+
+  it("stores the client's ID and spotted-at time when given", async () => {
+    const observedAt = Date.now() - 60_000;
+    await expect(createSubmission({ ...input, id: ID, observedAt }, submitter)).resolves.toBe(ID);
+    expect(inserted()).toMatchObject({ id: ID, timestamp_ms: observedAt, status: "pending" });
+  });
+
+  it("otherwise makes up an ID and records the current time", async () => {
+    const before = Date.now();
+    const id = await createSubmission(input, submitter);
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(inserted().timestamp_ms).toBeGreaterThanOrEqual(before);
+  });
+
+  it("reports an ID that's already stored as a duplicate, without clearing caches", async () => {
+    state.result = { data: null, error: { code: "23505", message: "duplicate key" } };
+    await expect(createSubmission({ ...input, id: ID }, submitter)).rejects.toEqual(
+      new DuplicateSubmissionError(ID),
+    );
+    expect(revalidateTag).not.toHaveBeenCalled();
+  });
+
+  it("auto-approves only when told to", async () => {
+    await createSubmission(input, { ...submitter, autoApprove: true });
+    expect(inserted().status).toBe("approved");
   });
 });
 

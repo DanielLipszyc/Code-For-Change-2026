@@ -10,8 +10,20 @@ describe("isPublicRequest", () => {
     }
   });
 
+  it("lets anyone load the offline page and the web app manifest", () => {
+    expect(isPublicRequest("GET", "/~offline")).toBe(true);
+    expect(isPublicRequest("GET", "/manifest.json")).toBe(true);
+  });
+
   it("requires sign-in for the rest of the app", () => {
-    for (const path of ["/log", "/submit", "/dashboard", `/submit/edit/${ID}`, "/contact"]) {
+    for (const path of [
+      "/log",
+      "/submit",
+      "/drafts",
+      "/dashboard",
+      `/submit/edit/${ID}`,
+      "/contact",
+    ]) {
       expect(isPublicRequest("GET", path)).toBe(false);
     }
   });

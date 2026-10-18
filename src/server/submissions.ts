@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { photoUrl } from "@/lib/photos";
 import { CLERK_USER_ID } from "@/lib/schemas";
@@ -205,32 +206,46 @@ export async function getPhoto(
   };
 }
 
-/** Save a new submission and return its ID */
+/** A submission with this ID is already stored (usually: the same report, sent again) */
+export class DuplicateSubmissionError extends Error {
+  constructor(readonly id: string) {
+    super(`Submission ${id} already exists`);
+  }
+}
+
+/** Postgres's unique_violation */
+const UNIQUE_VIOLATION = "23505";
+
+/**
+ * Save a new submission and return its ID. The client may choose the ID
+ * (input.id) so a resent report isn't stored twice: storing an ID that
+ * already exists throws DuplicateSubmissionError and changes nothing.
+ */
 export async function createSubmission(
   input: CreateSubmissionInput,
   submitter: { userId: string | null; displayName: string; autoApprove: boolean },
 ): Promise<string> {
-  const { data, error } = await supabase
-    .from("submissions")
-    .insert({
-      plant_name: input.plantName.plantName,
-      scientific_name: input.plantName.scientificName,
-      lat: input.lat,
-      lng: input.lng,
-      location_accuracy_m: input.locationAccuracyM,
-      // Spotted now: the form submits on the spot, and clients can't backdate reports
-      timestamp_ms: Date.now(),
-      notes: input.notes,
-      image_data: input.imageData,
-      user_id: submitter.userId,
-      created_by: submitter.displayName,
-      status: submitter.autoApprove ? "approved" : "pending",
-    })
-    .select("id")
-    .single();
+  const id = input.id ?? randomUUID();
+  const { error } = await supabase.from("submissions").insert({
+    id,
+    plant_name: input.plantName.plantName,
+    scientific_name: input.plantName.scientificName,
+    lat: input.lat,
+    lng: input.lng,
+    location_accuracy_m: input.locationAccuracyM,
+    // Reports saved offline carry the time they were made (checked by the
+    // schema); everything else was spotted just now
+    timestamp_ms: input.observedAt ?? Date.now(),
+    notes: input.notes,
+    image_data: input.imageData,
+    user_id: submitter.userId,
+    created_by: submitter.displayName,
+    status: submitter.autoApprove ? "approved" : "pending",
+  });
+  if (error?.code === UNIQUE_VIOLATION) throw new DuplicateSubmissionError(id);
   if (error) throw error;
   submissionsChanged();
-  return data.id;
+  return id;
 }
 
 /**
