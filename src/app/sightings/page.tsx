@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 interface Sighting {
-  id: string;
+  _id: string;
   plantName: string;
   lat: number;
   lng: number;
@@ -11,6 +11,7 @@ interface Sighting {
   notes?: string;
   imageData?: string;
   createdAt: string;
+  status?: "pending" | "approved";
 }
 
 export default function SightingsPage() {
@@ -43,12 +44,13 @@ export default function SightingsPage() {
   const loadSightings = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/submissions?all=true");
+      const response = await fetch("/api/submissions");
       if (!response.ok) {
         throw new Error("Failed to load sightings");
       }
-      const data = await response.json();
-      setSightings(data || []);
+      const data: Sighting[] = await response.json();
+      // Only reviewed reports are shown here, even to their submitter or an admin
+      setSightings((data || []).filter((s) => s.status === "approved"));
     } catch (err: any) {
       setError(err.message || "Unable to load sightings");
     } finally {
@@ -134,7 +136,7 @@ export default function SightingsPage() {
 
               return (
                 <div
-                  key={sighting.id}
+                  key={sighting._id}
                   className="border border-gray-200 rounded-lg p-4 flex gap-4 hover:border-green-300 transition-colors"
                 >
                   {sighting.imageData && (
