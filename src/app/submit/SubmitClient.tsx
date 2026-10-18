@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
 import { MAX_NOTES_LENGTH } from "@/lib/submissionInput";
 import { PLANT_ID_ENABLED } from "@/lib/features";
+import { offlineStorage } from "@/lib/offlineStorage";
 
 interface AIPrediction {
   prediction: string;
@@ -50,6 +51,7 @@ export default function SubmitClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
+  const draftId = searchParams.get("draftId");
   const { user, isLoaded } = useUser();
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -62,6 +64,10 @@ export default function SubmitClient() {
   const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [draftLat, setDraftLat] = useState<number | null>(null);
+  const [draftLng, setDraftLng] = useState<number | null>(null);
+  const [draftLocationAccuracyM, setDraftLocationAccuracyM] = useState<number | undefined>();
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +80,28 @@ export default function SubmitClient() {
 
     setPlantName((current) => (current ? current : value));
   }, [plantParam]);
+
+  // Load draft from /submit?draftId=...
+  useEffect(() => {
+    if (!draftId) return;
+
+    const loadDraft = async () => {
+      try {
+        const draft = await offlineStorage.getDraft(draftId);
+        if (draft) {
+          setSelectedImage(draft.imageData);
+          setDraftLat(draft.lat);
+          setDraftLng(draft.lng);
+          setDraftLocationAccuracyM(draft.locationAccuracyM);
+          setCurrentDraftId(draftId);
+        }
+      } catch (error) {
+        console.error("Error loading draft:", error);
+      }
+    };
+
+    loadDraft();
+  }, [draftId]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -167,17 +195,32 @@ export default function SubmitClient() {
     setIsSubmitting(true);
 
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error("Geolocation not supported"));
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+      let lat: number;
+      let lng: number;
+      let locationAccuracyM: number | undefined;
+
+      // Use draft location if completing a draft, otherwise get GPS
+      if (draftLat !== null && draftLng !== null) {
+        lat = draftLat;
+        lng = draftLng;
+        locationAccuracyM = draftLocationAccuracyM;
+      } else {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error("Geolocation not supported"));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          });
         });
-      });
+
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+        locationAccuracyM = position.coords.accuracy;
+      }
 
       if (!selectedImage) {
         alert("Please upload an image.");
@@ -194,9 +237,9 @@ export default function SubmitClient() {
         plantName: plantName || "Unknown Plant",
 
         // Location
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        locationAccuracyM: position.coords.accuracy,
+        lat,
+        lng,
+        locationAccuracyM,
 
         // Notes + image
         notes: notes || undefined,
@@ -215,6 +258,11 @@ export default function SubmitClient() {
         const err = await response.json().catch(() => ({}));
         alert(err?.error || "Unable to submit. Please try again.");
         return;
+      }
+
+      // Delete draft if completing one
+      if (currentDraftId) {
+        await offlineStorage.deleteDraft(currentDraftId);
       }
 
       // Show success notification, then redirect to map
@@ -250,6 +298,14 @@ export default function SubmitClient() {
           <p className="text-xl text-gray-600">
             Upload a photo of a plant you spotted in a swamp or wetland
           </p>
+          <div className="mt-4">
+            <button
+              onClick={() => router.push("/offline-submit")}
+              className="text-sm text-green-600 hover:text-green-700 font-medium underline"
+            >
+              Or use Offline Mode
+            </button>
+          </div>
         </div>
         {!user && (
           <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
