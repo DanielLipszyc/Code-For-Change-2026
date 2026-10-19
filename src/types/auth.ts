@@ -1,25 +1,13 @@
 /**
  * User role types for authorization
  */
-export type UserRole = 'user' | 'admin';
+export type UserRole = "user" | "admin";
 
 /**
- * Extended submission interface with authentication fields
+ * Who is making a request: decides what they can see and change.
+ * Built on the server by getViewer() in server/authz.ts.
  */
-export interface AuthenticatedSubmission {
-  userId: string;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt?: Date;
-}
-
-/**
- * User information returned from API
- */
-export interface UserInfo {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  imageUrl?: string;
+export interface Viewer {
+  userId: string | null;
+  isAdmin: boolean;
 }

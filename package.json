@@ -2,43 +2,62 @@
   "name": "code-for-change-2026",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "promote-admin": "ts-node scripts/promote-admin.ts",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --grep-invert @perf",
+    "test:perf": "playwright test --grep @perf --workers=1",
+    "check": "npm run lint && npm run typecheck && npm run format:check && npm run test",
+    "promote-admin": "tsx scripts/promote-admin.ts",
+    "plant-id:species": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/plant-id-species.mts",
+    "photos:move-to-storage": "tsx --conditions=react-server --env-file=.env.local scripts/move-photos-to-storage.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.7",
+    "@serwist/next": "^9.5.13",
     "@supabase/supabase-js": "^2.116.0",
+    "client-only": "^0.0.1",
     "leaflet": "^1.9.4",
     "next": "^15.5.27",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@clerk/backend": "^3.18.1",
-    "@testing-library/jest-dom": "^7.0.1",
-    "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.7",
-    "@types/jest": "^30.0.0",
+    "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "^1.64.1",
+    "@types/geojson": "^7946.0.16",
     "@types/leaflet": "^1.9.21",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.20.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.0",
     "dotenv": "^17.2.4",
-    "eslint": "^8.0.0",
+    "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.27",
-    "jest": "^30.5.2",
-    "jest-environment-jsdom": "^30.5.2",
+    "fake-indexeddb": "^6.2.6",
     "postcss": "^8.4.0",
+    "prettier": "^3.9.9",
+    "serwist": "^9.5.13",
     "tailwindcss": "^3.4.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.0.0"
+    "tsx": "^4.23.15",
+    "typescript": "^5.0.0",
+    "vitest": "^5.0.5"
+  },
+  "prettier": {
+    "printWidth": 100
   }
 }

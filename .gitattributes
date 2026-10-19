@@ -1,0 +1,7 @@
+# Use LF line endings in every checkout, on every OS, so Prettier's check
+# gives the same result on Windows as on macOS/Linux and in CI.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
