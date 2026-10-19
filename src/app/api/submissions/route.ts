@@ -28,20 +28,17 @@ export interface Submission {
 // Admins get everything, including pending reports awaiting review.
 // Everyone else gets approved reports plus their own pending ones (for My Log);
 // other people's Clerk user IDs are removed.
-// If 'all=true' query param is provided, show all submissions regardless of status.
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
     const admin = userId ? await isAdmin(userId) : false;
-    const { searchParams } = new URL(request.url);
-    const showAll = searchParams.get('all') === 'true';
 
     let query = supabase
       .from("submissions")
       .select("*")
       .order("timestamp_ms", { ascending: false });
 
-    if (!admin && !showAll) {
+    if (!admin) {
       // Clerk IDs are [A-Za-z0-9_]; anything else must not reach the filter string
       query =
         userId && CLERK_ID.test(userId)
