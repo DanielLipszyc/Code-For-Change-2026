@@ -13,6 +13,7 @@ const navItems = [
   { href: "/map", label: "Map", signIn: false },
   { href: "/guide", label: "Plant Guide", signIn: false },
   { href: "/submit", label: "Submit", signIn: true },
+  { href: "/drafts", label: "Drafts", signIn: true },
   { href: "/log", label: "My Log", signIn: true },
   { href: "/dashboard", label: "Dashboard", signIn: true },
   { href: "/about", label: "About", signIn: false },
@@ -56,12 +57,14 @@ export default function Navigation() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // Drafts appears only when something is saved on this device
+  // Reports saved on this device, shown as a count next to Drafts
   const savedCount = useSavedReports()?.length ?? 0;
+  // Drafts is for signed-in users, and for anyone with reports waiting on this device
+  const items = navItems.filter((item) => item.href !== "/drafts" || isSignedIn || savedCount > 0);
 
   const links = (mobile: boolean) => (
     <>
-      {navItems.map((item) => (
+      {items.map((item) => (
         <NavLink
           key={item.href}
           href={item.href}
@@ -72,21 +75,13 @@ export default function Navigation() {
           onClick={mobile ? () => setIsMenuOpen(false) : undefined}
         >
           {item.label}
+          {item.href === "/drafts" && savedCount > 0 && (
+            <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+              {savedCount}
+            </span>
+          )}
         </NavLink>
       ))}
-      {savedCount > 0 && (
-        <NavLink
-          href="/drafts"
-          active={pathname === "/drafts"}
-          mobile={mobile}
-          onClick={mobile ? () => setIsMenuOpen(false) : undefined}
-        >
-          Drafts{" "}
-          <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
-            {savedCount}
-          </span>
-        </NavLink>
-      )}
     </>
   );
 
