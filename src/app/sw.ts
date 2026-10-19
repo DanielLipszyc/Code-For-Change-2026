@@ -9,8 +9,8 @@ import { CacheFirst, ExpirationPlugin, NetworkFirst, Serwist, StaleWhileRevalida
  * - The app's scripts, styles and fonts are precached at install.
  * - Pages are fetched from the network first and kept, so a page opened
  *   once works offline after. /submit and /drafts require sign-in, so they
- *   can't be precached; SavedReportsSync asks for them (CACHE_PAGES) once
- *   someone is signed in.
+ *   can't be precached; SavedReportsSync asks for them
+ *   (CACHE_SIGNED_IN_PAGES) once someone is signed in.
  * - A page never opened before shows /~offline.
  *
  * API responses are never cached: they depend on who's signed in. Map tiles
@@ -65,13 +65,15 @@ const serwist = new Serwist({
   },
 });
 
-/** Keep the given same-origin pages, fetched as the signed-in user */
-async function cachePages(urls: string[]) {
+/** Pages for reporting in the field. They require sign-in, so they can't be precached. */
+const SIGNED_IN_PAGES = ["/submit", "/drafts"];
+
+/** Keep the signed-in pages, fetched as the signed-in user */
+async function cacheSignedInPages() {
   const cache = await caches.open(PAGES_CACHE);
   await Promise.all(
-    urls.map(async (path) => {
+    SIGNED_IN_PAGES.map(async (path) => {
       const url = new URL(path, self.location.origin);
-      if (url.origin !== self.location.origin) return;
       const response = await fetch(url, { credentials: "same-origin" });
       // A redirect means sign-in was needed: don't keep the sign-in page as /submit
       if (response.ok && !response.redirected) await cache.put(url, response);
@@ -80,9 +82,10 @@ async function cachePages(urls: string[]) {
 }
 
 self.addEventListener("message", (event) => {
-  const data = event.data as { type?: string; urls?: unknown } | null;
-  if (data?.type === "CACHE_PAGES" && Array.isArray(data.urls)) {
-    event.waitUntil(cachePages(data.urls.filter((u): u is string => typeof u === "string")));
+  // Only this site's own pages may ask
+  if (event.origin !== self.location.origin) return;
+  if ((event.data as { type?: unknown } | null)?.type === "CACHE_SIGNED_IN_PAGES") {
+    event.waitUntil(cacheSignedInPages());
   }
 });
 

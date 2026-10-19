@@ -5,9 +5,6 @@ import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/components/ui/Toast";
 import { sendQueuedReports } from "@/client/offline/send";
 
-/** Pages a signed-in user may need with no signal (they require sign-in, so they can't be precached) */
-const OFFLINE_PAGES = ["/submit", "/drafts"];
-
 /**
  * Sends reports saved on this device while offline, as soon as there's a
  * connection: when a page opens, when the browser comes back online, and
@@ -44,9 +41,7 @@ export default function SavedReportsSync() {
   useEffect(() => {
     if (!userId || !("serviceWorker" in navigator)) return;
     navigator.serviceWorker.ready
-      .then((registration) =>
-        registration.active?.postMessage({ type: "CACHE_PAGES", urls: OFFLINE_PAGES }),
-      )
+      .then((registration) => registration.active?.postMessage({ type: "CACHE_SIGNED_IN_PAGES" }))
       .catch(() => {});
   }, [userId]);
 

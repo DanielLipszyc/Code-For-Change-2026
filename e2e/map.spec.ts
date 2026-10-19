@@ -65,7 +65,9 @@ test("filtering redraws the markers without moving the map or reloading tiles", 
 
   const tileRequests: string[] = [];
   page.on("request", (request) => {
-    if (request.url().includes("tile.openstreetmap.org")) tileRequests.push(request.url());
+    if (new URL(request.url()).hostname === "tile.openstreetmap.org") {
+      tileRequests.push(request.url());
+    }
   });
 
   await page.getByRole("button", { name: /Filter Sightings/ }).click();
