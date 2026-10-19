@@ -12,6 +12,10 @@ async function serviceWorkerReady(page: Page) {
   });
 }
 
+// Both install a service worker and load pages several times, which is slow
+// while the other tests run alongside
+test.describe.configure({ timeout: 90_000 });
+
 test("pages opened online still open offline", async ({ page, context }) => {
   await page.goto("/guide");
   await serviceWorkerReady(page);
