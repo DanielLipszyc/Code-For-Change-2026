@@ -1,15 +1,26 @@
 version: 2
 updates:
+  # Once a month, one PR with every minor and patch update. Major versions
+  # (Next.js, Clerk, ESLint...) usually need code changes, so they're
+  # upgraded on purpose rather than proposed here. This only affects routine
+  # updates: security fixes come through Dependabot security updates
+  # (repo Settings -> Code security) whatever the version.
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-    # One PR for all minor/patch updates instead of one per package
+      interval: monthly
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
+  # Once a month, one PR for the GitHub Actions the workflows use
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]
