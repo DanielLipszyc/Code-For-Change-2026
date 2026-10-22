@@ -23,7 +23,7 @@
     "photos:move-to-storage": "tsx --conditions=react-server --env-file=.env.local scripts/move-photos-to-storage.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.39.7",
+    "@clerk/nextjs": "^7.9.17",
     "@serwist/next": "^9.5.13",
     "@supabase/supabase-js": "^2.116.0",
     "client-only": "^0.0.1",
