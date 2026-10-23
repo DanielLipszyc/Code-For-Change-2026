@@ -25,12 +25,11 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 ## Pages
 
 1. **Home** (`/`) - Landing page with features and account creation
-2. **About** (`/about`) - Mission, values, and team info
-3. **Submit** (`/submit`) - Plant sighting submission form
-4. **Invasive Plant Guide** (`/guide`) - Information about each species
-5. **My Log** (`/log`) - Searchable log of user's submissions
-6. **Dashboard** (`/dashboard`) - Onboarding-focused activity summary and network overview
-7. **Map** (`/map`) - Interactive invasive plant species map
+2. **Submit** (`/submit`) - Plant sighting submission form
+3. **Invasive Plant Guide** (`/guide`) - Information about each species
+4. **My Log** (`/log`) - Searchable log of user's submissions
+5. **Dashboard** (`/dashboard`) - Onboarding-focused activity summary and network overview
+6. **Map** (`/map`) - Interactive invasive plant species map
 
 ## Performance Notes
 
@@ -116,8 +115,6 @@ src/
 │   ├── layout.tsx        # Root layout with navigation
 │   ├── page.tsx          # Home page
 │   ├── globals.css       # Global styles
-│   ├── about/
-│   │   └── page.tsx      # About page
 │   ├── map/
 │   │   └── page.tsx      # map page
 │   ├── dashboard/

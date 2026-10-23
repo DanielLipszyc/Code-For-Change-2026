@@ -2,7 +2,6 @@ export const translations = {
     en: {
       nav: {
         home: "Home",
-        about: "About",
         submit: "Submit",
         guide: "Invasive Plant Guide",
         contact: "Contact",
@@ -40,7 +39,6 @@ export const translations = {
     es: {
       nav: {
         home: "Inicio",
-        about: "Acerca de",
         submit: "Enviar",
         guide: "Guía de Plantas Invasoras",
         contact: "Contacto",

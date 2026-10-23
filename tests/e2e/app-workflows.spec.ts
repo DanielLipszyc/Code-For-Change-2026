@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 
 const publicRoutes = [
   { path: "/", content: "Community-powered invasive plant observations" },
-  { path: "/about", content: "Our Mission" },
   { path: "/guide", content: "Alachua County Invasive Plant ID Guide" },
   { path: "/map", content: "Alachua County Invasive Plant Map" },
   { path: "/submit?plant=Air%20Potato", content: "Prefilled from guide" },
