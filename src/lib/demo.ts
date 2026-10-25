@@ -5,7 +5,12 @@ export const DEMO_COOKIE = "demo_user";
 
 export type DashboardPayload = {
   user: { id: string; name: string };
-  stats: Array<{ label: string; value: string; detail: string; tone: "emerald" | "sky" | "orange" | "violet" }>;
+  stats: Array<{
+    label: string;
+    value: string;
+    detail: string;
+    tone: "emerald" | "sky" | "orange" | "violet";
+  }>;
   observers: Array<{
     id: string;
     name: string;
@@ -29,18 +34,53 @@ export const demoDashboard: DashboardPayload = {
     { label: "Active days", value: "3", detail: "Days with a report", tone: "violet" },
   ],
   observers: [
-    { id: "obs-1", name: "Mara Rivers", focus: "Wetland grasses", sightings: 18, following: true, avatar: "MR" },
-    { id: "obs-2", name: "Theo Palm", focus: "Invasive trees", sightings: 13, following: false, avatar: "TP" },
-    { id: "obs-3", name: "Iris North", focus: "Aquatic plants", sightings: 9, following: true, avatar: "IN" },
+    {
+      id: "obs-1",
+      name: "Mara Rivers",
+      focus: "Wetland grasses",
+      sightings: 18,
+      following: true,
+      avatar: "MR",
+    },
+    {
+      id: "obs-2",
+      name: "Theo Palm",
+      focus: "Invasive trees",
+      sightings: 13,
+      following: false,
+      avatar: "TP",
+    },
+    {
+      id: "obs-3",
+      name: "Iris North",
+      focus: "Aquatic plants",
+      sightings: 9,
+      following: true,
+      avatar: "IN",
+    },
   ],
   achievements: [
     { title: "Trail Recon", detail: "5 of 5 field checks logged", progress: 100, icon: "🥾" },
-    { title: "Wetland Watcher", detail: "5 of 12 water-site reports", progress: (5 / 12) * 100, icon: "💧" },
-    { title: "Plant Detective", detail: "4 of 18 species confirmed", progress: (4 / 18) * 100, icon: "🔍" },
+    {
+      title: "Wetland Watcher",
+      detail: "5 of 12 water-site reports",
+      progress: (5 / 12) * 100,
+      icon: "💧",
+    },
+    {
+      title: "Plant Detective",
+      detail: "4 of 18 species confirmed",
+      progress: (4 / 18) * 100,
+      icon: "🔍",
+    },
   ],
   feed: [
     { title: "Demo logged Air Potato", meta: "Approved", type: "connection" },
     { title: "Mara Rivers logged Water Hyacinth", meta: "Approved", type: "species" },
-    { title: "Community challenge: map invasive stands", meta: "18 observers active", type: "challenge" },
+    {
+      title: "Community challenge: map invasive stands",
+      meta: "18 observers active",
+      type: "challenge",
+    },
   ],
 };

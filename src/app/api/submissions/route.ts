@@ -1,79 +1,49 @@
-import { supabase, toSubmission } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getPublicDisplayName, getUserRole, isAdmin } from "@/lib/auth";
-import { parseImageData, parseNotes, resolvePlant } from "@/lib/submissionInput";
-import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { createSubmissionSchema } from "@/lib/schemas";
+import { getPublicDisplayName, getViewer, roleOf } from "@/server/authz";
+import { MAX_BODY_BYTES, jsonError, parseJsonBody } from "@/server/http";
+import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
+import { InvalidPhotoError } from "@/server/photos";
+import { DuplicateSubmissionError, createSubmission, listSubmissions } from "@/server/submissions";
 
-const CLERK_ID = /^[A-Za-z0-9_]+$/;
-
-export interface Submission {
-  _id?: string;
-  plantName: string;
-  scientificName?: string;
-  lat: number;
-  lng: number;
-  locationAccuracyM?: number; // GPS accuracy radius in meters
-  timestamp: number;
-  notes?: string;
-  imageData?: string; // Base64 encoded image
-  userId?: string; // Clerk user ID (optional for legacy submissions)
-  createdBy?: string; // User's display name
-  createdAt?: Date;
-  updatedAt?: Date;
-  status?: 'pending' | 'approved'; // Approval status (pending = red for admins, approved = green for all)
-}
-
-// GET - Fetch submissions from Supabase
-// Admins get everything, including pending reports awaiting review.
-// Everyone else gets approved reports plus their own pending ones (for My Log);
-// other people's Clerk user IDs are removed.
-export async function GET() {
+/**
+ * GET /api/submissions
+ * Admins get everything; everyone else gets approved reports plus their own
+ * pending ones. With ?mine=1, only the caller's own submissions; with
+ * ?status=pending or ?status=approved, only those (still limited to what the
+ * caller may see).
+ */
+export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    const admin = userId ? await isAdmin(userId) : false;
-
-    let query = supabase
-      .from("submissions")
-      .select("*")
-      .order("timestamp_ms", { ascending: false });
-
-    if (!admin) {
-      // Clerk IDs are [A-Za-z0-9_]; anything else must not reach the filter string
-      query =
-        userId && CLERK_ID.test(userId)
-          ? query.or(`status.eq.approved,user_id.eq.${userId}`)
-          : query.eq("status", "approved");
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    const submissions = data.map(toSubmission).map((submission) =>
-      admin || submission.userId === userId ? submission : { ...submission, userId: null }
-    );
-
-    return NextResponse.json(submissions);
+    const viewer = await getViewer();
+    const params = request.nextUrl.searchParams;
+    const mine = params.get("mine") === "1";
+    const statusParam = params.get("status");
+    const status =
+      statusParam === "pending" || statusParam === "approved" ? statusParam : undefined;
+    return NextResponse.json(await listSubmissions(viewer, { mine, status }));
   } catch (error) {
     console.error("Error fetching submissions:", error);
-    return NextResponse.json({ error: "Failed to fetch submissions" }, { status: 500 });
+    return jsonError(500, "Failed to fetch submissions");
   }
 }
 
-// POST - Create new submission in Supabase
-// Requires authentication unless the submission is marked anonymous
+/**
+ * POST /api/submissions
+ * Requires sign-in unless the submission is marked anonymous. A report sent
+ * again with the same id gets 409 and isn't stored twice.
+ */
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await auth();
-    const userId = authResult.userId;
-    const data: Submission & { anonymous?: boolean } = await request.json();
-    const isAnonymous = Boolean(data.anonymous);
+    const { userId } = await auth();
 
-    if (!userId && !isAnonymous) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in to submit" },
-        { status: 401 }
-      );
+    const parsed = await parseJsonBody(request, createSubmissionSchema, MAX_BODY_BYTES.withPhoto);
+    if (!parsed.ok) return parsed.response;
+    const input = parsed.data;
+
+    if (!userId && !input.anonymous) {
+      return jsonError(401, "Unauthorized - Please sign in to submit");
     }
 
     // Limit per account, or per IP address for anonymous submissions
@@ -83,82 +53,31 @@ export async function POST(request: NextRequest) {
       return tooManyRequests(rateLimit.windowSeconds);
     }
 
-    let displayName = 'Anonymous';
-    let userRole: 'user' | 'admin' = 'user';
-
     // Anonymous submissions get no user attached and are never auto-approved
-    if (userId && !isAnonymous) {
-      const client = await clerkClient();
-      const user = await client.users.getUser(userId);
-      displayName = getPublicDisplayName(user, { fallback: 'Anonymous' });
-      userRole = await getUserRole(userId);
+    let submitter = { userId: null as string | null, displayName: "Anonymous", autoApprove: false };
+    if (userId && !input.anonymous) {
+      const user = await (await clerkClient()).users.getUser(userId);
+      submitter = {
+        userId,
+        displayName: getPublicDisplayName(user, { fallback: "Anonymous" }),
+        // Admins' own reports skip review
+        autoApprove: roleOf(user) === "admin",
+      };
     }
 
-    // Validate required fields
-    if (!data.plantName || typeof data.lat !== "number" || typeof data.lng !== "number") {
-      return NextResponse.json(
-        { error: "Missing required fields: plantName, lat, lng" },
-        { status: 400 }
-      );
-    }
-
-    // Only known species (or "Unknown") and bounded notes are stored
-    const plant = resolvePlant(data.plantName);
-    if (!plant) {
-      return NextResponse.json(
-        { error: "Plant name must be one of the listed species or Unknown" },
-        { status: 400 }
-      );
-    }
-
-    const notes = parseNotes(data.notes);
-    if ("error" in notes) {
-      return NextResponse.json({ error: notes.error }, { status: 400 });
-    }
-
-    const image = parseImageData(data.imageData);
-    if ("error" in image) {
-      return NextResponse.json({ error: image.error }, { status: 400 });
-    }
-
-    // Rough Alachua County bounds check
-    if (
-      data.lat < 29.3 || data.lat > 29.9 ||
-      data.lng < -82.7 || data.lng > -82.0
-    ) {
-      return NextResponse.json(
-        { error: "Location must be within Alachua County" },
-        { status: 400 }
-      );
-    }
-
-    const { data: inserted, error } = await supabase
-      .from("submissions")
-      .insert({
-        plant_name: plant.plantName,
-        scientific_name: plant.scientificName,
-        lat: data.lat,
-        lng: data.lng,
-        location_accuracy_m:
-          typeof data.locationAccuracyM === "number" ? data.locationAccuracyM : null,
-        timestamp_ms: data.timestamp || Date.now(),
-        notes: notes.value,
-        image_data: image.value,
-        user_id: isAnonymous ? null : userId, // Add authenticated user ID
-        created_by: displayName, // Add user's display name
-        status: userRole === 'admin' ? 'approved' : 'pending', // Auto-approve admin submissions
-      })
-      .select("id")
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({
-      success: true,
-      id: inserted.id
-    });
+    const id = await createSubmission(input, submitter);
+    return NextResponse.json({ success: true, id });
   } catch (error) {
+    if (error instanceof InvalidPhotoError) {
+      return jsonError(400, "The photo couldn't be read. Try a JPEG or PNG.");
+    }
+    if (error instanceof DuplicateSubmissionError) {
+      return NextResponse.json(
+        { error: "This report was already submitted", id: error.id },
+        { status: 409 },
+      );
+    }
     console.error("Error creating submission:", error);
-    return NextResponse.json({ error: "Failed to create submission" }, { status: 500 });
+    return jsonError(500, "Failed to create submission");
   }
 }

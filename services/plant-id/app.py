@@ -1,0 +1,98 @@
+import base64
+import json
+from pathlib import Path
+from io import BytesIO
+from PIL import Image
+import modal
+
+app = modal.App("swamp-spotter-bioclip")
+
+def download_model():
+    import open_clip
+    open_clip.create_model_and_transforms("hf-hub:imageomics/bioclip-2")
+    open_clip.get_tokenizer("hf-hub:imageomics/bioclip-2")
+
+bioclip_image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .pip_install(
+        "torch",
+        "torchvision",
+        "open_clip_torch",
+        "huggingface_hub",
+        "pillow",
+        "fastapi[standard]",
+    )
+    .run_function(download_model)  # Pre-bakes weights into disk image
+    .add_local_file(Path(__file__).parent / "species.json", "/root/species.json")
+)
+
+# The species to score, generated from src/data/plants.ts (npm run plant-id:species).
+# The file sits next to this one locally and in the container.
+SPECIES_FILE = Path(__file__).parent / "species.json"
+SPECIES_LIST = json.loads(SPECIES_FILE.read_text(encoding="utf-8"))
+
+@app.cls(
+    image=bioclip_image,
+    gpu="T4",               # Standard T4 is cost-effective and fits BioCLIP-2
+    scaledown_window=600,   # Shuts down after 10 minutes of idle time
+)
+class PlantClassifier:
+    @modal.enter()
+    def load_model(self):
+        import torch
+        import open_clip
+
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Load BioCLIP 2 from Hugging Face via OpenCLIP
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms(
+            "hf-hub:imageomics/bioclip-2"
+        )
+        self.tokenizer = open_clip.get_tokenizer("hf-hub:imageomics/bioclip-2")
+        self.model.to(self.device).eval()
+
+        # Precompute text embeddings so inference remains fast
+        text_prompts = [
+            f"a photo of {s['scientific']}, also known as {s['name']}"
+            for s in SPECIES_LIST
+        ]
+        tokens = self.tokenizer(text_prompts).to(self.device)
+
+        with torch.no_grad():
+            text_features = self.model.encode_text(tokens)
+            self.text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+
+    # requires_proxy_auth: callers must send a Modal proxy auth token (Modal-Key and
+    # Modal-Secret headers), so the URL alone can't be used to spend GPU time
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
+    def predict(self, payload: dict):
+        import torch
+
+        # Extract base64 image string (compatible with Next.js payload)
+        raw_b64 = payload.get("image", "")
+        if "," in raw_b64:
+            raw_b64 = raw_b64.split(",", 1)[1]
+
+        image_bytes = base64.b64decode(raw_b64)
+        image = Image.open(BytesIO(image_bytes)).convert("RGB")
+        tensor = self.preprocess(image).unsqueeze(0).to(self.device)
+
+        with torch.no_grad():
+            image_features = self.model.encode_image(tensor)
+            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+
+            # Compute similarity logits and softmax probabilities
+            similarity = (100.0 * image_features @ self.text_features.T).softmax(dim=-1)[0]
+
+        # Format scores for each species
+        scores = []
+        for i, s in enumerate(SPECIES_LIST):
+            scores.append({
+                "name": s["name"],
+                "scientificName": s["scientific"],
+                "confidence": round(float(similarity[i].item()), 4)
+            })
+
+        # Sort descending by confidence
+        scores.sort(key=lambda x: x["confidence"], reverse=True)
+        return {"scores": scores}

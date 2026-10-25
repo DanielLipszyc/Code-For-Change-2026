@@ -7,4 +7,4 @@
  * the "AI Plant Identification" box on /submit). Turned off for now; set to true
  * and provide GEMINI_API_KEY to bring it back.
  */
-export const PLANT_ID_ENABLED = false;
+export const PLANT_ID_ENABLED = true;

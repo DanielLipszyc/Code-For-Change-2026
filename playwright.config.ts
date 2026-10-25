@@ -1,23 +1,39 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = "http://localhost:3100";
+const PORT = 3200;
+
+/**
+ * Browser tests (e2e/). They build the app and run the production server with
+ * your .env.local, so they read the real Supabase data and never sign in or
+ * write anything. Production rather than `next dev`: pages don't compile on
+ * first visit, so timings are real and tests don't time out while they build.
+ *
+ *   npm run test:e2e
+ *
+ * To test against a server you already started, set E2E_BASE_URL.
+ */
+const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
-  testDir: "./tests/e2e",
+  testDir: "e2e",
   fullyParallel: true,
-  forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : undefined,
   reporter: "list",
+  timeout: 30_000,
+  expect: { timeout: 10_000 },
   use: {
     baseURL,
     trace: "retain-on-failure",
-    ...devices["Desktop Chrome"],
   },
-  webServer: {
-    command: "npm run start -- --hostname localhost --port 3100",
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  projects: [
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile", use: { ...devices["Pixel 7"] } },
+  ],
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: `npm run build && npx next start -p ${PORT}`,
+        url: `${baseURL}/about`,
+        reuseExistingServer: true,
+        timeout: 300_000,
+      },
 });

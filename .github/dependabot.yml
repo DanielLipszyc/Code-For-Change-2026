@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # One PR for all minor/patch updates instead of one per package
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

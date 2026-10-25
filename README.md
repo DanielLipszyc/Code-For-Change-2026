@@ -1,133 +1,140 @@
 # Swamp Spotter
+
 ## Code For Change 2026
 
 A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, Supabase, and Tailwind CSS.
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 (App Router)
+- **Framework:** Next.js 15 (App Router)
 - **Language:** TypeScript
-- **Database:** Supabase (Postgres)
+- **Database and photos:** Supabase (Postgres and Storage)
 - **Auth:** Clerk
+- **Map:** Leaflet with OpenStreetMap tiles
+- **Plant ID:** BioCLIP 2 on Modal (`services/plant-id/`)
+- **Offline:** IndexedDB and a service worker (Serwist)
 - **Styling:** Tailwind CSS
-- **Linting:** ESLint
+- **Testing:** Vitest, Playwright
+- **Linting and formatting:** ESLint, Prettier
 
 ## Features
 
 - 📱 Mobile-first responsive design
-- 🎨 Modern UI with Tailwind CSS
-- ⚡ Faster dashboard data loads through short-lived server-side caching
-- 🌿 Guided dashboard onboarding for new users
-- 🧪 One-click demo account sign-in (see Demo Access)
-- 🖼️ Optimized image loading for the home page slideshow
-- 📦 PWA-ready with manifest
+- 📡 Works offline: reports are saved on the device and sent when there's a connection
+- 🗺️ A map that loads with its sightings and stays put while you filter
+- 🤖 AI plant suggestions from a photo
+- 📦 Installable (web app manifest and service worker)
 
 ## Pages
 
 1. **Home** (`/`) - Landing page with features and account creation
 2. **About** (`/about`) - Mission, values, and team info
-3. **Submit** (`/submit`) - Plant sighting submission form
-4. **Invasive Plant Guide** (`/guide`) - Information about each species
-5. **My Log** (`/log`) - Searchable log of user's submissions
-6. **Dashboard** (`/dashboard`) - Onboarding-focused activity summary and network overview
-7. **Map** (`/map`) - Interactive invasive plant species map
-
-## Language Support
-
-The app interface supports English, Spanish, and Portuguese. English is used by
-default; visitors can change the language from the navigation selector, and the
-choice is saved in the browser for future visits. Clerk sign-in and sign-up
-screens use the matching Spanish or Portuguese localization when available.
-
-## Performance Notes
-
-- Dashboard payloads are cached for a short interval to reduce repeated database and Clerk lookups.
-- New users see a guided onboarding section that directs them to report, explore, and track progress.
-- The home page slideshow avoids loading all slide images at once by rendering only the active and adjacent images.
-
-## Demo Access
-
-This is for local development only (`npm run dev`). The demo UI, dashboard API, and auth bypass all use the shared `NODE_ENV === "development"` gate. In production, run the app with `NODE_ENV=production` (the standard `next build` / `next start` flow); do not override it to `development`. The sign-in page has a "Continue as Demo User" button that works without Clerk or a database. It sets a `demo_user` cookie that only unlocks `/dashboard` and `/api/dashboard` during local development, which serve static sample data from `src/lib/demo.ts`. The welcome tour always shows for the demo user.
+3. **Submit** (`/submit`) - Plant sighting submission form; works offline
+4. **Drafts** (`/drafts`) - Reports saved on this device, waiting to be finished or sent
+5. **Invasive Plant Guide** (`/guide`) - Information about each species
+6. **My Log** (`/log`) - Searchable log of user's submissions
+7. **Map** (`/map`) - Interactive invasive plant species map, with a List view
+8. **Dashboard** (`/dashboard`) - Personal stats and other observers
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 22+ installed
-- npm or yarn
+- Node.js 22 or newer
+- npm
 
 ### Environment variables
 
-Create a `.env.local` file in the project root:
+Copy the example file and fill in your keys:
 
 ```bash
-# Clerk (https://dashboard.clerk.com -> API Keys)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-
-# Supabase (Project Settings -> API Keys)
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_SECRET_KEY=sb_secret_...   # the "Secret key", server-only, never expose to the browser
-
-# Optional: only needed if photo-based plant ID is switched on
-# (PLANT_ID_ENABLED in src/lib/features.ts, currently off)
-GEMINI_API_KEY=...
+cp .env.example .env.local
 ```
+
+[`.env.example`](.env.example) explains where each value comes from. Never commit `.env.local`.
 
 ### Database setup
 
 Open the Supabase dashboard, go to **SQL Editor**, paste the contents of
 [`supabase/schema.sql`](supabase/schema.sql), and run it. This creates the
-`submissions` and `follows` tables. The script is safe to re-run, and re-running
-it is how an existing database picks up schema changes.
+tables and the private `submission-photos` Storage bucket. The script is safe to
+re-run, and re-running it is how an existing database picks up schema changes.
+
+If the database has photos from before they moved to Storage, move them once:
+
+```bash
+npm run photos:move-to-storage              # lists what it would move
+npm run photos:move-to-storage -- --apply   # moves them
+```
 
 ### Installation
 
 ```bash
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Testing
+## Scripts
+
+| Command                          | What it does                                                           |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `npm run dev`                    | Start the development server                                           |
+| `npm run build`                  | Build for production                                                   |
+| `npm start`                      | Run the production build                                               |
+| `npm test`                       | Run the unit tests (`npm run test:watch` to rerun)                     |
+| `npm run test:e2e`               | Run the browser tests (see below)                                      |
+| `npm run test:perf`              | Check the map's loading time (runs on its own)                         |
+| `npm run lint`                   | Lint with ESLint                                                       |
+| `npm run typecheck`              | Type-check with TypeScript                                             |
+| `npm run format`                 | Format everything with Prettier                                        |
+| `npm run check`                  | Lint, typecheck, format check and tests in one go                      |
+| `npm run promote-admin`          | Make a user an admin: `npm run promote-admin <email>`                  |
+| `npm run plant-id:species`       | Regenerate the plant ID model's species list from `src/data/plants.ts` |
+| `npm run photos:move-to-storage` | Move photos stored in the database to Storage (see above)              |
+
+### Browser tests
+
+The browser tests build the app and start the production server with your
+`.env.local`, and only read data. Install the browser once, then run them:
 
 ```bash
-npm test
+npx playwright install chromium
+npm run test:e2e
 ```
-
-This runs ESLint, TypeScript typechecking, the Vitest API/unit suite with coverage thresholds, a production build, and Playwright browser workflows. Run unit tests without coverage using `npm run test:unit`, or regenerate the coverage report using `npm run test:coverage`. Reports are written to `coverage/`; GitHub Actions uploads them as the `vitest-coverage` artifact. Browser tests require Chromium, installed with `npx playwright install chromium`.
-
-GitHub Actions runs the same checks, CodeQL SAST, dependency review, a production npm audit report, an OWASP ZAP baseline scan, and a k6 load profile. Add `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` as repository Actions secrets so the production build and browser server can initialize Clerk. Start a higher-volume k6 stress run with **Actions → Integration tests → Run workflow → Run the higher-volume stress profile**. Dependabot checks npm and GitHub Actions dependencies weekly.
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── layout.tsx        # Root layout with navigation
-│   ├── page.tsx          # Home page
-│   ├── globals.css       # Global styles
-│   ├── about/
-│   │   └── page.tsx      # About page
-│   ├── map/
-│   │   └── page.tsx      # map page
-│   ├── dashboard/
-│   │   └── page.tsx      # Dashboard page
-│   └── contact/
-│       └── page.tsx      # Contact page
-└── components/
-    └── Navigation.tsx    # Mobile-responsive navigation
+│   ├── (site)/        # Home, about, guide
+│   ├── (auth)/        # Sign-in, sign-up
+│   ├── (app)/         # Dashboard, log, map, submit, drafts (each page's own UI in _components/)
+│   ├── api/           # API routes
+│   └── sw.ts          # Service worker
+├── server/            # Server-only code: database, photos, auth checks, rate limits, plant ID
+├── client/            # Browser-only code: offline report store and sender
+├── lib/               # Helpers shared by browser and server
+├── data/              # Plant list and county boundary
+├── types/
+├── components/        # Shared UI; ui/ has Dialog, confirm and toast
+└── middleware.ts
+e2e/                   # Browser tests (Playwright)
+services/plant-id/     # The plant ID model (Python, deployed on Modal)
+scripts/               # Admin and data scripts
+supabase/              # Database schema
+docs/                  # Architecture notes
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for what goes where and why.
+
+## Contributing
+
+1. Branch from `main`.
+2. Run `npm run check` before opening a pull request.
+3. CI must pass before merging.
 
 ## License
 

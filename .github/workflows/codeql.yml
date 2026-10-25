@@ -1,8 +1,10 @@
 name: CodeQL
 
+# Static security analysis of the TypeScript code (from Jackson's UX_dev branch)
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
   schedule:
     - cron: "23 4 * * 1"
 
@@ -16,17 +18,10 @@ jobs:
     name: Analyze JavaScript and TypeScript
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
+          build-mode: none
           queries: security-and-quality
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
-
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+      - uses: github/codeql-action/analyze@v4

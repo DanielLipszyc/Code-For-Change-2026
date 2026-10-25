@@ -2,7 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
-import { LanguageProvider } from "@/components/LanguageProvider";
+import SavedReportsSync from "@/components/SavedReportsSync";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+import { ToastProvider } from "@/components/ui/Toast";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,8 +23,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom stays enabled for accessibility (WCAG 1.4.4); the map handles its own gestures
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f0fdf4" },
     { media: "(prefers-color-scheme: dark)", color: "#14532d" },
@@ -34,13 +36,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light">
-      <body className={`${inter.className} antialiased min-h-screen bg-white`}>
-        <LanguageProvider>
-          <Navigation />
-          <main className="safe-top safe-bottom">{children}</main>
-        </LanguageProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="light">
+        <body className={`${inter.className} antialiased min-h-screen bg-white`}>
+          <ToastProvider>
+            <ConfirmProvider>
+              <SavedReportsSync />
+              <Navigation />
+              <main className="safe-top safe-bottom">{children}</main>
+            </ConfirmProvider>
+          </ToastProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -40,9 +40,26 @@ next-env.d.ts
 
 # IDE
 .idea
-.vscode
+# Share the workspace settings and recommended extensions; keep the rest personal
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 *.swp
 *.swo
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# python (services/)
+__pycache__/
+*.py[cod]
+.venv/
+
+# playwright
+/test-results/
+/playwright-report/
+
+# service worker, built from src/app/sw.ts
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
