@@ -18,7 +18,7 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 - 🎨 Modern UI with Tailwind CSS
 - ⚡ Faster dashboard data loads through short-lived server-side caching
 - 🌿 Guided dashboard onboarding for new users
-- 🧪 Demo dashboard access for local testing (`/dashboard?demo=1`)
+- 🧪 One-click demo account sign-in (see Demo Access)
 - 🖼️ Optimized image loading for the home page slideshow
 - 📦 PWA-ready with manifest
 
@@ -40,13 +40,7 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 
 ## Demo Access
 
-For local testing without a Clerk account, use the demo login button on the sign-in page or visit:
-
-```text
-/dashboard?demo=1
-```
-
-This enables a local demo user so the dashboard can be tested for onboarding, follow toggles, and summary cards during development.
+This is for local development only (`npm run dev`). It is disabled in production builds. The sign-in page has a "Continue as Demo User" button that works without Clerk or a database. It sets a `demo_user` cookie that only unlocks `/dashboard` and `/api/dashboard`, which serve static sample data from `src/lib/demo.ts`. The welcome tour always shows for the demo user.
 
 ## Getting Started
 

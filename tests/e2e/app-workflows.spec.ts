@@ -6,7 +6,6 @@ const publicRoutes = [
   { path: "/guide", content: "Alachua County Invasive Plant ID Guide" },
   { path: "/map", content: "Alachua County Invasive Plant Map" },
   { path: "/submit?plant=Air%20Potato", content: "Prefilled from guide" },
-  // { path: "/dashboard?demo=1", content: "Citizen Scientist Dashboard" },
   { path: "/sign-in", content: "Sign in to submit and manage plant sightings" },
   { path: "/sign-up", content: "Create an account to start contributing plant sightings" },
 ];
@@ -38,24 +37,6 @@ test("filters the plant guide and changes language", async ({ page }) => {
   await page.locator("select").first().selectOption("es");
   await expect(page.getByRole("heading", { name: /Guía de Identificación/ })).toBeVisible();
 });
-
-/*
-test("demo dashboard completes an onboarding step", async ({ page }) => {
-  await page.goto("/dashboard?demo=1");
-
-  await expect(page.getByText("0% complete")).toBeVisible();
-  await page.getByRole("button", { name: /Review the guide/ }).click();
-  await expect(page.getByText("33% complete")).toBeVisible();
-  await expect(page.getByText("Demo onboarding step completed.")).toBeVisible();
-});
-
-test("demo sign-in opens the dashboard without an account", async ({ page }) => {
-  await page.goto("/sign-in");
-  await page.getByRole("button", { name: "Continue as Demo User" }).click();
-  await expect(page).toHaveURL(/\/dashboard\?demo=1/);
-  await expect(page.getByRole("heading", { name: /Welcome back, Demo/ })).toBeVisible();
-});
-*/
 
 test("redirects protected log access to sign-in", async ({ page }) => {
   await page.goto("/log", { waitUntil: "domcontentloaded" });

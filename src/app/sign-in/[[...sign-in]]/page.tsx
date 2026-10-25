@@ -3,6 +3,7 @@
 import { SignIn, useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DEMO_ENABLED } from "@/lib/demo";
 
 export default function SignInPage() {
   const { isSignedIn, isLoaded } = useUser();
@@ -11,7 +12,7 @@ export default function SignInPage() {
 
   const handleDemoLogin = () => {
     document.cookie = "demo_user=1; path=/; max-age=86400";
-    router.push("/dashboard?demo=1");
+    router.push("/dashboard");
   };
 
   useEffect(() => {
@@ -78,6 +79,7 @@ export default function SignInPage() {
           </p>
         </div>
 
+        {DEMO_ENABLED && (
         <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <p className="text-sm font-semibold text-emerald-800">Demo access</p>
           <button
@@ -88,6 +90,7 @@ export default function SignInPage() {
             Continue as Demo User
           </button>
         </div>
+        )}
 
         <SignIn
           appearance={{

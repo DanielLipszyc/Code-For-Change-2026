@@ -2,25 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabase, toSubmission } from "@/lib/supabase";
 import { getPublicDisplayName } from "@/lib/auth";
+import { DEMO_COOKIE, DEMO_ENABLED, demoDashboard, type DashboardPayload } from "@/lib/demo";
 
 const DASHBOARD_CACHE_TTL_MS = 60_000;
 const dashboardCache = new Map<string, { expiresAt: number; payload: DashboardPayload }>();
-
-type DashboardPayload = {
-  user: { id: string; name: string };
-  stats: Array<{ label: string; value: string; detail: string; tone: "emerald" | "sky" | "orange" | "violet" }>;
-  observers: Array<{
-    id: string;
-    name: string;
-    focus: string;
-    sightings: number;
-    following: boolean;
-    avatar: string;
-    imageUrl?: string;
-  }>;
-  achievements: Array<{ title: string; detail: string; progress: number; icon: string }>;
-  feed: Array<{ title: string; meta: string; type: "connection" | "species" | "challenge" }>;
-};
 
 function readDashboardCache(userId: string): DashboardPayload | null {
   const entry = dashboardCache.get(userId);
@@ -106,30 +91,32 @@ function toSafeDate(value: unknown): Date | null {
   return null;
 }
 
-const fallbackDashboard: DashboardPayload = {
-  user: { id: "local-user", name: "Observer" },
-  stats: [
-    { label: "Observations", value: "0", detail: "Start your first field log", tone: "emerald" },
-    { label: "Species logged", value: "0", detail: "No IDs yet", tone: "sky" },
-    { label: "Community rank", value: "#12", detail: "Building momentum", tone: "orange" },
-    { label: "Streak", value: "1d", detail: "New field streak", tone: "violet" },
-  ],
-  observers: [
-    { id: "obs-1", name: "Mara Rivers", focus: "Wetland grasses", sightings: 18, following: true, avatar: "MR" },
-    { id: "obs-2", name: "Theo Palm", focus: "Invasive trees", sightings: 13, following: false, avatar: "TP" },
-    { id: "obs-3", name: "Iris North", focus: "Aquatic plants", sightings: 9, following: true, avatar: "IN" },
-  ],
-  achievements: [
-    { title: "Trail Recon", detail: "0 of 5 field checks logged", progress: 0, icon: "🥾" },
-    { title: "Wetland Watcher", detail: "0 of 12 water-site reports", progress: 0, icon: "💧" },
-    { title: "Plant Detective", detail: "0 of 18 species confirmed", progress: 0, icon: "🔍" },
-  ],
-  feed: [
-    { title: "Start your observation streak", meta: "Ready when you are", type: "connection" },
-    { title: "Community challenge: map invasive stands", meta: "2 days ago · 18 observers active", type: "challenge" },
-    { title: "New wetland reports are coming in", meta: "Fresh sightings nearby", type: "species" },
-  ],
-};
+function buildStats(total: number, approved: number, species: number, activeDays: number): DashboardPayload["stats"] {
+  return [
+    { label: "Observations", value: total.toString(), detail: `${approved} approved`, tone: getActivityTone("Observations") },
+    { label: "Species logged", value: species.toString(), detail: species === 1 ? "1 unique plant" : `${species} unique plants`, tone: getActivityTone("Species") },
+    { label: "Pending review", value: (total - approved).toString(), detail: "Awaiting approval", tone: "orange" },
+    { label: "Active days", value: activeDays.toString(), detail: "Days with a report", tone: getActivityTone("Streak") },
+  ];
+}
+
+function buildAchievements(total: number, approved: number, species: number): DashboardPayload["achievements"] {
+  return [
+    { title: "Trail Recon", detail: `${Math.min(total, 5)} of 5 field checks logged`, progress: Math.min((total / 5) * 100, 100), icon: "🥾" },
+    { title: "Wetland Watcher", detail: `${Math.min(approved, 12)} of 12 water-site reports`, progress: Math.min((approved / 12) * 100, 100), icon: "💧" },
+    { title: "Plant Detective", detail: `${Math.min(species, 18)} of 18 species confirmed`, progress: Math.min((species / 18) * 100, 100), icon: "🔍" },
+  ];
+}
+
+function emptyDashboard(userId: string, name: string): DashboardPayload {
+  return {
+    user: { id: userId, name },
+    stats: buildStats(0, 0, 0, 0),
+    observers: [],
+    achievements: buildAchievements(0, 0, 0),
+    feed: [],
+  };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -137,6 +124,9 @@ export async function GET(request: NextRequest) {
     const currentUserId = authResult.userId;
 
     if (!currentUserId) {
+      if (DEMO_ENABLED && request.cookies.get(DEMO_COOKIE)?.value === "1") {
+        return NextResponse.json(demoDashboard);
+      }
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -146,13 +136,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) {
-      return NextResponse.json({
-        ...fallbackDashboard,
-        user: {
-          id: currentUserId,
-          name: (await getUserName(currentUserId)) || "Observer",
-        },
-      });
+      return NextResponse.json(emptyDashboard(currentUserId, (await getUserName(currentUserId)) || "Observer"));
     }
 
     const { data: submissionRows, error: submissionsError } = await supabase
@@ -223,53 +207,8 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.sightings - a.sightings)
       .slice(0, 4);
 
-    const stats: DashboardPayload["stats"] = [
-      {
-        label: "Observations",
-        value: currentTotal.toString(),
-        detail: `${approvedCount} approved`,
-        tone: getActivityTone("Observations"),
-      },
-      {
-        label: "Species logged",
-        value: uniqueSpecies.toString(),
-        detail: `${Math.max(uniqueSpecies - 2, 0)} new IDs`,
-        tone: getActivityTone("Species"),
-      },
-      {
-        label: "Community rank",
-        value: `#${Math.max(8, 30 - Math.min(currentTotal, 22)).toString().padStart(2, "0")}`,
-        detail: currentTotal >= 10 ? "Top 15%" : "Building momentum",
-        tone: getActivityTone("Rank"),
-      },
-      {
-        label: "Streak",
-        value: `${Math.max(recentDays, 1)}d`,
-        detail: recentDays > 1 ? "Active field days" : "Start your streak",
-        tone: getActivityTone("Streak"),
-      },
-    ];
-
-    const achievements: DashboardPayload["achievements"] = [
-      {
-        title: "Trail Recon",
-        detail: `${Math.min(currentTotal, 5)} of 5 field checks logged`,
-        progress: Math.min((currentTotal / 5) * 100, 100),
-        icon: "🥾",
-      },
-      {
-        title: "Wetland Watcher",
-        detail: `${Math.min(approvedCount, 12)} of 12 water-site reports`,
-        progress: Math.min((approvedCount / 12) * 100, 100),
-        icon: "💧",
-      },
-      {
-        title: "Plant Detective",
-        detail: `${Math.min(uniqueSpecies, 18)} of 18 species confirmed`,
-        progress: Math.min((uniqueSpecies / 18) * 100, 100),
-        icon: "🔍",
-      },
-    ];
+    const stats = buildStats(currentTotal, approvedCount, uniqueSpecies, recentDays);
+    const achievements = buildAchievements(currentTotal, approvedCount, uniqueSpecies);
 
     const feed: DashboardPayload["feed"] = visibleSubmissions.slice(0, 3).map((submission) => {
       const observerName = submission.createdBy || (submission.userId ? "Observer" : "Community");
@@ -309,15 +248,8 @@ export async function GET(request: NextRequest) {
           error.message.includes("schema cache")));
 
     if (isMissingTable) {
-      const fallbackPayload: DashboardPayload = {
-        ...fallbackDashboard,
-        user: {
-          id: (await auth()).userId || "local-user",
-          name: (await getUserName((await auth()).userId || "local-user")) || "Observer",
-        },
-      };
-
       const userId = (await auth()).userId || "local-user";
+      const fallbackPayload = emptyDashboard(userId, (await getUserName(userId)) || "Observer");
       writeDashboardCache(userId, fallbackPayload);
       return NextResponse.json(fallbackPayload);
     }

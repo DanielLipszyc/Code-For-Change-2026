@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import WelcomeTour from "@/components/WelcomeTour";
+import { DEMO_ENABLED, DEMO_USER_ID } from "@/lib/demo";
+import { useCallback, useEffect, useState } from "react";
 
 type Stat = {
   label: string;
@@ -54,15 +56,10 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [flashMessage, setFlashMessage] = useState("");
 
-  const isDemoMode = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return window.location.search.includes("demo=1") || document.cookie.includes("demo_user=1");
-  }, []);
-
-  useEffect(() => {
-    async function loadDashboard() {
+  const loadDashboard = useCallback(async () => {
       try {
-        const response = await fetch(`/api/dashboard${isDemoMode ? "?demo=1" : ""}`);
+        setError("");
+        const response = await fetch("/api/dashboard");
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
           if (response.status === 401) {
@@ -79,10 +76,17 @@ export default function DashboardPage() {
       } finally {
         setLoading(false);
       }
-    }
-
-    loadDashboard();
   }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  const handleStartDemo = () => {
+    document.cookie = "demo_user=1; path=/; max-age=86400";
+    setLoading(true);
+    loadDashboard();
+  };
 
   const handleInviteFriend = async () => {
     const inviteText = "Join me on Swamp Spotter and help log invasive plants across Alachua County.";
@@ -123,8 +127,13 @@ export default function DashboardPage() {
       };
     });
 
+    if (data.user.id === DEMO_USER_ID) {
+      setFlashMessage(nextFollowing ? "Observer followed." : "Observer unfollowed.");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/dashboard${isDemoMode ? "?demo=1" : ""}`, {
+      const response = await fetch("/api/dashboard", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -202,6 +211,18 @@ export default function DashboardPage() {
           >
             {isAuthError ? "Go to sign in" : "Try again"}
           </Link>
+          {isAuthError && DEMO_ENABLED && (
+            <button
+              type="button"
+              onClick={handleStartDemo}
+              className="mt-4 block w-full rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50 p-5 text-left hover:bg-emerald-100"
+            >
+              <span className="block text-sm font-black text-emerald-900">🧪 Try the demo</span>
+              <span className="mt-1 block text-xs font-semibold text-emerald-800">
+                Explore the dashboard with sample data. No account needed.
+              </span>
+            </button>
+          )}
         </div>
       </main>
     );
@@ -209,6 +230,7 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-emerald-50 to-white text-slate-900">
+      <WelcomeTour alwaysShow={data.user.id === DEMO_USER_ID} />
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -284,38 +306,18 @@ export default function DashboardPage() {
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-slate-950 p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wide text-emerald-300">Current week</span>
-                    <div className="mt-4 flex items-end gap-2">
-                      <span className="text-5xl font-black">{Math.max(data.stats[0]?.value ? Number(data.stats[0].value) : 0, 1)}</span>
-                      <span className="pb-2 text-sm text-slate-300">new reports</span>
-                    </div>
-                  </div>
-                  <span className="text-4xl">🌎</span>
+                <span className="text-xs font-bold uppercase tracking-wide text-emerald-300">Your reports</span>
+                <div className="mt-4 flex items-end gap-2">
+                  <span className="text-5xl font-black">{data.stats[0]?.value ?? "0"}</span>
+                  <span className="pb-2 text-sm text-slate-300">submitted</span>
                 </div>
-                <div className="mt-6 h-2 rounded-full bg-white/10">
-                  <div className="h-full w-[76%] rounded-full bg-emerald-300" />
-                </div>
-                <div className="mt-4 flex items-center justify-between text-xs text-slate-300">
-                  <span>Week goal: 31</span>
-                  <span>76%</span>
-                </div>
+                <div className="mt-4 text-xs text-slate-300">{data.stats[0]?.detail}</div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-emerald-50 to-lime-50 p-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wide text-emerald-800">Field milestone</span>
-                  <span className="text-3xl">🏆</span>
-                </div>
-                <div className="mt-10">
-                  <div className="text-5xl font-black text-slate-900">Level {Math.min(12, Math.max(3, Number(data.stats[0]?.value || 1) / 2 + 2))}</div>
-                  <div className="mt-2 text-sm font-semibold text-slate-600">Observer tier</div>
-                </div>
-                <div className="mt-6 h-2 rounded-full bg-emerald-100">
-                  <div className="h-full w-[88%] rounded-full bg-emerald-600" />
-                </div>
-                <div className="mt-3 text-xs font-bold text-emerald-800">{Math.max(3, 12 - Number(data.stats[0]?.value || 0))} points to next badge</div>
+                <span className="text-xs font-black uppercase tracking-wide text-emerald-800">Species logged</span>
+                <div className="mt-4 text-5xl font-black text-slate-900">{data.stats[1]?.value ?? "0"}</div>
+                <div className="mt-2 text-sm font-semibold text-slate-600">{data.stats[1]?.detail}</div>
               </div>
             </div>
 
@@ -327,6 +329,11 @@ export default function DashboardPage() {
                 </Link>
               </div>
               <div className="mt-4 space-y-3">
+                {data.feed.length === 0 && (
+                  <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+                    No activity yet. Submit a sighting to get started.
+                  </p>
+                )}
                 {data.feed.map((item, index) => (
                   <div key={`${item.title}-${index}`} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
                     <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-sm">
@@ -362,6 +369,11 @@ export default function DashboardPage() {
               </div>
 
               <div className="mt-5 space-y-4">
+                {data.observers.length === 0 && (
+                  <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+                    No other observers yet.
+                  </p>
+                )}
                 {data.observers.map((observer) => (
                   <div key={observer.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 p-3">
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-700 font-black text-white">

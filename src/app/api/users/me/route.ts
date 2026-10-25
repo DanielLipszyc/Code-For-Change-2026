@@ -33,11 +33,42 @@ export async function GET() {
       name: user.firstName || user.emailAddresses[0]?.emailAddress || 'User',
       role,
       imageUrl: user.imageUrl,
+      welcomeTourSeen: user.publicMetadata.welcomeTourSeen === true,
     });
   } catch (error) {
     console.error("Error fetching user info:", error);
     return NextResponse.json(
       { error: "Failed to fetch user information" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/users/me
+ * Mark the welcome tour as seen for the current account
+ */
+export async function PATCH() {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in" },
+        { status: 401 }
+      );
+    }
+
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { welcomeTourSeen: true },
+    });
+
+    return NextResponse.json({ welcomeTourSeen: true });
+  } catch (error) {
+    console.error("Error updating user info:", error);
+    return NextResponse.json(
+      { error: "Failed to update user information" },
       { status: 500 }
     );
   }

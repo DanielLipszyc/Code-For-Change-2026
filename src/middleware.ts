@@ -13,13 +13,11 @@ const isPublicRoute = createRouteMatcher([
   '/api/submissions(.*)', // GET requests are public, POST will be protected in route handler
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  const demoCookie = request.cookies.get('demo_user')?.value === '1';
-  const demoQuery = request.nextUrl.searchParams.get('demo') === '1';
-  const isDemoDashboard = request.nextUrl.pathname === '/dashboard' && (demoCookie || demoQuery);
-  const isDemoDashboardApi = request.nextUrl.pathname === '/api/dashboard' && (demoCookie || demoQuery);
+// Local development only: the dashboard is reachable signed-out so the demo user can be used
+const isDemoRoute = createRouteMatcher(['/dashboard', '/api/dashboard']);
 
-  if (isDemoDashboard || isDemoDashboardApi) {
+export default clerkMiddleware(async (auth, request) => {
+  if (process.env.NODE_ENV === 'development' && isDemoRoute(request)) {
     return;
   }
 

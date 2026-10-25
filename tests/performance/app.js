@@ -27,11 +27,5 @@ export default function () {
   const home = http.get(`${baseUrl}/`);
   check(home, { "home page responds": (response) => response.status === 200 });
 
-  const dashboard = http.get(`${baseUrl}/api/dashboard?demo=1`);
-  check(dashboard, {
-    "demo dashboard responds": (response) => response.status === 200,
-    "demo dashboard has expected user": (response) => response.json("user.id") === "demo-user",
-  });
-
   sleep(1);
 }
