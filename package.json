@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@clerk/localizations": "^4.24.1",
-    "@clerk/nextjs": "^6.39.7",
+    "@clerk/nextjs": "^7.9.19",
     "@serwist/next": "^9.5.13",
     "@supabase/supabase-js": "^2.116.0",
     "client-only": "^0.0.1",
