@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 function Frame({ url, children }: { url: string; children: ReactNode }) {
   return (
@@ -36,6 +37,7 @@ function WelcomeArt() {
 }
 
 function GuideArt() {
+  const { t } = useLanguage();
   return (
     <Frame url="swampspotter / guide">
       <div className="grid grid-cols-3 gap-2">
@@ -46,7 +48,7 @@ function GuideArt() {
           </div>
         ))}
       </div>
-      <div className="mt-3 rounded-md bg-emerald-600 py-1.5 text-center text-[11px] font-semibold text-white">Report this plant</div>
+      <div className="mt-3 rounded-md bg-emerald-600 py-1.5 text-center text-[11px] font-semibold text-white">{t("Report this plant")}</div>
       <Callout n={1} className="left-3 top-14" />
       <Callout n={2} className="bottom-2 right-6" />
     </Frame>
@@ -54,12 +56,13 @@ function GuideArt() {
 }
 
 function PhotoArt() {
+  const { t } = useLanguage();
   return (
     <Frame url="swampspotter / submit">
-      <div className="mb-1 text-[11px] font-semibold text-gray-800">Plant Photo *</div>
+      <div className="mb-1 text-[11px] font-semibold text-gray-800">{t("Plant Photo *")}</div>
       <div className="flex h-28 flex-col items-center justify-center rounded-lg border-2 border-dashed border-emerald-400 bg-white text-gray-500">
         <span className="text-3xl">📷</span>
-        <span className="text-[10px]">Tap to take or upload a photo</span>
+        <span className="text-[10px]">{t("Tap to take or upload a photo")}</span>
       </div>
       <Callout n={1} className="right-6 top-10" />
     </Frame>
@@ -67,15 +70,16 @@ function PhotoArt() {
 }
 
 function DetailsArt() {
+  const { t } = useLanguage();
   return (
     <Frame url="swampspotter / submit">
-      <div className="text-[10px] font-medium text-gray-700">Select Plant Species *</div>
+      <div className="text-[10px] font-medium text-gray-700">{t("Select Plant Species *")}</div>
       <div className="mt-1 flex items-center justify-between rounded-md border border-emerald-500 bg-white px-2 py-1.5 text-[11px] text-gray-800 ring-2 ring-emerald-200">
         Air Potato <span>▾</span>
       </div>
-      <div className="mt-3 text-[10px] font-medium text-gray-700">Notes</div>
+      <div className="mt-3 text-[10px] font-medium text-gray-700">{t("Notes")}</div>
       <div className="mt-1 h-10 rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] text-gray-400">
-        Describe the habitat, water conditions, nearby plants...
+        {t("Describe the habitat, water conditions, nearby plants...")}
       </div>
       <Callout n={2} className="right-6 top-8" />
       <Callout n={3} className="bottom-3 right-6" />
@@ -84,17 +88,18 @@ function DetailsArt() {
 }
 
 function SubmitArt() {
+  const { t } = useLanguage();
   return (
     <Frame url="swampspotter / submit">
       <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2">
         <div className="flex h-10 w-10 items-center justify-center rounded bg-emerald-50 text-xl">🌱</div>
         <div className="text-[11px] text-gray-700">
           <div className="font-semibold">Air Potato</div>
-          <div className="text-gray-400">photo attached</div>
+          <div className="text-gray-400">{t("photo attached")}</div>
         </div>
       </div>
-      <div className="mt-3 rounded-xl bg-[#136207] py-2.5 text-center text-xs font-semibold text-white">🌿 Submit Plant</div>
-      <div className="mt-2 text-center text-[10px] text-emerald-700">✓ Sent for review!</div>
+      <div className="mt-3 rounded-xl bg-[#136207] py-2.5 text-center text-xs font-semibold text-white">{t("🌿 Submit Plant")}</div>
+      <div className="mt-2 text-center text-[10px] text-emerald-700">✓ {t("Sent for review!")}</div>
       <Callout n={1} className="bottom-8 right-6" />
     </Frame>
   );
@@ -118,13 +123,14 @@ function LogArt() {
 }
 
 function MapArt() {
+  const { t } = useLanguage();
   return (
     <Frame url="swampspotter / map">
       <div className="relative h-32 overflow-hidden rounded-lg bg-gradient-to-br from-emerald-100 via-sky-100 to-emerald-200">
         <div className="absolute left-8 top-6 text-xl">📍</div>
         <div className="absolute left-24 top-16 text-xl">📍</div>
         <div className="absolute right-10 top-8 text-xl">📍</div>
-        <div className="absolute bottom-2 left-2 rounded bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-gray-700">Alachua County</div>
+        <div className="absolute bottom-2 left-2 rounded bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-gray-700">{t("Alachua County")}</div>
       </div>
       <Callout n={1} className="left-10 top-6" />
     </Frame>
@@ -132,18 +138,19 @@ function MapArt() {
 }
 
 function DashboardArt() {
+  const { t } = useLanguage();
   return (
     <Frame url="swampspotter / dashboard">
       <div className="grid grid-cols-3 gap-2">
         {[["7", "Observations"], ["4", "Species"], ["2", "Pending"]].map(([v, l]) => (
           <div key={l} className="rounded-lg bg-white p-2 text-center shadow-sm">
             <div className="text-lg font-black text-gray-900">{v}</div>
-            <div className="text-[9px] font-semibold uppercase text-gray-500">{l}</div>
+            <div className="text-[9px] font-semibold uppercase text-gray-500">{t(l)}</div>
           </div>
         ))}
       </div>
       <div className="mt-2 flex items-center gap-2 rounded-lg bg-white p-2 text-[10px] text-gray-600 shadow-sm">
-        <span>👥</span> Follow observers and see their latest reports
+        <span>👥</span> {t("Follow observers and see their latest reports")}
       </div>
       <Callout n={1} className="left-4 top-2" />
     </Frame>
@@ -164,6 +171,7 @@ const steps: Step[] = [
 ];
 
 export default function WelcomeTour({ alwaysShow = false }: { alwaysShow?: boolean }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -215,21 +223,21 @@ export default function WelcomeTour({ alwaysShow = false }: { alwaysShow?: boole
     >
       <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-          Step {step + 1} of {steps.length}
+          {t("Step {current} of {total}", { current: step + 1, total: steps.length })}
         </div>
         <div aria-hidden="true">{current.art}</div>
-        <h2 id="welcome-tour-title" className="mt-4 text-xl font-bold text-gray-900">{current.title}</h2>
-        <p className="mt-2 text-gray-600">{current.body}</p>
+        <h2 id="welcome-tour-title" className="mt-4 text-xl font-bold text-gray-900">{t(current.title)}</h2>
+        <p className="mt-2 text-gray-600">{t(current.body)}</p>
         {current.tips && (
           <ul className="mt-3 space-y-1 text-sm text-gray-600">
             {current.tips.map((tip) => (
-              <li key={tip} className="flex gap-2"><span className="text-emerald-600">✓</span>{tip}</li>
+              <li key={tip} className="flex gap-2"><span className="text-emerald-600">✓</span>{t(tip)}</li>
             ))}
           </ul>
         )}
         {current.href && (
           <Link href={current.href} onClick={close} className="mt-3 inline-block text-sm font-medium text-emerald-700 hover:underline">
-            {current.cta} →
+            {t(current.cta ?? "")} →
           </Link>
         )}
         <div className="mt-5 flex justify-center gap-1.5" aria-hidden="true">
@@ -239,12 +247,12 @@ export default function WelcomeTour({ alwaysShow = false }: { alwaysShow?: boole
         </div>
         <div className="mt-5 flex items-center justify-between">
           <button type="button" onClick={close} className="text-sm text-gray-500 hover:text-gray-700">
-            Skip
+            {t("Skip")}
           </button>
           <div className="flex gap-2">
             {step > 0 && (
               <button type="button" onClick={() => setStep(step - 1)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                Back
+                {t("Back")}
               </button>
             )}
             <button
@@ -252,7 +260,7 @@ export default function WelcomeTour({ alwaysShow = false }: { alwaysShow?: boole
               onClick={() => (last ? close() : setStep(step + 1))}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
             >
-              {last ? "Get started" : "Next"}
+              {last ? t("Get started") : t("Next")}
             </button>
           </div>
         </div>

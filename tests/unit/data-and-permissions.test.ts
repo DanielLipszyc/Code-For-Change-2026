@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { plants, plantNames } from "@/data/plants";
-import { translations } from "@/lib/translation";
+import { isLanguage, translate, translations } from "@/lib/translation";
 import {
   addSubmission,
   clearSubmissions,
@@ -48,11 +48,29 @@ describe("plant data and translations", () => {
     expect(plantNames[0]).toBe("Air Potato");
   });
 
-  it("provides navigation and guide copy in both supported languages", () => {
-    expect(translations.en.nav.home).toBe("Home");
-    expect(translations.es.nav.home).toBe("Inicio");
-    expect(translations.en.guide.reportButton).toBeTruthy();
-    expect(translations.es.guide.reportButton).toBeTruthy();
+  it("provides navigation and guide copy in the supported languages", () => {
+    expect(translate("en", "Home")).toBe("Home");
+    expect(translate("es", "Home")).toBe("Inicio");
+    expect(translate("pt", "Home")).toBe("Início");
+    expect(translate("en", "Report this plant")).toBeTruthy();
+    expect(translate("es", "Report this plant")).toBe("Reportar esta planta");
+    expect(translate("pt", "Report this plant")).toBe("Relatar esta planta");
+  });
+
+  it("validates supported languages and interpolates translated values", () => {
+    expect(isLanguage("en")).toBe(true);
+    expect(isLanguage("es")).toBe(true);
+    expect(isLanguage("pt")).toBe(true);
+    expect(isLanguage("fr")).toBe(false);
+    expect(isLanguage(null)).toBe(false);
+    expect(translate("es", "Showing {shown} of {total} sightings", { shown: 2, total: 7 }))
+      .toBe("Mostrando 2 de 7 avistamientos");
+  });
+
+  it("keeps every English catalog key translated in Spanish and Portuguese", () => {
+    const englishKeys = Object.keys(translations.en).sort();
+    expect(Object.keys(translations.es).sort()).toEqual(englishKeys);
+    expect(Object.keys(translations.pt).sort()).toEqual(englishKeys);
   });
 });
 

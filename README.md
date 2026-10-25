@@ -32,6 +32,13 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 6. **Dashboard** (`/dashboard`) - Onboarding-focused activity summary and network overview
 7. **Map** (`/map`) - Interactive invasive plant species map
 
+## Language Support
+
+The app interface supports English, Spanish, and Portuguese. English is used by
+default; visitors can change the language from the navigation selector, and the
+choice is saved in the browser for future visits. Clerk sign-in and sign-up
+screens use the matching Spanish or Portuguese localization when available.
+
 ## Performance Notes
 
 - Dashboard payloads are cached for a short interval to reduce repeated database and Clerk lookups.
@@ -40,7 +47,7 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 
 ## Demo Access
 
-This is for local development only (`npm run dev`). It is disabled in production builds. The sign-in page has a "Continue as Demo User" button that works without Clerk or a database. It sets a `demo_user` cookie that only unlocks `/dashboard` and `/api/dashboard`, which serve static sample data from `src/lib/demo.ts`. The welcome tour always shows for the demo user.
+This is for local development only (`npm run dev`). The demo UI, dashboard API, and auth bypass all use the shared `NODE_ENV === "development"` gate. In production, run the app with `NODE_ENV=production` (the standard `next build` / `next start` flow); do not override it to `development`. The sign-in page has a "Continue as Demo User" button that works without Clerk or a database. It sets a `demo_user` cookie that only unlocks `/dashboard` and `/api/dashboard` during local development, which serve static sample data from `src/lib/demo.ts`. The welcome tour always shows for the demo user.
 
 ## Getting Started
 

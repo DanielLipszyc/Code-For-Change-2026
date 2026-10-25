@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useLanguage } from "@/components/LanguageProvider";
+import { isLanguage } from "@/lib/translation";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -18,6 +20,24 @@ const navItems = [
 export default function Navigation() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
+  const languageSelector = (
+    <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+      <span className="sr-only">{t("Select language")}</span>
+      <select
+        aria-label={t("Select language")}
+        value={language}
+        onChange={(event) => {
+          if (isLanguage(event.target.value)) setLanguage(event.target.value);
+        }}
+        className="min-w-32 rounded-md border border-gray-300 bg-white px-2 py-2 text-center text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 [text-align-last:center]"
+      >
+        <option value="en">🇺🇸 English</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="pt">🇧🇷 Português</option>
+      </select>
+    </label>
+  );
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
@@ -71,7 +91,7 @@ export default function Navigation() {
                     : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                 }`}
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
 
@@ -81,17 +101,21 @@ export default function Navigation() {
                 href="/sign-in"
                 className="inline-flex min-w-[108px] items-center justify-center px-5 py-2.5 rounded-md text-sm font-semibold bg-[#136207] text-white shadow-sm hover:bg-[#0d4705] transition-colors"
               >
-                Sign In
+                {t("Sign In")}
               </Link>
+              {languageSelector}
             </SignedOut>
             <SignedIn>
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: "w-9 h-9",
-                  },
-                }}
-              />
+              <div className="flex items-center gap-2">
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-9 h-9",
+                    },
+                  }}
+                />
+                {languageSelector}
+              </div>
             </SignedIn>
           </div>
 
@@ -103,7 +127,7 @@ export default function Navigation() {
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
               aria-expanded="false"
             >
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">{t("Open main menu")}</span>
               {isMenuOpen ? (
                 <svg
                   className="block h-6 w-6"
@@ -152,23 +176,26 @@ export default function Navigation() {
                   : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
               }`}
             >
-              {item.label}
+              {t(item.label)}
             </Link>
           ))}
 
           {/* Mobile Authentication UI */}
           <div className="pt-4 pb-2 border-t border-gray-200 dark:border-gray-700">
             <SignedOut>
-              <Link
-                href="/sign-in"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-3 py-2 rounded-md text-base font-medium bg-[#136207] text-white hover:bg-[#0d4705] transition-colors text-center"
-              >
-                Sign In
-              </Link>
+              <div className="flex items-center gap-2 px-3">
+                <Link
+                  href="/sign-in"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex-1 rounded-md bg-[#136207] px-3 py-2 text-center text-base font-medium text-white transition-colors hover:bg-[#0d4705]"
+                >
+                  {t("Sign In")}
+                </Link>
+                {languageSelector}
+              </div>
             </SignedOut>
             <SignedIn>
-              <div className="px-3 py-2">
+              <div className="flex items-center justify-between px-3 py-2">
                 <UserButton
                   appearance={{
                     elements: {
@@ -176,6 +203,7 @@ export default function Navigation() {
                     },
                   }}
                 />
+                {languageSelector}
               </div>
             </SignedIn>
           </div>

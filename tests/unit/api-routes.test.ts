@@ -156,6 +156,15 @@ describe("dashboard API", () => {
     expect(response.status).toBe(401);
   });
 
+  it("rejects an unauthenticated dashboard request with a demo cookie outside development", async () => {
+    const request = new NextRequest("http://localhost/api/dashboard", {
+      headers: { cookie: "demo_user=1" },
+    });
+
+    const response = await getDashboard(request);
+    expect(response.status).toBe(401);
+  });
+
   it("returns the personalized fallback when Supabase is not configured", async () => {
     mocks.auth.mockResolvedValue({ userId: "fallback-user" });
     vi.stubEnv("SUPABASE_URL", "");

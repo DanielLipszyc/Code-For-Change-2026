@@ -18,6 +18,7 @@
     "promote-admin": "ts-node scripts/promote-admin.ts"
   },
   "dependencies": {
+    "@clerk/localizations": "^4.24.1",
     "@clerk/nextjs": "^6.39.7",
     "@supabase/supabase-js": "^2.116.0",
     "leaflet": "^1.9.4",

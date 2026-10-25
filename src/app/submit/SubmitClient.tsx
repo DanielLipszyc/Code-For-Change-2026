@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { plants } from "@/data/plants";
 import { MAX_NOTES_LENGTH } from "@/lib/submissionInput";
 import { PLANT_ID_ENABLED } from "@/lib/features";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface AIPrediction {
   prediction: string;
@@ -47,6 +48,7 @@ const compressImage = (
 };
 
 export default function SubmitClient() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
@@ -160,7 +162,7 @@ export default function SubmitClient() {
     e.preventDefault();
 
     if (!user && !submitAnonymously) {
-      alert("Please sign in or choose to submit anonymously.");
+      alert(t("Please sign in or choose to submit anonymously."));
       return;
     }
 
@@ -169,7 +171,7 @@ export default function SubmitClient() {
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         if (!navigator.geolocation) {
-          reject(new Error("Geolocation not supported"));
+          reject(new Error(t("Geolocation not supported")));
           return;
         }
         navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -180,7 +182,7 @@ export default function SubmitClient() {
       });
 
       if (!selectedImage) {
-        alert("Please upload an image.");
+        alert(t("Please upload an image."));
         return;
       }
 
@@ -213,7 +215,7 @@ export default function SubmitClient() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        alert(err?.error || "Unable to submit. Please try again.");
+        alert(err?.error || t("Unable to submit. Please try again."));
         return;
       }
 
@@ -221,7 +223,7 @@ export default function SubmitClient() {
       setShowSuccess(true);
     } catch (error) {
       console.error("Error submitting plant:", error);
-      alert("Unable to submit. Please check your location services and try again.");
+      alert(t("Unable to submit. Please check your location services and try again."));
     } finally {
       setIsSubmitting(false);
     }
@@ -235,8 +237,8 @@ export default function SubmitClient() {
           <div className="bg-[#136207] text-white px-12 py-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-fade-in-out">
             <div className="text-6xl">✅</div>
             <div className="text-center">
-              <p className="font-bold text-3xl mb-2">Success!</p>
-              <p className="text-lg opacity-90">Plant submitted successfully</p>
+              <p className="font-bold text-3xl mb-2">{t("Success!")}</p>
+              <p className="text-lg opacity-90">{t("Plant submitted successfully")}</p>
             </div>
           </div>
         </div>
@@ -245,10 +247,10 @@ export default function SubmitClient() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            Submit a Plant 🌱
+            {t("Submit a Plant 🌱")}
           </h1>
           <p className="text-xl text-gray-600">
-            Upload a photo of a plant you spotted in a swamp or wetland
+            {t("Upload a photo of a plant you spotted in a swamp or wetland")}
           </p>
         </div>
         {!user && (
@@ -260,10 +262,10 @@ export default function SubmitClient() {
                 onChange={(e) => setSubmitAnonymously(e.target.checked)}
                 className="h-4 w-4 rounded border-sky-300 text-sky-700 focus:ring-sky-500"
               />
-              Submit anonymously
+              {t("Submit anonymously")}
             </label>
             <p className="mt-2 text-sm text-sky-800">
-              Your report will be added without a user profile or name attached.
+              {t("Your report will be added without a user profile or name attached.")}
             </p>
           </div>
         )}
@@ -277,7 +279,7 @@ export default function SubmitClient() {
                 onChange={(e) => setSubmitAnonymously(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-[#136207] focus:ring-[#136207]"
               />
-              Submit anonymously instead of using my account name
+              {t("Submit anonymously instead of using my account name")}
             </label>
           </div>
         )}
@@ -287,11 +289,10 @@ export default function SubmitClient() {
           <div className="text-2xl">📍</div>
           <div>
             <p className="font-semibold text-amber-900">
-              Location must be enabled to submit.
+              {t("Location must be enabled to submit.")}
             </p>
             <p className="text-sm text-amber-800 mt-1">
-              We attach GPS coordinates to every report. Please allow location access in your browser
-              (and turn on Location Services on your device) before submitting.
+              {t("We attach GPS coordinates to every report. Please allow location access in your browser (and turn on Location Services on your device) before submitting.")}
             </p>
           </div>
         </div>
@@ -301,7 +302,7 @@ export default function SubmitClient() {
           {/* Image Upload */}
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
             <label className="block text-lg font-semibold text-gray-900 mb-4">
-              Plant Photo *
+              {t("Plant Photo *")}
             </label>
 
             <div
@@ -327,7 +328,7 @@ export default function SubmitClient() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedImage}
-                    alt="Preview"
+                    alt={t("Preview")}
                     className="max-h-64 mx-auto rounded-lg shadow-md"
                   />
                   <p className="text-sm text-gray-600">{fileName}</p>
@@ -342,7 +343,7 @@ export default function SubmitClient() {
                     }}
                     className="text-red-600 hover:text-red-700 text-sm font-medium"
                   >
-                    Remove image
+                    {t("Remove image")}
                   </button>
                 </div>
               ) : (
@@ -350,9 +351,9 @@ export default function SubmitClient() {
                   <div className="text-5xl">📷</div>
                   <div>
                     <p className="text-lg font-medium text-gray-700">
-                      Click to upload or drag and drop
+                      {t("Click to upload or drag and drop")}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">PNG, JPG, HEIC up to 10MB</p>
+                    <p className="text-sm text-gray-500 mt-1">{t("PNG, JPG, HEIC up to 10MB")}</p>
                   </div>
                 </div>
               )}
@@ -363,7 +364,7 @@ export default function SubmitClient() {
           {PLANT_ID_ENABLED && selectedImage && (
             <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                🤖 AI Plant Identification
+                🤖 {t("AI Plant Identification")}
               </h3>
 
               {isIdentifying ? (
@@ -372,13 +373,13 @@ export default function SubmitClient() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Analyzing image...</span>
+                  <span>{t("Analyzing image...")}</span>
                 </div>
               ) : aiPrediction ? (
                 <div className="space-y-3">
                   <div className="p-4 rounded-xl bg-primary-50 border border-primary-200">
                     <span className="text-xs font-semibold uppercase tracking-wide text-[#136207]">
-                      AI Identification
+                      {t("AI Identification")}
                     </span>
                     <p className="text-xl font-bold text-gray-900 mt-1">
                       {aiPrediction.prediction}
@@ -400,13 +401,12 @@ export default function SubmitClient() {
                     >
                       {plantName.toLowerCase() === aiPrediction.prediction.toLowerCase() ? (
                         <p className="text-[#136207] font-medium">
-                          ✅ Your selection matches the AI prediction!
+                          {t("✅ Your selection matches the AI prediction!")}
                         </p>
                       ) : (
                         <div className="space-y-2">
                           <p className="text-orange-700 font-medium">
-                            ⚠️ Your selection ({plantName}) differs from AI prediction (
-                            {aiPrediction.prediction}). Your selection will be saved.
+                            {t("Your selection ({plant}) differs from AI prediction ({prediction}). Your selection will be saved.", { plant: plantName, prediction: aiPrediction.prediction })}
                           </p>
                           {aiPrediction.isKnownPlant && (
                             <button
@@ -414,7 +414,7 @@ export default function SubmitClient() {
                               onClick={() => setPlantName(aiPrediction.prediction)}
                               className="text-sm font-semibold text-[#136207] underline"
                             >
-                              Use AI suggestion instead
+                              {t("Use AI suggestion instead")}
                             </button>
                           )}
                         </div>
@@ -423,7 +423,7 @@ export default function SubmitClient() {
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">Unable to identify plant. Please select manually below.</p>
+                <p className="text-gray-500">{t("Unable to identify plant. Please select manually below.")}</p>
               )}
             </div>
           )}
@@ -432,12 +432,12 @@ export default function SubmitClient() {
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
             <div>
               <label htmlFor="plantName" className="block text-sm font-medium text-gray-700 mb-2">
-                Select Plant Species *
+                {t("Select Plant Species *")}
               </label>
 
               {plantParam && (
                 <p className="text-sm text-emerald-700 mb-2">
-                  Prefilled from guide: <b>{plantParam}</b>
+                  {t("Prefilled from guide:")} <b>{plantParam}</b>
                 </p>
               )}
 
@@ -451,25 +451,25 @@ export default function SubmitClient() {
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors"
               >
-                <option value="">-- Select a plant --</option>
+                <option value="">{t("-- Select a plant --")}</option>
                 {plants.map((plant) => (
                   <option key={plant.name} value={plant.name}>
                     {plant.name} ({plant.scientificName})
                   </option>
                 ))}
-                <option value="Unknown">Unknown / Other</option>
+                <option value="Unknown">{t("Unknown / Other")}</option>
               </select>
 
               {aiPrediction?.isKnownPlant && !plantName && (
                 <p className="text-sm text-[#136207] mt-2">
-                  💡 AI suggests: {aiPrediction.prediction}
+                  💡 {t("AI suggests:")} {aiPrediction.prediction}
                 </p>
               )}
             </div>
 
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Notes
+                {t("Additional Notes")}
               </label>
               <textarea
                 id="notes"
@@ -478,7 +478,7 @@ export default function SubmitClient() {
                 maxLength={MAX_NOTES_LENGTH}
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#136207] focus:border-transparent transition-colors resize-none"
-                placeholder="Describe the habitat, water conditions, nearby plants..."
+                placeholder={t("Describe the habitat, water conditions, nearby plants...")}
               />
             </div>
           </div>
@@ -499,10 +499,10 @@ export default function SubmitClient() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Submitting...
+                {t("Submitting...")}
               </>
             ) : (
-              <>🌿 Submit Plant</>
+              <>{t("🌿 Submit Plant")}</>
             )}
           </button>
         </form>

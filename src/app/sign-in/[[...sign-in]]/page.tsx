@@ -4,8 +4,10 @@ import { SignIn, useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEMO_ENABLED } from "@/lib/demo";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function SignInPage() {
+  const { t } = useLanguage();
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
   const [showNotice, setShowNotice] = useState(false);
@@ -36,10 +38,10 @@ export default function SignInPage() {
         <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl ring-1 ring-black/5 p-6 text-center animate-fade-in">
           <div className="text-2xl mb-2">🌿</div>
           <h3 className="text-lg font-semibold text-gray-900">
-            You&apos;re already signed in
+            {t("You’re already signed in")}
           </h3>
           <p className="mt-2 text-sm text-gray-600">
-            Redirecting you to Swamp Spotter…
+            {t("Redirecting you to Swamp Spotter…")}
           </p>
 
           <div className="mt-4 h-1 w-full overflow-hidden rounded bg-gray-100">
@@ -71,23 +73,22 @@ export default function SignInPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back to{" "}
-            <span className="text-[#136207]">Swamp Spotter</span>
+            {t("Welcome back to Swamp Spotter")}
           </h2>
           <p className="text-gray-600">
-            Sign in to submit and manage plant sightings
+            {t("Sign in to submit and manage plant sightings")}
           </p>
         </div>
 
         {DEMO_ENABLED && (
         <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-          <p className="text-sm font-semibold text-emerald-800">Demo access</p>
+          <p className="text-sm font-semibold text-emerald-800">{t("Demo access")}</p>
           <button
             type="button"
             onClick={handleDemoLogin}
             className="mt-3 w-full rounded-xl bg-[#136207] px-4 py-3 text-sm font-bold text-white hover:bg-[#0f5006]"
           >
-            Continue as Demo User
+            {t("Continue as Demo User")}
           </button>
         </div>
         )}

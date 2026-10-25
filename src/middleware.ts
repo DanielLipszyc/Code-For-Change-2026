@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { DEMO_ENABLED } from '@/lib/demo';
 
 // Define routes that should be publicly accessible
 const isPublicRoute = createRouteMatcher([
@@ -17,7 +18,7 @@ const isPublicRoute = createRouteMatcher([
 const isDemoRoute = createRouteMatcher(['/dashboard', '/api/dashboard']);
 
 export default clerkMiddleware(async (auth, request) => {
-  if (process.env.NODE_ENV === 'development' && isDemoRoute(request)) {
+  if (DEMO_ENABLED && isDemoRoute(request)) {
     return;
   }
 

@@ -28,14 +28,22 @@ for (const route of publicRoutes) {
 test("filters the plant guide and changes language", async ({ page }) => {
   await page.route("https://**/*", (route) => route.abort());
   await page.goto("/guide");
+  const languageSelector = page.getByLabel("Select language").first();
+  await expect(languageSelector).toHaveValue("en");
 
   await page.getByPlaceholder(/Search plants/).fill("Dioscorea bulbifera");
   await expect(page.getByRole("heading", { name: "Alachua County Invasive Plant ID Guide" })).toBeVisible();
   await expect(page.getByText("Showing 1 of 17")).toBeVisible();
   await expect(page.getByText("Air Potato", { exact: true }).first()).toBeVisible();
 
-  await page.locator("select").first().selectOption("es");
+  await languageSelector.selectOption("es");
   await expect(page.getByRole("heading", { name: /Guía de Identificación/ })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "es");
+
+  await page.reload();
+  await expect(languageSelector).toHaveValue("es");
+  await page.goto("/about");
+  await expect(page.getByRole("heading", { name: "Acerca de Swamp Spotter" })).toBeVisible();
 });
 
 test("redirects protected log access to sign-in", async ({ page }) => {

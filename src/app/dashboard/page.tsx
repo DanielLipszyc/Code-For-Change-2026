@@ -3,6 +3,7 @@
 import Link from "next/link";
 import WelcomeTour from "@/components/WelcomeTour";
 import { DEMO_ENABLED, DEMO_USER_ID } from "@/lib/demo";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useCallback, useEffect, useState } from "react";
 
 type Stat = {
@@ -50,7 +51,21 @@ const toneStyles = {
   violet: "bg-violet-50 text-violet-700",
 };
 
+function localizeStatDetail(
+  detail: string,
+  t: (key: string, values?: Record<string, string | number>) => string
+) {
+  const approvedCount = /^(\d+) approved$/.exec(detail);
+  if (approvedCount) return t("{count} approved", { count: Number(approvedCount[1]) });
+
+  const plantCount = /^(\d+) unique plants$/.exec(detail);
+  if (plantCount) return t("{count} unique plants", { count: Number(plantCount[1]) });
+
+  return t(detail);
+}
+
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -89,15 +104,15 @@ export default function DashboardPage() {
   };
 
   const handleInviteFriend = async () => {
-    const inviteText = "Join me on Swamp Spotter and help log invasive plants across Alachua County.";
+    const inviteText = t("Invite me to join Swamp Spotter and help log invasive plants across Alachua County.");
 
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(inviteText);
       }
-      setFlashMessage("Invite copied to clipboard.");
+      setFlashMessage(t("Invite copied to clipboard."));
     } catch {
-      setFlashMessage(`Invite ready to share: ${inviteText}`);
+      setFlashMessage(t("Invite ready to share: {invite}", { invite: inviteText }));
     }
   };
 
@@ -106,7 +121,7 @@ export default function DashboardPage() {
     if (panel) {
       panel.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    setFlashMessage("Network panel opened.");
+    setFlashMessage(t("Network panel opened."));
   };
 
   const handleFollowToggle = async (observerId: string) => {
@@ -128,7 +143,7 @@ export default function DashboardPage() {
     });
 
     if (data.user.id === DEMO_USER_ID) {
-      setFlashMessage(nextFollowing ? "Observer followed." : "Observer unfollowed.");
+      setFlashMessage(t(nextFollowing ? "Observer followed." : "Observer unfollowed."));
       return;
     }
 
@@ -155,7 +170,7 @@ export default function DashboardPage() {
           ),
         };
       });
-      setFlashMessage(nextFollowing ? "Observer followed." : "Observer unfollowed.");
+      setFlashMessage(t(nextFollowing ? "Observer followed." : "Observer unfollowed."));
     } catch (error) {
       console.error(error);
       setData((current) => {
@@ -167,7 +182,7 @@ export default function DashboardPage() {
           ),
         };
       });
-      setFlashMessage("Follow action saved locally. Backend sync will resume when the API is configured.");
+      setFlashMessage(t("Follow action saved locally. Backend sync will resume when the API is configured."));
     }
   };
 
@@ -198,18 +213,18 @@ export default function DashboardPage() {
         <div className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
           <div className="text-6xl">{isAuthError ? "🔒" : "⚠️"}</div>
           <h1 className="mt-4 text-3xl font-black text-slate-900">
-            {isAuthError ? "Sign in required" : "Dashboard unavailable"}
+            {isAuthError ? t("Sign in required") : t("Dashboard unavailable")}
           </h1>
           <p className="mt-3 text-slate-600">
             {isAuthError
-              ? "Please sign in to view your citizen scientist dashboard."
-              : "The dashboard data is temporarily unavailable, but your session is still active."}
+              ? t("Please sign in to view your citizen scientist dashboard.")
+              : t("The dashboard data is temporarily unavailable, but your session is still active.")}
           </p>
           <Link
             href={isAuthError ? "/sign-in" : "/dashboard"}
             className="mt-6 inline-block rounded-xl bg-[#136207] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f5006]"
           >
-            {isAuthError ? "Go to sign in" : "Try again"}
+            {isAuthError ? t("Go to sign in") : t("Try again")}
           </Link>
           {isAuthError && DEMO_ENABLED && (
             <button
@@ -217,9 +232,9 @@ export default function DashboardPage() {
               onClick={handleStartDemo}
               className="mt-4 block w-full rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50 p-5 text-left hover:bg-emerald-100"
             >
-              <span className="block text-sm font-black text-emerald-900">🧪 Try the demo</span>
+              <span className="block text-sm font-black text-emerald-900">{t("🧪 Try the demo")}</span>
               <span className="mt-1 block text-xs font-semibold text-emerald-800">
-                Explore the dashboard with sample data. No account needed.
+                {t("Explore the dashboard with sample data. No account needed.")}
               </span>
             </button>
           )}
@@ -236,13 +251,13 @@ export default function DashboardPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Citizen Scientist Dashboard
+              {t("Citizen Scientist Dashboard")}
             </div>
             <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-              Welcome back, {data.user.name.split(" ")[0] || "Observer"}
+              {t("Welcome back, {name}", { name: data.user.name.split(" ")[0] || t("Observer") })}
             </h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-              Track field activity, follow collaborators, and grow your impact across the Alachua County observation network.
+              {t("Track field activity, follow collaborators, and grow your impact across the Alachua County observation network.")}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -250,20 +265,20 @@ export default function DashboardPage() {
               href="/submit"
               className="rounded-xl bg-[#136207] px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#0f5006] transition-colors"
             >
-              + New Observation
+              {t("+ New Observation")}
             </Link>
             <Link
               href="/log"
               className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
             >
-              View Log
+              {t("View Log")}
             </Link>
             <button
               type="button"
               onClick={handleInviteFriend}
               className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-800 shadow-sm hover:bg-emerald-100 transition-colors"
             >
-              Invite Friend
+              {t("Invite Friend")}
             </button>
           </div>
         </div>
@@ -278,14 +293,14 @@ export default function DashboardPage() {
           {data.stats.map((stat) => (
             <article key={stat.label} className="rounded-2xl border border-white bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{stat.label}</span>
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{t(stat.label)}</span>
                 <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-lg ${toneStyles[stat.tone]}`}>
                   {stat.tone === "emerald" ? "🌿" : stat.tone === "sky" ? "🌎" : stat.tone === "orange" ? "🏆" : "🔥"}
                 </span>
               </div>
               <div className="mt-5 flex items-end justify-between gap-3">
                 <span className="text-4xl font-black tracking-tight text-slate-900">{stat.value}</span>
-                <span className="text-xs font-semibold text-slate-500">{stat.detail}</span>
+                <span className="text-xs font-semibold text-slate-500">{localizeStatDetail(stat.detail, t)}</span>
               </div>
             </article>
           ))}
@@ -295,43 +310,43 @@ export default function DashboardPage() {
           <article className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Community map</span>
-                <h2 className="mt-2 text-2xl font-black text-slate-950">Observation activity</h2>
+                <span className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">{t("Community map")}</span>
+                <h2 className="mt-2 text-2xl font-black text-slate-950">{t("Observation activity")}</h2>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Live network
+                {t("Live network")}
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-slate-950 p-6 text-white">
-                <span className="text-xs font-bold uppercase tracking-wide text-emerald-300">Your reports</span>
+                <span className="text-xs font-bold uppercase tracking-wide text-emerald-300">{t("Your reports")}</span>
                 <div className="mt-4 flex items-end gap-2">
                   <span className="text-5xl font-black">{data.stats[0]?.value ?? "0"}</span>
-                  <span className="pb-2 text-sm text-slate-300">submitted</span>
+                  <span className="pb-2 text-sm text-slate-300">{t("submitted")}</span>
                 </div>
-                <div className="mt-4 text-xs text-slate-300">{data.stats[0]?.detail}</div>
+                <div className="mt-4 text-xs text-slate-300">{localizeStatDetail(data.stats[0]?.detail ?? "", t)}</div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-emerald-50 to-lime-50 p-6">
-                <span className="text-xs font-black uppercase tracking-wide text-emerald-800">Species logged</span>
+                <span className="text-xs font-black uppercase tracking-wide text-emerald-800">{t("Species logged")}</span>
                 <div className="mt-4 text-5xl font-black text-slate-900">{data.stats[1]?.value ?? "0"}</div>
-                <div className="mt-2 text-sm font-semibold text-slate-600">{data.stats[1]?.detail}</div>
+                <div className="mt-2 text-sm font-semibold text-slate-600">{localizeStatDetail(data.stats[1]?.detail ?? "", t)}</div>
               </div>
             </div>
 
             <div className="mt-8">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-slate-900">Recent field activity</h3>
+                <h3 className="text-lg font-black text-slate-900">{t("Recent field activity")}</h3>
                 <Link href="/log" className="text-sm font-bold text-emerald-700 hover:text-emerald-800">
-                  View log →
+                  {t("View log →")}
                 </Link>
               </div>
               <div className="mt-4 space-y-3">
                 {data.feed.length === 0 && (
                   <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                    No activity yet. Submit a sighting to get started.
+                    {t("No activity yet. Submit a sighting to get started.")}
                   </p>
                 )}
                 {data.feed.map((item, index) => (
@@ -340,11 +355,11 @@ export default function DashboardPage() {
                       {item.type === "connection" ? "👥" : item.type === "species" ? "🌱" : "🎯"}
                     </span>
                     <div className="flex-1">
-                      <div className="font-bold text-slate-900">{item.title}</div>
-                      <div className="mt-1 text-xs font-semibold text-slate-500">{item.meta}</div>
+                      <div className="font-bold text-slate-900">{t(item.title)}</div>
+                      <div className="mt-1 text-xs font-semibold text-slate-500">{t(item.meta)}</div>
                     </div>
                     <span className="rounded-full border border-emerald-100 bg-white px-3 py-1 text-xs font-bold text-emerald-700">
-                      {item.type}
+                      {t(item.type)}
                     </span>
                   </div>
                 ))}
@@ -356,22 +371,22 @@ export default function DashboardPage() {
             <article id="observer-network" className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">Observers</span>
-                  <h2 className="mt-2 text-2xl font-black text-slate-950">Your network</h2>
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">{t("Observers")}</span>
+                  <h2 className="mt-2 text-2xl font-black text-slate-950">{t("Your network")}</h2>
                 </div>
                 <button
                   type="button"
                   onClick={handleConnectNetwork}
                   className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
                 >
-                  Connect
+                  {t("Connect")}
                 </button>
               </div>
 
               <div className="mt-5 space-y-4">
                 {data.observers.length === 0 && (
                   <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                    No other observers yet.
+                    {t("No other observers yet.")}
                   </p>
                 )}
                 {data.observers.map((observer) => (
@@ -383,17 +398,17 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <div className="font-black text-slate-900">{observer.name}</div>
-                          <div className="text-xs font-semibold text-slate-500">{observer.focus}</div>
+                          <div className="text-xs font-semibold text-slate-500">{t(observer.focus)}</div>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleFollowToggle(observer.id)}
                           className={`rounded-full px-3 py-1 text-xs font-black ${observer.following ? "bg-emerald-700 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-50"}`}
                         >
-                          {observer.following ? "Following" : "Follow"}
+                          {t(observer.following ? "Following" : "Follow")}
                         </button>
                       </div>
-                      <div className="mt-2 text-xs font-semibold text-slate-500">{observer.sightings} reports</div>
+                      <div className="mt-2 text-xs font-semibold text-slate-500">{t("{count} reports", { count: observer.sightings })}</div>
                     </div>
                   </div>
                 ))}
@@ -403,8 +418,8 @@ export default function DashboardPage() {
             <article className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-700">Contribution path</span>
-                  <h2 className="mt-2 text-2xl font-black text-slate-950">Impact ladder</h2>
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-700">{t("Contribution path")}</span>
+                  <h2 className="mt-2 text-2xl font-black text-slate-950">{t("Impact ladder")}</h2>
                 </div>
                 <span className="text-3xl">⚡</span>
               </div>
@@ -415,11 +430,11 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-sm font-black text-slate-900">
                         <span>{achievement.icon}</span>
-                        <span>{achievement.title}</span>
+                        <span>{t(achievement.title)}</span>
                       </span>
                       <span className="text-xs font-bold text-slate-500">{Math.min(100, Math.round(achievement.progress))}%</span>
                     </div>
-                    <div className="mt-2 text-xs font-semibold text-slate-500">{achievement.detail}</div>
+                    <div className="mt-2 text-xs font-semibold text-slate-500">{t(achievement.detail)}</div>
                     <div className="mt-2 h-2 rounded-full bg-slate-100">
                       <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-500" style={{ width: `${Math.min(100, Math.round(achievement.progress))}%` }} />
                     </div>

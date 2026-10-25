@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import 'leaflet/dist/leaflet.css';
 import { UserRole } from '@/types/auth';
+import { useLanguage } from '@/components/LanguageProvider';
 
 interface Submission {
   _id?: string;
@@ -71,7 +72,8 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
 function buildPopupContent(
   submission: Submission,
   showPending: boolean,
-  onShowDetails: () => void
+  onShowDetails: () => void,
+  t: (key: string) => string
 ): HTMLElement {
   const root = document.createElement('div');
   root.style.minWidth = '150px';
@@ -93,16 +95,16 @@ function buildPopupContent(
   }
   addLine(
     'span',
-    `Spotted: ${new Date(submission.timestamp).toLocaleDateString()}`,
+    `${t('Spotted:')} ${new Date(submission.timestamp).toLocaleDateString()}`,
     'font-size: 11px; color: #888;'
   );
   if (showPending) {
-    addLine('span', '⏳ Pending Approval', 'font-size: 11px; color: #dc2626; font-weight: 600;');
+    addLine('span', `⏳ ${t('Pending Approval')}`, 'font-size: 11px; color: #dc2626; font-weight: 600;');
   }
 
   const button = document.createElement('button');
   button.type = 'button';
-  button.textContent = 'More details';
+  button.textContent = t('More details');
   button.style.cssText =
     'display: block; margin-top: 10px; padding: 8px 12px; background: #136207; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; font-weight: 600;';
   button.addEventListener('click', onShowDetails);
@@ -112,6 +114,8 @@ function buildPopupContent(
 }
 
 export default function Map() {
+  const { language, t } = useLanguage();
+  const locale = language === 'es' ? 'es-ES' : language === 'pt' ? 'pt-BR' : 'en-US';
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
 
@@ -241,7 +245,7 @@ export default function Map() {
 
   // Handle delete submission
   const handleDelete = async (submissionId: string) => {
-    if (!confirm('Are you sure you want to delete this submission?')) return;
+    if (!confirm(t('Are you sure you want to delete this submission?'))) return;
 
     try {
       const response = await fetch(`/api/submissions/${submissionId}`, { method: 'DELETE' });
@@ -249,14 +253,14 @@ export default function Map() {
       if (response.ok) {
         setSubmissions((prev) => prev.filter((s) => s._id !== submissionId));
         setSelectedSubmission(null);
-        alert('Submission deleted successfully');
+        alert(t('Submission deleted successfully'));
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to delete submission');
+        alert(error.error || t('Failed to delete submission'));
       }
     } catch (error) {
       console.error('Error deleting submission:', error);
-      alert('Failed to delete submission');
+      alert(t('Failed to delete submission'));
     }
   };
 
@@ -280,17 +284,17 @@ export default function Map() {
             setSelectedSubmission({ ...selectedSubmission, status: 'approved' as const });
           }
 
-          alert('Submission approved successfully');
+          alert(t('Submission approved successfully'));
         } else {
           const error = await response.json();
-          alert(error.error || 'Failed to approve submission');
+          alert(error.error || t('Failed to approve submission'));
         }
       } catch (error) {
         console.error('Error approving submission:', error);
-        alert('Failed to approve submission');
+        alert(t('Failed to approve submission'));
       }
     },
-    [selectedSubmission]
+    [selectedSubmission, t]
   );
 
   // Check if user can edit submission
@@ -376,7 +380,8 @@ export default function Map() {
           const popupContent = buildPopupContent(
             submission,
             isPending && userRole === 'admin',
-            () => setSelectedSubmission(submission)
+            () => setSelectedSubmission(submission),
+            t
           );
 
           L.default
@@ -403,7 +408,7 @@ export default function Map() {
         map.current = null;
       }
     };
-  }, [dataLoaded, roleLoaded, userRole, displayedSubmissions]);
+  }, [dataLoaded, roleLoaded, userRole, displayedSubmissions, t]);
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -411,7 +416,7 @@ export default function Map() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Alachua County Invasive Plant Map
+            {t('Alachua County Invasive Plant Map')}
           </h1>
         </div>
 
@@ -433,11 +438,11 @@ export default function Map() {
               onClick={handleExportCsv}
               disabled={!dataLoaded || displayedSubmissions.length === 0}
               className="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-gray-900 px-6 py-3 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-black/10 dark:ring-white/10 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              title="Download sightings as CSV"
+              title={t('Download sightings as CSV')}
             >
-              ⬇️ Export CSV
+              ⬇️ {t('Export CSV')}
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                ({displayedSubmissions.length} shown)
+                ({t('{count} shown', { count: displayedSubmissions.length })})
               </span>
             </button>
           </div>
@@ -451,9 +456,9 @@ export default function Map() {
           >
             <div className="flex items-center gap-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Filter Sightings</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('Filter Sightings')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {filtersExpanded ? 'Click to collapse' : 'Click to expand filters'}
+                  {t(filtersExpanded ? 'Click to collapse' : 'Click to expand filters')}
                 </p>
               </div>
             </div>
@@ -472,7 +477,7 @@ export default function Map() {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-semibold text-gray-900 dark:text-white">
-                    🌿 Filter by Plant Species
+                    🌿 {t('Filter by Plant Species')}
                   </label>
                   {uniquePlants.length > 0 && (
                     <div className="flex gap-2">
@@ -480,13 +485,13 @@ export default function Map() {
                         onClick={handleSelectAllPlants}
                         className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
                       >
-                        Select All
+                        {t('Select All')}
                       </button>
                       <button
                         onClick={handleClearAllPlants}
                         className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                       >
-                        Clear
+                        {t('Clear')}
                       </button>
                     </div>
                   )}
@@ -506,19 +511,19 @@ export default function Map() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No plants to filter</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('No plants to filter')}</p>
                 )}
               </div>
 
               {/* Date Range Filter */}
               <div className="mb-4">
                 <label className="text-sm font-semibold text-gray-900 dark:text-white block mb-3">
-                  📅 Filter by Date Range
+                  📅 {t('Filter by Date Range')}
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
-                      From
+                      {t('From')}
                     </label>
                     <input
                       type="date"
@@ -528,7 +533,7 @@ export default function Map() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">To</label>
+                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">{t('To')}</label>
                     <input
                       type="date"
                       value={dateTo}
@@ -546,11 +551,11 @@ export default function Map() {
                     onClick={handleClearFilters}
                     className="px-4 py-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-sm font-medium transition-colors"
                   >
-                    ✕ Clear All Filters
+                    ✕ {t('Clear All Filters')}
                   </button>
                 )}
                 <span className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
-                  Showing {displayedSubmissions.length} of {submissions.length} sightings
+                  {t('Showing {shown} of {total} sightings', { shown: displayedSubmissions.length, total: submissions.length })}
                 </span>
               </div>
             </div>
@@ -563,11 +568,11 @@ export default function Map() {
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">⏳</span>
               <h2 className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                Pending Submissions ({submissions.filter((s) => s.status === 'pending').length})
+                {t('Pending Submissions ({count})', { count: submissions.filter((s) => s.status === 'pending').length })}
               </h2>
             </div>
             <p className="text-amber-800 dark:text-amber-200 mb-4">
-              Click on any submission below to view details and approve
+              {t('Click on any submission below to view details and approve')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {submissions
@@ -601,11 +606,11 @@ export default function Map() {
                           </p>
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          {new Date(submission.timestamp).toLocaleDateString()}
+                          {new Date(submission.timestamp).toLocaleDateString(locale)}
                         </p>
                         {submission.createdBy && (
                           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                            By: {submission.createdBy}
+                            {t('By:')} {submission.createdBy}
                           </p>
                         )}
                       </div>
@@ -620,32 +625,29 @@ export default function Map() {
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              About Alachua County
+              {t('About Alachua County')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Alachua County is located in north-central Florida and is home to diverse wetland
-              ecosystems and plant species. The county encompasses approximately 1,400 square miles
-              and includes the city of Gainesville.
+              {t('Alachua County is located in north-central Florida and is home to diverse wetland ecosystems and plant species. The county encompasses approximately 1,400 square miles and includes the city of Gainesville.')}
             </p>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-              <li>• Area: ~1,400 square miles</li>
-              <li>• County Seat: Gainesville</li>
-              <li>• Population: ~280,000</li>
-              <li>• Key Wetlands: Paynes Prairie, Newnans Lake</li>
+              <li>{t('• Area: ~1,400 square miles')}</li>
+              <li>{t('• County Seat: Gainesville')}</li>
+              <li>{t('• Population: ~280,000')}</li>
+              <li>{t('• Key Wetlands: Paynes Prairie, Newnans Lake')}</li>
             </ul>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Native Plants</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('Native Plants')}</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Alachua County is rich in native plant species adapted to its subtropical climate and
-              wetland environments.
+              {t('Alachua County is rich in native plant species adapted to its subtropical climate and wetland environments.')}
             </p>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-              <li>• Sawgrass</li>
-              <li>• Bald Cypress</li>
-              <li>• Water Lilies</li>
-              <li>• Pickerelweed</li>
+              <li>{t('• Sawgrass')}</li>
+              <li>{t('• Bald Cypress')}</li>
+              <li>{t('• Water Lilies')}</li>
+              <li>{t('• Pickerelweed')}</li>
             </ul>
           </div>
         </div>
@@ -664,7 +666,7 @@ export default function Map() {
             <button
               onClick={() => setSelectedSubmission(null)}
               className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl font-bold"
-              aria-label="Close details"
+              aria-label={t('Close details')}
             >
               ✕
             </button>
@@ -680,7 +682,7 @@ export default function Map() {
                   />
                 ) : (
                   <div className="p-10 text-center text-gray-500 dark:text-gray-400">
-                    No photo provided
+                    {t('No photo provided')}
                   </div>
                 )}
               </div>
@@ -688,7 +690,7 @@ export default function Map() {
               <div className="p-8 space-y-4">
                 <div>
                   <p className="text-sm uppercase tracking-wide text-green-700 font-semibold">
-                    Plant
+                    {t('Plant')}
                   </p>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                     {selectedSubmission.plantName}
@@ -702,18 +704,18 @@ export default function Map() {
 
                 <div className="space-y-2 text-gray-700 dark:text-gray-200">
                   <div className="flex items-start gap-2">
-                    <span className="font-semibold">Spotted:</span>
+                    <span className="font-semibold">{t('Spotted:')}</span>
                     <span>{new Date(selectedSubmission.timestamp).toLocaleString()}</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="font-semibold">Location:</span>
+                    <span className="font-semibold">{t('Location:')}</span>
                     <span>
                       {selectedSubmission.lat.toFixed(4)}, {selectedSubmission.lng.toFixed(4)}
                     </span>
                   </div>
                   {selectedSubmission.notes && (
                     <div className="flex items-start gap-2">
-                      <span className="font-semibold">Notes:</span>
+                      <span className="font-semibold">{t('Notes:')}</span>
                       <span className="text-gray-700 dark:text-gray-200">
                         {selectedSubmission.notes}
                       </span>
@@ -721,7 +723,7 @@ export default function Map() {
                   )}
                   {selectedSubmission.createdBy && (
                     <div className="flex items-start gap-2">
-                      <span className="font-semibold">Submitted by:</span>
+                      <span className="font-semibold">{t('Submitted by:')}</span>
                       <span className="text-gray-700 dark:text-gray-200">
                         {selectedSubmission.createdBy}
                       </span>
@@ -740,7 +742,7 @@ export default function Map() {
                           onClick={() => handleEdit(selectedSubmission._id!)}
                           className="flex-1 px-4 py-2 bg-[#136207] text-white rounded-md hover:bg-[#0d4705] transition-colors font-medium"
                         >
-                          Edit
+                          {t('Edit')}
                         </button>
                       )}
                       {canDelete(selectedSubmission) && (
@@ -748,7 +750,7 @@ export default function Map() {
                           onClick={() => handleDelete(selectedSubmission._id!)}
                           className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
                         >
-                          Delete
+                          {t('Delete')}
                         </button>
                       )}
                       {userRole === 'admin' && selectedSubmission.status === 'pending' && (
@@ -756,7 +758,7 @@ export default function Map() {
                           onClick={() => handleApprove(selectedSubmission._id!)}
                           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                         >
-                          Approve
+                          {t('Approve')}
                         </button>
                       )}
                     </div>
@@ -782,4 +784,3 @@ function getLocation(): Promise<[number, number]> {
     }
   });
 }
-

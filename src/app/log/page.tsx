@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useLanguage } from "@/components/LanguageProvider";
 
-const handleDelete = async (submissionId: string) => {
-    if (!confirm('Are you sure you want to delete this submission?')) {
+const handleDelete = async (
+  submissionId: string,
+  t: (key: string) => string
+) => {
+    if (!confirm(t("Are you sure you want to delete this submission?"))) {
       return;
     }
 
@@ -15,15 +19,15 @@ const handleDelete = async (submissionId: string) => {
       });
 
       if (response.ok) {
-        alert('Submission deleted successfully');
+        alert(t("Submission deleted successfully"));
         window.location.reload();
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to delete submission');
+        alert(error.error || t("Failed to delete submission"));
       }
     } catch (error) {
       console.error('Error deleting submission:', error);
-      alert('Failed to delete submission');
+      alert(t("Failed to delete submission"));
     }
   };
 
@@ -71,10 +75,12 @@ function statusBadgeClasses(status: string) {
 }
 
 function SubmissionCard({ submission }: { submission: Submission }) {
+  const { language, t } = useLanguage();
   const [src, setSrc] = useState(submission.imageData || FALLBACK_IMG);
+  const locale = language === "es" ? "es-ES" : language === "pt" ? "pt-BR" : "en-US";
   const submittedDate = submission.createdAt
-    ? new Date(submission.createdAt).toLocaleDateString()
-    : new Date(submission.timestamp).toLocaleDateString();
+    ? new Date(submission.createdAt).toLocaleDateString(locale)
+    : new Date(submission.timestamp).toLocaleDateString(locale);
 
   return (
     <div className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 hover:shadow-md transition">
@@ -93,7 +99,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
               submission.status || "pending"
             )}`}
           >
-            {submission.status === "approved" ? "✓ Approved" : "⏳ Pending"}
+            {t(submission.status === "approved" ? "✓ Approved" : "⏳ Pending")}
           </span>
         </div>
       </div>
@@ -110,7 +116,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
               </p>
             )}
             <p className="text-xs text-slate-500 mt-1">
-              Submitted: {submittedDate}
+              {t("Submitted: {date}", { date: submittedDate })}
             </p>
           </div>
 
@@ -118,16 +124,16 @@ function SubmissionCard({ submission }: { submission: Submission }) {
             href={`/submit/edit/${submission._id}`}
             style={{textAlign: "center"}}
             className="flex-grow rounded-lg bg-[#136207] px-1.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0f5006]"
-            title="Edit submission"
+            title={t("Edit submission")}
           >
-            Edit
+            {t("Edit")}
           </Link>
           <button
-            onClick={() => handleDelete(submission._id!)}
+            onClick={() => handleDelete(submission._id, t)}
             className="flex-grow rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-700"
-            title="Delete submission"
+            title={t("Delete submission")}
           >
-            Delete
+            {t("Delete")}
           </button>
         </div>
 
@@ -146,6 +152,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
 }
 
 export default function LogPage() {
+  const { language, t } = useLanguage();
   const { user, isLoaded } = useUser();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -200,7 +207,7 @@ export default function LogPage() {
       <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-4xl mb-4">🌿</div>
-          <p className="text-slate-600">Loading your submissions...</p>
+          <p className="text-slate-600">{t("Loading your submissions...")}</p>
         </div>
       </div>
     );
@@ -211,15 +218,15 @@ export default function LogPage() {
       <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-white flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-6xl mb-4">🔒</div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">Sign In Required</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">{t("Sign In Required")}</h1>
           <p className="text-slate-600 mb-6">
-            Please sign in to view your submission log.
+            {t("Sign in to view your submissions")}
           </p>
           <Link
             href="/sign-in"
             className="inline-block px-6 py-3 bg-[#136207] text-white font-semibold rounded-lg hover:bg-[#0f5006] transition-colors"
           >
-            Sign In
+            {t("Sign In")}
           </Link>
         </div>
       </div>
@@ -232,10 +239,10 @@ export default function LogPage() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-              My Submission Log
+              {t("My Submission Log")}
             </h1>
             <p className="mt-2 text-slate-600">
-              View and manage all your plant submissions
+              {t("View and manage all your plant submissions")}
             </p>
           </div>
 
@@ -244,7 +251,7 @@ export default function LogPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search your submissions..."
+                placeholder={t("Search your submissions...")}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
               />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -257,17 +264,16 @@ export default function LogPage() {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
             >
-              <option value="All">All statuses</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
+              <option value="All">{t("All statuses")}</option>
+              <option value="approved">{t("Approved")}</option>
+              <option value="pending">{t("Pending")}</option>
             </select>
           </div>
         </div>
 
         <div className="mt-8">
           <p className="text-sm text-slate-600">
-            Showing <b>{userSubmissions.length}</b> submission
-            {userSubmissions.length !== 1 ? "s" : ""}
+            {t(userSubmissions.length === 1 ? "Showing {count} submission" : "Showing {count} submissions", { count: userSubmissions.length })}
           </p>
 
           {userSubmissions.length === 0 ? (
@@ -275,23 +281,23 @@ export default function LogPage() {
               {query || statusFilter !== "All" ? (
                 <>
                   <div className="text-4xl mb-4">🔍</div>
-                  <p className="font-semibold mb-2">No matches found</p>
+                  <p className="font-semibold mb-2">{t("No matches found")}</p>
                   <p className="text-sm text-slate-600">
-                    Try adjusting your search or filter
+                    {t("Try adjusting your search or filter")}
                   </p>
                 </>
               ) : (
                 <>
                   <div className="text-4xl mb-4">🌱</div>
-                  <p className="font-semibold mb-2">No submissions yet</p>
+                  <p className="font-semibold mb-2">{t("No submissions yet")}</p>
                   <p className="text-sm text-slate-600 mb-4">
-                    Start contributing by submitting your first plant sighting!
+                    {t("Start contributing by submitting your first plant sighting!")}
                   </p>
                   <Link
                     href="/submit"
                     className="inline-block px-4 py-2 bg-[#136207] text-white font-semibold rounded-lg hover:bg-[#0f5006] transition-colors"
                   >
-                    Submit a Plant
+                    {t("Submit a Plant")}
                   </Link>
                 </>
               )}
