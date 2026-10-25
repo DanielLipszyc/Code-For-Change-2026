@@ -28,7 +28,7 @@ for (const route of publicRoutes) {
 test("filters the plant guide and changes language", async ({ page }) => {
   await page.route("https://**/*", (route) => route.abort());
   await page.goto("/guide");
-  const languageSelector = page.getByLabel("Select language").first();
+  const languageSelector = page.getByTestId("language-selector").first();
   await expect(languageSelector).toHaveValue("en");
 
   await page.getByPlaceholder(/Search plants/).fill("Dioscorea bulbifera");
@@ -37,7 +37,9 @@ test("filters the plant guide and changes language", async ({ page }) => {
   await expect(page.getByText("Air Potato", { exact: true }).first()).toBeVisible();
 
   await languageSelector.selectOption("es");
-  await expect(page.getByRole("heading", { name: /Guía de Identificación/ })).toBeVisible();
+  await expect(page.getByRole("heading", {
+    name: "Guía de identificación de plantas invasoras del condado de Alachua",
+  })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "es");
 
   await page.reload();

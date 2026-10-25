@@ -26,6 +26,7 @@ export default function Navigation() {
       <span className="sr-only">{t("Select language")}</span>
       <select
         aria-label={t("Select language")}
+        data-testid="language-selector"
         value={language}
         onChange={(event) => {
           if (isLanguage(event.target.value)) setLanguage(event.target.value);
@@ -103,20 +104,17 @@ export default function Navigation() {
               >
                 {t("Sign In")}
               </Link>
-              {languageSelector}
             </SignedOut>
             <SignedIn>
-              <div className="flex items-center gap-2">
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-9 h-9",
-                    },
-                  }}
-                />
-                {languageSelector}
-              </div>
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-9 h-9",
+                  },
+                }}
+              />
             </SignedIn>
+            {languageSelector}
           </div>
 
           {/* Mobile menu button */}
@@ -182,8 +180,8 @@ export default function Navigation() {
 
           {/* Mobile Authentication UI */}
           <div className="pt-4 pb-2 border-t border-gray-200 dark:border-gray-700">
-            <SignedOut>
-              <div className="flex items-center gap-2 px-3">
+            <div className="flex items-center justify-between gap-2 px-3">
+              <SignedOut>
                 <Link
                   href="/sign-in"
                   onClick={() => setIsMenuOpen(false)}
@@ -191,11 +189,8 @@ export default function Navigation() {
                 >
                   {t("Sign In")}
                 </Link>
-                {languageSelector}
-              </div>
-            </SignedOut>
-            <SignedIn>
-              <div className="flex items-center justify-between px-3 py-2">
+              </SignedOut>
+              <SignedIn>
                 <UserButton
                   appearance={{
                     elements: {
@@ -203,9 +198,9 @@ export default function Navigation() {
                     },
                   }}
                 />
-                {languageSelector}
-              </div>
-            </SignedIn>
+              </SignedIn>
+              {languageSelector}
+            </div>
           </div>
         </div>
       </div>
