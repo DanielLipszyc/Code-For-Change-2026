@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
+
 export interface PlantIdResult {
   prediction: string;
   scientificName: string | null;
@@ -38,24 +40,25 @@ export default function PlantIdSuggestion({
   compare,
   onUseSuggestion,
 }: PlantIdSuggestionProps) {
+  const { t } = useLanguage();
   const matches = result && chosen.toLowerCase() === result.prediction.toLowerCase();
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-lg sm:p-8">
       <h2 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-        🤖 AI Plant Identification
+        🤖 {t("AI Plant Identification")}
       </h2>
 
       {identifying ? (
         <div className="flex items-center space-x-3 text-gray-600" role="status">
           <Spinner />
-          <span>Analyzing image...</span>
+          <span>{t("Analyzing image...")}</span>
         </div>
       ) : result ? (
         <div className="space-y-3">
           <div className="rounded-xl border border-primary-200 bg-primary-50 p-4">
             <span className="text-xs font-semibold uppercase tracking-wide text-[#136207]">
-              AI Identification
+              {t("AI Identification")}
             </span>
             <p className="mt-1 text-xl font-bold text-gray-900">
               {result.prediction}
@@ -77,13 +80,19 @@ export default function PlantIdSuggestion({
             >
               {matches ? (
                 <p className="font-medium text-[#136207]">
-                  ✅ Your selection matches the AI prediction!
+                  ✅ {t("Your selection matches the AI prediction!")}
                 </p>
               ) : (
                 <div className="space-y-2">
                   <p className="font-medium text-orange-700">
-                    ⚠️ Your selection ({chosen}) differs from AI prediction ({result.prediction}).
-                    Your selection will be saved.
+                    ⚠️{" "}
+                    {t(
+                      "Your selection ({chosen}) differs from AI prediction ({prediction}). Your selection will be saved.",
+                      {
+                        chosen,
+                        prediction: result.prediction,
+                      },
+                    )}
                   </p>
                   {result.isKnownPlant && (
                     <button
@@ -91,7 +100,7 @@ export default function PlantIdSuggestion({
                       onClick={() => onUseSuggestion(result.prediction)}
                       className="text-sm font-semibold text-[#136207] underline"
                     >
-                      Use AI suggestion instead
+                      {t("Use AI suggestion instead")}
                     </button>
                   )}
                 </div>
@@ -100,11 +109,14 @@ export default function PlantIdSuggestion({
           )}
         </div>
       ) : online ? (
-        <p className="text-gray-500">Unable to identify plant. Please select manually below.</p>
+        <p className="text-gray-500">
+          {t("Unable to identify plant. Please select manually below.")}
+        </p>
       ) : (
         <p className="text-gray-500">
-          AI suggestions need a connection. Save this as a draft to get one when you finish it
-          later, or pick the plant yourself.
+          {t(
+            "AI suggestions need a connection. Save this as a draft to get one when you finish it later, or pick the plant yourself.",
+          )}
         </p>
       )}
     </div>

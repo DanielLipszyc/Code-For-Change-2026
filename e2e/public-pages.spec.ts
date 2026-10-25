@@ -25,7 +25,7 @@ test("about page loads", async ({ page }) => {
 
 test.describe("guide", () => {
   test("lists every plant and searches them", async ({ page }) => {
-    await page.goto("/guide");
+    await page.goto("/guide", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Showing 17 of 17")).toBeVisible();
 
     await page.getByRole("textbox", { name: "Search plants" }).fill("cogon");
@@ -34,19 +34,55 @@ test.describe("guide", () => {
   });
 
   test("shows the corrected plant names", async ({ page }) => {
-    await page.goto("/guide");
+    await page.goto("/guide", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Coral Ardisia" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Caesar's Weed" })).toBeVisible();
   });
 
-  test("the report link sends the stored English name, even in Spanish", async ({ page }) => {
-    await page.goto("/guide");
+  test("the report link sends the stored English name, even in Spanish", async ({
+    page,
+  }, testInfo) => {
+    await page.goto("/guide", { waitUntil: "domcontentloaded" });
+    if (testInfo.project.name === "mobile") {
+      await page.getByRole("button", { name: "Open main menu" }).click();
+    }
     await page.getByRole("combobox", { name: "Language" }).selectOption("es");
     await page.getByRole("textbox", { name: "Buscar plantas" }).fill("cogon");
 
     await page.getByRole("button", { name: /Hierba Cogon/ }).click();
     const report = page.getByRole("dialog").getByRole("link", { name: "Reportar esta planta" });
     await expect(report).toHaveAttribute("href", "/submit?plant=Cogon%20Grass");
+  });
+
+  test("switches guide content and plant tips to Portuguese", async ({ page }, testInfo) => {
+    await page.goto("/guide", { waitUntil: "domcontentloaded" });
+    if (testInfo.project.name === "mobile") {
+      await page.getByRole("button", { name: "Open main menu" }).click();
+    }
+    await page.getByRole("combobox", { name: "Language" }).selectOption("pt");
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "pt");
+    await expect(
+      page.getByRole("heading", {
+        name: "Guia de identificação de plantas invasoras do condado de Alachua",
+      }),
+    ).toBeVisible();
+    await page.getByRole("heading", { name: "Cará-do-ar" }).click();
+    await expect(page.getByRole("dialog").getByText("Identificação rápida")).toBeVisible();
+    await expect(
+      page
+        .getByRole("dialog")
+        .getByText("Folhas pontudas em formato de coração e tubérculos que crescem na trepadeira."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("dialog").getByRole("link", { name: "Relatar esta planta" }),
+    ).toHaveAttribute("href", "/submit?plant=Air%20Potato");
+
+    await page.goto("/map", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByRole("heading", { name: "Mapa de plantas invasoras do condado de Alachua" }),
+    ).toBeVisible();
+
   });
 });
 

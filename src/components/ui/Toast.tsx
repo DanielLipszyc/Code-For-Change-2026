@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 type ToastKind = "success" | "error" | "info";
 
@@ -32,6 +33,7 @@ const STYLES: Record<ToastKind, string> = {
  * just before navigating stays visible on the next page.
  */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextId = useRef(0);
 
@@ -74,7 +76,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => dismiss(toast.id)}
-              aria-label="Dismiss"
+              aria-label={t("Dismiss")}
               className="opacity-80 hover:opacity-100"
             >
               ✕

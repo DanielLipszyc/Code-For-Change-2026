@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { downloadCsv } from "@/lib/csv";
@@ -54,6 +55,7 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
+  const { t } = useLanguage();
   const { user } = useUser();
   const userId = user?.id ?? null;
   const isAdmin = user?.publicMetadata?.role === "admin";
@@ -142,9 +144,12 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
 
   async function handleDelete(submission: Submission) {
     const confirmed = await confirm({
-      title: "Delete this report?",
-      message: `${submission.plantName}, spotted ${new Date(submission.timestamp).toLocaleDateString()}. This can't be undone.`,
-      confirmLabel: "Delete",
+      title: t("Delete this report?"),
+      message: t("{plant}, spotted {date}. This can't be undone.", {
+        plant: submission.plantName,
+        date: new Date(submission.timestamp).toLocaleDateString(),
+      }),
+      confirmLabel: t("Delete"),
       danger: true,
     });
     if (!confirmed) return;
@@ -153,9 +158,9 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
       await fetchJson(`/api/submissions/${submission.id}`, { method: "DELETE" });
       setSelected(null);
       forget(submission.id);
-      toast.success("Report deleted.");
+      toast.success(t("Report deleted."));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete submission");
+      toast.error(error instanceof Error ? error.message : t("Failed to delete submission"));
     }
   }
 
@@ -167,9 +172,9 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
       setApproved((current) => [toPoint(approvedSubmission), ...current]);
       setDetails((current) => ({ ...current, [submission.id]: approvedSubmission }));
       setSelected((current) => current && { ...current, status: "approved" });
-      toast.success("Report approved. It's now on the public map.");
+      toast.success(t("Report approved. It's now on the public map."));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to approve submission");
+      toast.error(error instanceof Error ? error.message : t("Failed to approve submission"));
     }
   }
 
@@ -200,7 +205,7 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
       const stamp = new Date().toISOString().slice(0, 10);
       downloadCsv(`swamp-spotter-map-export-${stamp}.csv`, rows);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Export failed");
+      toast.error(error instanceof Error ? error.message : t("Export failed"));
     }
   }
 
@@ -213,10 +218,13 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
 
   return (
     <>
+      <h1 className="mb-8 text-center text-4xl font-bold text-gray-900 dark:text-white sm:text-5xl">
+        {t("Alachua County Invasive Plant Map")}
+      </h1>
       <div className="overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-gray-800">
         <div
           role="tablist"
-          aria-label="Show sightings as"
+          aria-label={t("Show sightings as")}
           className="flex gap-2 border-b border-gray-200 p-2 dark:border-gray-700"
         >
           <button
@@ -226,7 +234,7 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
             onClick={() => changeView("map")}
             className={tabClass(view === "map")}
           >
-            Map
+            {t("Map")}
           </button>
           <button
             type="button"
@@ -235,7 +243,7 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
             onClick={() => changeView("list")}
             className={tabClass(view === "list")}
           >
-            List
+            {t("List")}
           </button>
         </div>
 
@@ -265,11 +273,11 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
             onClick={handleExportCsv}
             disabled={displayed.length === 0}
             className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/10 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-900 dark:text-white dark:ring-white/10 dark:hover:bg-gray-800"
-            title="Download sightings as CSV"
+            title={t("Download sightings as CSV")}
           >
-            ⬇️ Export CSV
+            ⬇️ {t("Export CSV")}
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              ({displayed.length} shown)
+              {t("({count} shown)", { count: displayed.length })}
             </span>
           </button>
         </div>
@@ -287,7 +295,7 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
 
       <SubmissionDetail
         open={selected !== null}
-        title={selected ? `${selected.plantName} sighting` : ""}
+        title={selected ? t("{plant} sighting", { plant: selected.plantName }) : ""}
         submission={selectedDetails}
         error={selected ? (detailErrors[selected.id] ?? null) : null}
         canEdit={isOwn}

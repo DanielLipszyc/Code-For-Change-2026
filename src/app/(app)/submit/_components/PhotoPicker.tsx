@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface PhotoPickerProps {
   photo: string | null;
@@ -12,11 +13,12 @@ interface PhotoPickerProps {
 /** Tap to take or choose a photo, or drop one in */
 export default function PhotoPicker({ photo, fileName, onPick, onRemove }: PhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { t } = useLanguage();
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-lg sm:p-8">
       <label htmlFor="photo" className="mb-4 block text-lg font-semibold text-gray-900">
-        Plant Photo *
+        {t("Plant Photo *")}
       </label>
 
       <div
@@ -50,7 +52,7 @@ export default function PhotoPicker({ photo, fileName, onPick, onRemove }: Photo
         {photo ? (
           <div className="space-y-4">
             {/* eslint-disable-next-line @next/next/no-img-element -- a local preview (data URL) */}
-            <img src={photo} alt="Preview" className="mx-auto max-h-64 rounded-lg shadow-md" />
+            <img src={photo} alt={t("Preview")} className="mx-auto max-h-64 rounded-lg shadow-md" />
             {fileName && <p className="text-sm text-gray-600">{fileName}</p>}
             <button
               type="button"
@@ -60,15 +62,17 @@ export default function PhotoPicker({ photo, fileName, onPick, onRemove }: Photo
               }}
               className="text-sm font-medium text-red-600 hover:text-red-700"
             >
-              Remove image
+              {t("Remove image")}
             </button>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="text-5xl">📷</div>
             <div>
-              <p className="text-lg font-medium text-gray-700">Tap to take or choose a photo</p>
-              <p className="mt-1 text-sm text-gray-500">or drag and drop one here</p>
+              <p className="text-lg font-medium text-gray-700">
+                {t("Tap to take or choose a photo")}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">{t("or drag and drop one here")}</p>
             </div>
           </div>
         )}

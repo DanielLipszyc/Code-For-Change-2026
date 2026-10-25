@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SignedIn, SignedOut, UserButton, useAuth } from "@clerk/nextjs";
 import { useSavedReports } from "@/client/offline/hooks";
+import { isUiLanguage } from "@/lib/uiTranslations";
+import { useLanguage } from "@/components/LanguageProvider";
 import logo from "../../public/logo.png";
 
 // Home is the logo. signIn: the page requires sign-in (lib/routeAccess.ts).
@@ -56,6 +58,7 @@ function NavLink({
 export default function Navigation() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Reports saved on this device, shown as a count next to Drafts
   const savedCount = useSavedReports()?.length ?? 0;
@@ -74,7 +77,7 @@ export default function Navigation() {
           prefetch={item.signIn && !isSignedIn ? false : undefined}
           onClick={mobile ? () => setIsMenuOpen(false) : undefined}
         >
-          {item.label}
+          {t(item.label)}
           {item.href === "/drafts" && savedCount > 0 && (
             <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
               {savedCount}
@@ -83,6 +86,24 @@ export default function Navigation() {
         </NavLink>
       ))}
     </>
+  );
+
+  const languageSelector = (
+    <label className="inline-flex flex-col items-center justify-center gap-0.5 text-center text-xs font-semibold text-gray-700 dark:text-gray-200">
+      <select
+        aria-label={t("Language")}
+        data-testid="language-selector"
+        value={language}
+        onChange={(event) => {
+          if (isUiLanguage(event.target.value)) setLanguage(event.target.value);
+        }}
+        className="max-w-[148px] rounded-md border border-gray-300 bg-white px-2 py-1.5 text-center text-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <option value="en">🇺🇸 English</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="pt">🇧🇷 Português</option>
+      </select>
+    </label>
   );
 
   return (
@@ -125,12 +146,13 @@ export default function Navigation() {
                 href="/sign-in"
                 className="inline-flex min-w-[108px] items-center justify-center rounded-md bg-[#136207] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0d4705]"
               >
-                Sign In
+                {t("Sign In")}
               </Link>
             </SignedOut>
             <SignedIn>
               <UserButton appearance={{ elements: { avatarBox: "w-9 h-9" } }} />
             </SignedIn>
+            {languageSelector}
           </div>
 
           {/* Mobile menu button */}
@@ -142,7 +164,9 @@ export default function Navigation() {
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
             >
-              <span className="sr-only">{isMenuOpen ? "Close main menu" : "Open main menu"}</span>
+              <span className="sr-only">
+                {isMenuOpen ? t("Close main menu") : t("Open main menu")}
+              </span>
               <svg
                 className="block h-6 w-6"
                 fill="none"
@@ -170,21 +194,20 @@ export default function Navigation() {
       <div id="mobile-menu" className={`md:hidden ${isMenuOpen ? "block" : "hidden"}`}>
         <div className="space-y-1 border-t bg-white px-2 pb-3 pt-2 dark:border-gray-800 dark:bg-gray-900 sm:px-3">
           {links(true)}
-          <div className="border-t border-gray-200 pb-2 pt-4 dark:border-gray-700">
+          <div className="flex flex-wrap items-center justify-center gap-4 border-t border-gray-200 pb-2 pt-4 dark:border-gray-700">
             <SignedOut>
               <Link
                 href="/sign-in"
                 onClick={() => setIsMenuOpen(false)}
                 className="block rounded-md bg-[#136207] px-3 py-2 text-center text-base font-medium text-white transition-colors hover:bg-[#0d4705]"
               >
-                Sign In
+                {t("Sign In")}
               </Link>
             </SignedOut>
             <SignedIn>
-              <div className="px-3 py-2">
-                <UserButton appearance={{ elements: { avatarBox: "w-10 h-10" } }} />
-              </div>
+              <UserButton appearance={{ elements: { avatarBox: "w-10 h-10" } }} />
             </SignedIn>
+            {languageSelector}
           </div>
         </div>
       </div>

@@ -23,3 +23,18 @@ export function isPublicRequest(method: string, pathname: string): boolean {
 
   return false;
 }
+
+/** A query-gated, development-only exception for the read-only dashboard demo. */
+export function isLocalDemoDashboardRequest(
+  method: string,
+  pathname: string,
+  searchParams: Pick<URLSearchParams, "get">,
+  environment: string | undefined = process.env.NODE_ENV,
+): boolean {
+  return (
+    environment === "development" &&
+    method === "GET" &&
+    pathname === "/dashboard" &&
+    searchParams.get("demo") === "1"
+  );
+}

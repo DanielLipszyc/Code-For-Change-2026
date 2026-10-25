@@ -21,12 +21,6 @@ export default async function MapPage() {
   return (
     <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 text-center">
-          <h1 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white sm:text-5xl">
-            Alachua County Invasive Plant Map
-          </h1>
-        </div>
-
         <MapExplorer approvedPoints={approvedPoints} />
         <CountyInfo />
       </div>

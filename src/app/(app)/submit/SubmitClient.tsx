@@ -5,10 +5,11 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import { useOnline } from "@/client/offline/hooks";
+import { useLanguage } from "@/components/LanguageProvider";
 import { getSavedReport, saveReport, type SavedReport } from "@/client/offline/reports";
 import { sendSavedReport } from "@/client/offline/send";
 import { PHOTO_MAX_SIZE, PHOTO_QUALITY, compressImage, readFileAsDataUrl } from "@/client/images";
-import { plants } from "@/data/plants";
+import { localizePlant, plants } from "@/data/plants";
 import { PLANT_ID_ENABLED } from "@/lib/features";
 import { MAX_NOTES_LENGTH } from "@/lib/limits";
 import LocationField, { type ReportLocation } from "./_components/LocationField";
@@ -55,6 +56,7 @@ export default function SubmitClient() {
   // draftId: links from the earlier offline mode
   const draftParam = searchParams.get("draft") ?? searchParams.get("draftId");
   const { user, isLoaded } = useUser();
+  const { language, t } = useLanguage();
   const toast = useToast();
   const online = useOnline();
 
@@ -116,7 +118,7 @@ export default function SubmitClient() {
       const saved = await getSavedReport(draftParam);
       if (cancelled) return;
       if (!saved) {
-        toast.error("That draft isn't saved on this device.");
+        toast.error(t("That draft isn't saved on this device."));
         return;
       }
       reportIdRef.current = saved.id;
@@ -137,11 +139,11 @@ export default function SubmitClient() {
       if (cancelled) return;
       setPhoto(image);
       if (!saved.plantName) identifyPlant(image);
-    })().catch(() => toast.error("Couldn't open that draft."));
+    })().catch(() => toast.error(t("Couldn't open that draft.")));
     return () => {
       cancelled = true;
     };
-  }, [draftParam, identifyPlant, toast]);
+  }, [draftParam, identifyPlant, t, toast]);
 
   // Signed-out visitors can only submit anonymously
   useEffect(() => {
@@ -168,7 +170,7 @@ export default function SubmitClient() {
       identifyPlant(image);
     } catch (error) {
       setFileName("");
-      toast.error(error instanceof Error ? error.message : "Couldn't read that photo.");
+      toast.error(error instanceof Error ? error.message : t("Couldn't read that photo."));
     }
   }
 
@@ -180,7 +182,7 @@ export default function SubmitClient() {
       return where;
     } catch {
       setShowMap(true);
-      toast.error("Couldn't get your location. Tap the spot on the map instead.");
+      toast.error(t("Couldn't get your location. Tap the spot on the map instead."));
       return null;
     } finally {
       setLocating(false);
@@ -189,11 +191,11 @@ export default function SubmitClient() {
 
   async function handleSave(mode: "send" | "draft") {
     if (!photo) {
-      toast.error("Please add a photo of the plant.");
+      toast.error(t("Please add a photo of the plant."));
       return;
     }
     if (mode === "send" && !plantName) {
-      toast.error("Please choose the plant, or Unknown / Other.");
+      toast.error(t("Please choose the plant, or Unknown / Other."));
       return;
     }
 
@@ -226,13 +228,13 @@ export default function SubmitClient() {
         // Storage unavailable (some private windows): a draft can't be kept,
         // but a report can still be sent directly
         if (mode === "draft" || !navigator.onLine) {
-          toast.error("This browser won't let the app save reports on the device.");
+          toast.error(t("This browser won't let the app save reports on the device."));
           return;
         }
       }
 
       if (mode === "draft") {
-        toast.success("Draft saved. Finish it from Drafts.");
+        toast.success(t("Draft saved. Finish it from Drafts."));
         router.push("/drafts");
         return;
       }
@@ -244,7 +246,7 @@ export default function SubmitClient() {
         setShowSuccess(true);
       } else if (result.status === "offline") {
         toast.success(
-          "No connection right now. Your report is saved and will be sent automatically.",
+          t("No connection right now. Your report is saved and will be sent automatically."),
         );
         router.push("/drafts");
       } else {
@@ -252,7 +254,7 @@ export default function SubmitClient() {
       }
     } catch (error) {
       console.error("Error saving report:", error);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(t("Something went wrong. Please try again."));
     } finally {
       setSaving(null);
     }
@@ -267,8 +269,8 @@ export default function SubmitClient() {
           <div className="animate-fade-in-out flex flex-col items-center gap-4 rounded-2xl bg-[#136207] px-12 py-8 text-white shadow-2xl">
             <div className="text-6xl">✅</div>
             <div className="text-center">
-              <p className="mb-2 text-3xl font-bold">Success!</p>
-              <p className="text-lg opacity-90">Plant submitted successfully</p>
+              <p className="mb-2 text-3xl font-bold">{t("Success!")}</p>
+              <p className="text-lg opacity-90">{t("Plant submitted successfully")}</p>
             </div>
           </div>
         </div>
@@ -277,10 +279,10 @@ export default function SubmitClient() {
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
           <h1 className="mb-4 text-4xl font-bold text-gray-900 sm:text-5xl">
-            {draft ? "Finish your report 🌱" : "Submit a Plant 🌱"}
+            {draft ? t("Finish your report 🌱") : t("Submit a Plant 🌱")}
           </h1>
           <p className="text-xl text-gray-600">
-            Upload a photo of a plant you spotted in a swamp or wetland
+            {t("Upload a photo of a plant you spotted in a swamp or wetland")}
           </p>
         </div>
 
@@ -289,10 +291,11 @@ export default function SubmitClient() {
             className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 px-6 py-4 text-amber-900 shadow-sm"
             role="status"
           >
-            <p className="font-semibold">You&apos;re offline.</p>
+            <p className="font-semibold">{t("You're offline.")}</p>
             <p className="mt-1 text-sm">
-              You can still fill this in. Your report is saved on this device and sent automatically
-              when you&apos;re back online.
+              {t(
+                "You can still fill this in. Your report is saved on this device and sent automatically when you're back online.",
+              )}
             </p>
           </div>
         )}
@@ -311,11 +314,13 @@ export default function SubmitClient() {
                 onChange={(event) => setAnonymous(event.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-[#136207] focus:ring-[#136207]"
               />
-              {user ? "Submit anonymously instead of using my account name" : "Submit anonymously"}
+              {user
+                ? t("Submit anonymously instead of using my account name")
+                : t("Submit anonymously")}
             </label>
             {!user && (
               <p className="mt-2 text-sm text-sky-800">
-                Your report will be added without a user profile or name attached.
+                {t("Your report will be added without a user profile or name attached.")}
               </p>
             )}
           </div>
@@ -354,11 +359,11 @@ export default function SubmitClient() {
           <div className="space-y-6 rounded-2xl bg-white p-6 shadow-lg sm:p-8">
             <div>
               <label htmlFor="plantName" className="mb-2 block text-sm font-medium text-gray-700">
-                Select Plant Species *
+                {t("Select Plant Species *")}
               </label>
               {plantParam && (
                 <p className="mb-2 text-sm text-emerald-700">
-                  Prefilled from guide: <b>{plantParam}</b>
+                  {t("Prefilled from guide:")} <b>{plantParam}</b>
                 </p>
               )}
               <select
@@ -370,22 +375,24 @@ export default function SubmitClient() {
                 }}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-transparent focus:ring-2 focus:ring-[#136207]"
               >
-                <option value="">-- Select a plant --</option>
+                <option value="">{t("-- Select a plant --")}</option>
                 {plants.map((plant) => (
                   <option key={plant.name} value={plant.name}>
-                    {plant.name} ({plant.scientificName})
+                    {localizePlant(plant, language).name} ({plant.scientificName})
                   </option>
                 ))}
-                <option value="Unknown">Unknown / Other</option>
+                <option value="Unknown">{t("Unknown / Other")}</option>
               </select>
               {plantId?.isKnownPlant && !plantName && (
-                <p className="mt-2 text-sm text-[#136207]">💡 AI suggests: {plantId.prediction}</p>
+                <p className="mt-2 text-sm text-[#136207]">
+                  💡 {t("AI suggests:")} {plantId.prediction}
+                </p>
               )}
             </div>
 
             <div>
               <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
-                Additional Notes
+                {t("Additional Notes")}
               </label>
               <textarea
                 id="notes"
@@ -394,7 +401,7 @@ export default function SubmitClient() {
                 maxLength={MAX_NOTES_LENGTH}
                 rows={4}
                 className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-transparent focus:ring-2 focus:ring-[#136207]"
-                placeholder="Describe the habitat, water conditions, nearby plants..."
+                placeholder={t("Describe the habitat, water conditions, nearby plants...")}
               />
             </div>
           </div>
@@ -416,11 +423,11 @@ export default function SubmitClient() {
             >
               {saving === "send"
                 ? online
-                  ? "Submitting…"
-                  : "Saving…"
+                  ? t("Submitting…")
+                  : t("Saving…")
                 : online
-                  ? "🌿 Submit Plant"
-                  : "💾 Save, and send when I'm back online"}
+                  ? `🌿 ${t("Submit Plant")}`
+                  : `💾 ${t("Save, and send when I'm back online")}`}
             </button>
             <button
               type="button"
@@ -428,7 +435,7 @@ export default function SubmitClient() {
               disabled={!photo || busy}
               className="w-full rounded-xl border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saving === "draft" ? "Saving…" : "Save as draft, finish later"}
+              {saving === "draft" ? t("Saving…") : t("Save as draft, finish later")}
             </button>
           </div>
         </form>

@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/components/LanguageProvider";
 import Navigation from "@/components/Navigation";
 import SavedReportsSync from "@/components/SavedReportsSync";
 import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { ToastProvider } from "@/components/ui/Toast";
-import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <LanguageProvider>
       <html lang="en" className="light">
         <body className={`${inter.className} antialiased min-h-screen bg-white`}>
           <ToastProvider>
@@ -48,6 +48,6 @@ export default function RootLayout({
           </ToastProvider>
         </body>
       </html>
-    </ClerkProvider>
+    </LanguageProvider>
   );
 }

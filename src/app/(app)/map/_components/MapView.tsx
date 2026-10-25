@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type * as Leaflet from "leaflet";
 import type { GeoJsonObject } from "geojson";
+import { useLanguage } from "@/components/LanguageProvider";
 import alachuaBoundary from "@/data/alachua-boundary.json";
 import { isInAlachua } from "@/lib/limits";
 import type { MapPoint } from "@/types/submission";
@@ -60,6 +61,7 @@ export default function MapView({
   onPreview,
   onSelect,
 }: MapViewProps) {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const leafletRef = useRef<{
     L: typeof Leaflet;
@@ -171,7 +173,7 @@ export default function MapView({
         ref={containerRef}
         className="h-full w-full"
         data-testid="map"
-        aria-label="Map of invasive plant sightings"
+        aria-label={t("Map of invasive plant sightings")}
       />
       {!ready && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-200">

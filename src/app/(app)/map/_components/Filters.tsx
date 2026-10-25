@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 import { NO_FILTERS, hasFilters, type MapFilters } from "./mapFilters";
 
 interface FiltersProps {
@@ -13,6 +14,7 @@ interface FiltersProps {
 
 /** Collapsible plant and date filters for the map */
 export default function Filters({ plantOptions, value, onChange, shown, total }: FiltersProps) {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
 
   const togglePlant = (plant: string) =>
@@ -32,9 +34,11 @@ export default function Filters({ plantOptions, value, onChange, shown, total }:
         className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
       >
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Filter Sightings</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            {t("Filter Sightings")}
+          </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {expanded ? "Click to collapse" : "Click to expand filters"}
+            {t(expanded ? "Click to collapse" : "Click to expand filters")}
           </p>
         </div>
         <div
@@ -49,7 +53,7 @@ export default function Filters({ plantOptions, value, onChange, shown, total }:
           <fieldset className="mb-4">
             <div className="mb-3 flex items-center justify-between">
               <legend className="text-sm font-semibold text-gray-900 dark:text-white">
-                🌿 Filter by Plant Species
+                🌿 {t("Filter by Plant Species")}
               </legend>
               {plantOptions.length > 0 && (
                 <div className="flex gap-2">
@@ -58,14 +62,14 @@ export default function Filters({ plantOptions, value, onChange, shown, total }:
                     onClick={() => onChange({ ...value, plants: plantOptions })}
                     className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
                   >
-                    Select All
+                    {t("Select All")}
                   </button>
                   <button
                     type="button"
                     onClick={() => onChange({ ...value, plants: [] })}
                     className="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                   >
-                    Clear
+                    {t("Clear")}
                   </button>
                 </div>
               )}
@@ -85,17 +89,17 @@ export default function Filters({ plantOptions, value, onChange, shown, total }:
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No plants to filter</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t("No plants to filter")}</p>
             )}
           </fieldset>
 
           <fieldset className="mb-4">
             <legend className="mb-3 block text-sm font-semibold text-gray-900 dark:text-white">
-              📅 Filter by Date Range
+              📅 {t("Filter by Date Range")}
             </legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block text-xs text-gray-600 dark:text-gray-400">
-                <span className="mb-1 block">From</span>
+                <span className="mb-1 block">{t("From")}</span>
                 <input
                   type="date"
                   value={value.dateFrom}
@@ -104,7 +108,7 @@ export default function Filters({ plantOptions, value, onChange, shown, total }:
                 />
               </label>
               <label className="block text-xs text-gray-600 dark:text-gray-400">
-                <span className="mb-1 block">To</span>
+                <span className="mb-1 block">{t("To")}</span>
                 <input
                   type="date"
                   value={value.dateTo}
@@ -122,11 +126,11 @@ export default function Filters({ plantOptions, value, onChange, shown, total }:
                 onClick={() => onChange(NO_FILTERS)}
                 className="rounded-lg bg-amber-100 px-4 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50"
               >
-                ✕ Clear All Filters
+                ✕ {t("Clear All Filters")}
               </button>
             )}
             <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-              Showing {shown} of {total} sightings
+              {t("Showing {shown} of {total} sightings", { shown, total })}
             </span>
           </div>
         </div>

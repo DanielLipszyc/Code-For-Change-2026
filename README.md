@@ -23,6 +23,8 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 - 📡 Works offline: reports are saved on the device and sent when there's a connection
 - 🗺️ A map that loads with its sightings and stays put while you filter
 - 🤖 AI plant suggestions from a photo
+- 🌎 English, Spanish, and Portuguese interface with a saved language preference
+- 🧪 Read-only sample dashboard demo for local development only
 - 📦 Installable (web app manifest and service worker)
 
 ## Pages
@@ -31,10 +33,25 @@ A mobile-friendly invasive plant species mapper built with Next.js, TypeScript, 
 2. **About** (`/about`) - Mission, values, and team info
 3. **Submit** (`/submit`) - Plant sighting submission form; works offline
 4. **Drafts** (`/drafts`) - Reports saved on this device, waiting to be finished or sent
-5. **Invasive Plant Guide** (`/guide`) - Information about each species
+5. **Invasive Plant Guide** (`/guide`) - Species information and identification tips in English, Spanish, and Portuguese
 6. **My Log** (`/log`) - Searchable log of user's submissions
 7. **Map** (`/map`) - Interactive invasive plant species map, with a List view
 8. **Dashboard** (`/dashboard`) - Personal stats and other observers
+
+### Languages
+
+Choose English, Spanish, or Portuguese from the language selector in the navigation.
+Your choice is saved in this browser and applied across the app. Plant names and
+identification tips in the guide and report forms are localized while report data
+continues to use each plant's canonical English name.
+
+### Local demo
+
+While running `npm run dev`, open
+[`http://localhost:3000/dashboard?demo=1`](http://localhost:3000/dashboard?demo=1)
+to view the dashboard with sample data without signing in. The demo is read-only.
+It is enabled only when `NODE_ENV` is `development`; production builds and
+production routes never expose the demo.
 
 ## Getting Started
 

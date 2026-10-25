@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPublicRequest } from "./routeAccess";
+import { isLocalDemoDashboardRequest, isPublicRequest } from "./routeAccess";
 
 const ID = "3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e";
 
@@ -26,6 +26,18 @@ describe("isPublicRequest", () => {
     ]) {
       expect(isPublicRequest("GET", path)).toBe(false);
     }
+  });
+
+  it("allows only the explicit local demo dashboard request without sign-in", () => {
+    const params = new URLSearchParams("demo=1");
+    expect(isLocalDemoDashboardRequest("GET", "/dashboard", params, "development")).toBe(true);
+    expect(isLocalDemoDashboardRequest("GET", "/dashboard", params, "production")).toBe(false);
+    expect(isLocalDemoDashboardRequest("GET", "/dashboard", params, "test")).toBe(false);
+    expect(isLocalDemoDashboardRequest("POST", "/dashboard", params, "development")).toBe(false);
+    expect(isLocalDemoDashboardRequest("GET", "/api/dashboard", params, "development")).toBe(false);
+    expect(
+      isLocalDemoDashboardRequest("GET", "/dashboard", new URLSearchParams(), "development"),
+    ).toBe(false);
   });
 
   it("lets anyone read submissions and their photos", () => {

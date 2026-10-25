@@ -2,21 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { plants, type Plant, type ThreatLevel } from "@/data/plants";
-import { translations } from "@/lib/translation";
-
-type Language = "en" | "es";
-
-const THREAT_LABELS: Record<ThreatLevel, Record<Language, string>> = {
-  Low: { en: "Low", es: "Baja" },
-  Moderate: { en: "Moderate", es: "Moderada" },
-  Significant: { en: "Significant", es: "Significativa" },
-};
-
-/** The plant name and tip in the chosen language */
-function localize(plant: Plant, lang: Language) {
-  return lang === "es" ? plant.es : { name: plant.name, tip: plant.tip };
-}
+import { localizePlant, plants, type Plant, type ThreatLevel } from "@/data/plants";
+import { useLanguage } from "@/components/LanguageProvider";
+import type { UiLanguage } from "@/lib/uiTranslations";
 
 function threatBadgeClasses(level: ThreatLevel) {
   switch (level) {
@@ -64,10 +52,11 @@ function InfoModal({
 }: {
   plant: Plant;
   onClose: () => void;
-  lang: Language;
+  lang: UiLanguage;
 }) {
+  const { t } = useLanguage();
   const [src, setSrc] = useState(plant.picUrl);
-  const { name, tip } = localize(plant, lang);
+  const { name, tip } = localizePlant(plant, lang);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -86,7 +75,7 @@ function InfoModal({
       <button
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t("Close")}
       />
       <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
@@ -97,7 +86,7 @@ function InfoModal({
           <button
             onClick={onClose}
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Close modal"
+            aria-label={t("Close")}
           >
             ✕
           </button>
@@ -122,63 +111,37 @@ function InfoModal({
                 )}`}
               >
                 <span className={`h-2 w-2 rounded-full ${threatDotClasses(plant.threatLevel)}`} />
-                {THREAT_LABELS[plant.threatLevel][lang]}{" "}
-                {translations[lang as Language]?.guide?.threatLevel ?? "Threat level"}
+                {t(plant.threatLevel)} {t("threat level")}
               </span>
             </div>
           </div>
 
           <div className="p-5 sm:p-6">
-            <h4 className="text-base font-bold text-slate-900">
-              {translations[lang]?.guide?.quickId ??
-                (lang === "en" ? "Quick ID" : "Identificación rápida")}
-            </h4>
+            <h4 className="text-base font-bold text-slate-900">{t("Quick ID")}</h4>
             <p className="mt-2 text-sm leading-relaxed text-slate-700">
-              <span className="font-semibold text-slate-900">
-                {translations[lang]?.guide?.tip ??
-                  (lang === "en" ? "Look for:" : "Identificar por:")}
-              </span>{" "}
-              {tip}
+              <span className="font-semibold text-slate-900">{t("Look for:")}</span> {tip}
             </p>
 
             <div className="mt-5 grid gap-3">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {translations[lang]?.guide?.whyItMattersTitle ??
-                    (lang === "en" ? "Why it matters" : "Por qué importa")}
+                  {t("Why it matters")}
                 </p>
                 <p className="mt-1 text-sm text-slate-700">
-                  {translations[lang]?.guide?.whyItMattersBody ??
-                    (lang === "en"
-                      ? "Invasive plants can spread quickly, outcompete native species, and impact local ecosystems. Reporting helps prioritize removals and protect habitats."
-                      : "Las plantas invasoras pueden propagarse rápidamente, superar a las especies nativas y afectar los ecosistemas locales. Reportar ayuda a priorizar la eliminación y proteger los hábitats.")}
+                  {t(
+                    "Invasive plants can spread quickly, outcompete native species, and impact local ecosystems. Reporting helps prioritize removals and protect habitats.",
+                  )}
                 </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {translations[lang]?.guide?.whatToDoTitle ??
-                    (lang === "en" ? "What to do if you find it" : "Qué hacer si la encuentra")}
+                  {t("What to do if you find it")}
                 </p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                  <li>
-                    {translations[lang]?.guide?.photoTip ??
-                      (lang === "en"
-                        ? "Take a clear photo (leaves + stem/flowers/fruit if possible)."
-                        : "Tome una foto clara (hojas + tallo/flores/fruta si es posible).")}
-                  </li>
-                  <li>
-                    {translations[lang]?.guide?.locationTip ??
-                      (lang === "en"
-                        ? "Note the location (trail name, nearest landmark, or address)."
-                        : "Anote la ubicación (nombre del sendero, punto de referencia más cercano o dirección).")}
-                  </li>
-                  <li>
-                    {translations[lang]?.guide?.avoidSpreading ??
-                      (lang === "en"
-                        ? "Avoid spreading seeds/fragments on shoes or tools."
-                        : "Evite propagar semillas o fragmentos en zapatos o herramientas.")}
-                  </li>
+                  <li>{t("Take a clear photo (leaves + stem/flowers/fruit if possible).")}</li>
+                  <li>{t("Note the location (trail name, nearest landmark, or address).")}</li>
+                  <li>{t("Avoid spreading seeds/fragments on shoes or tools.")}</li>
                 </ul>
               </div>
 
@@ -188,8 +151,7 @@ function InfoModal({
                   className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
                   onClick={onClose}
                 >
-                  {translations[lang]?.guide?.reportButton ??
-                    (lang === "en" ? "Report this plant" : "Reportar esta planta")}
+                  {t("Report this plant")}
                 </Link>
               </div>
             </div>
@@ -207,10 +169,11 @@ function PlantCard({
 }: {
   plant: Plant;
   onOpenInfo: (plant: Plant) => void;
-  lang: Language;
+  lang: UiLanguage;
 }) {
+  const { t } = useLanguage();
   const [src, setSrc] = useState(plant.picUrl);
-  const { name, tip } = localize(plant, lang);
+  const { name, tip } = localizePlant(plant, lang);
 
   return (
     <div
@@ -219,7 +182,7 @@ function PlantCard({
       onClick={() => onOpenInfo(plant)}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpenInfo(plant)}
       className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-emerald-400"
-      title={`View info about ${name}`}
+      title={t("View info about {plant}", { plant: name })}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element -- plant photos come from many outside sites */}
@@ -236,8 +199,7 @@ function PlantCard({
               plant.threatLevel,
             )}`}
           >
-            {THREAT_LABELS[plant.threatLevel][lang]}{" "}
-            {translations[lang as Language]?.guide?.threatLevel ?? "Threat level"}
+            {t(plant.threatLevel)} {t("threat level")}
           </span>
         </div>
       </div>
@@ -260,7 +222,7 @@ export default function GuidePage() {
   const [threat, setThreat] = useState<"All" | ThreatLevel>("All");
   const [sort, setSort] = useState<"Threat" | "Name">("Threat");
   const [activePlant, setActivePlant] = useState<Plant | null>(null);
-  const [lang, setLang] = useState<Language>("en");
+  const { language: lang, t } = useLanguage();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -275,13 +237,16 @@ export default function GuidePage() {
         const matchesThreat = threat === "All" ? true : p.threatLevel === threat;
         const matchesQuery =
           !q ||
-          [p.name, p.es.name, p.scientificName].some((text) => text.toLowerCase().includes(q));
+          [p.name, p.es.name, p.pt.name, p.scientificName].some((text) =>
+            text.toLowerCase().includes(q),
+          );
         return matchesThreat && matchesQuery;
       })
       .sort((a, b) => {
-        if (sort === "Name") return localize(a, lang).name.localeCompare(localize(b, lang).name);
+        if (sort === "Name")
+          return localizePlant(a, lang).name.localeCompare(localizePlant(b, lang).name);
         const d = (threatRank[b.threatLevel] ?? 0) - (threatRank[a.threatLevel] ?? 0);
-        return d !== 0 ? d : localize(a, lang).name.localeCompare(localize(b, lang).name);
+        return d !== 0 ? d : localizePlant(a, lang).name.localeCompare(localizePlant(b, lang).name);
       });
   }, [query, threat, sort, lang]);
 
@@ -292,40 +257,23 @@ export default function GuidePage() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-              {lang === "en"
-                ? "Alachua County Invasive Plant ID Guide"
-                : "Guía de Identificación de Plantas Invasoras del Condado de Alachua"}
+              {t("Alachua County Invasive Plant ID Guide")}
             </h1>
             <p className="mt-2 text-slate-600">
-              {lang === "en"
-                ? "Search by common or scientific name. Use the threat level to prioritize reporting."
-                : "Busca por nombre común o científico. Usa el nivel de amenaza para priorizar la notificación."}
+              {t(
+                "Search by common or scientific name. Use the threat level to prioritize reporting.",
+              )}
             </p>
           </div>
 
           {/* Controls */}
           <div className="grid w-full gap-3 sm:w-auto sm:min-w-[420px]">
             <div className="flex gap-3">
-              {/* Language selector on the left */}
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as Language)}
-                aria-label={lang === "en" ? "Language" : "Idioma"}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              >
-                <option value="en">English</option>
-                <option value="es">Español</option>
-              </select>
-
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                aria-label={lang === "en" ? "Search plants" : "Buscar plantas"}
-                placeholder={
-                  lang === "en"
-                    ? "Search plants (e.g., air potato, Dioscorea)…"
-                    : "Buscar plantas (ej., air potato, Dioscorea)…"
-                }
+                aria-label={t("Search plants")}
+                placeholder={t("Search plants (e.g., air potato, Dioscorea)…")}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
               />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -337,27 +285,23 @@ export default function GuidePage() {
               <select
                 value={threat}
                 onChange={(e) => setThreat(e.target.value as "All" | ThreatLevel)}
-                aria-label={lang === "en" ? "Threat level" : "Nivel de amenaza"}
+                aria-label={t("Threat level")}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
               >
-                <option value="All">
-                  {lang === "en" ? "All threat levels" : "Todos los niveles"}
-                </option>
-                <option value="Significant">
-                  {lang === "en" ? "Significant" : "Significativa"}
-                </option>
-                <option value="Moderate">{lang === "en" ? "Moderate" : "Moderada"}</option>
-                <option value="Low">{lang === "en" ? "Low" : "Baja"}</option>
+                <option value="All">{t("All threats")}</option>
+                <option value="Significant">{t("Significant")}</option>
+                <option value="Moderate">{t("Moderate")}</option>
+                <option value="Low">{t("Low")}</option>
               </select>
 
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as "Threat" | "Name")}
-                aria-label={lang === "en" ? "Sort by" : "Ordenar por"}
+                aria-label={t("Sort by")}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
               >
-                <option value="Threat">{lang === "en" ? "Sort: Threat" : "Orden: Amenaza"}</option>
-                <option value="Name">{lang === "en" ? "Sort: Name" : "Orden: Nombre"}</option>
+                <option value="Threat">{t("Sort by threat")}</option>
+                <option value="Name">{t("Sort by name")}</option>
               </select>
             </div>
           </div>
@@ -366,9 +310,7 @@ export default function GuidePage() {
         {/* Plant list */}
         <div className="mt-8">
           <p className="text-sm text-slate-600">
-            {lang === "en"
-              ? `Showing ${filtered.length} of ${plants.length}`
-              : `Mostrando ${filtered.length} de ${plants.length}`}
+            {t("Showing {shown} of {total}", { shown: filtered.length, total: plants.length })}
           </p>
 
           <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -379,9 +321,7 @@ export default function GuidePage() {
 
           {filtered.length === 0 && (
             <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-700">
-              {lang === "en"
-                ? "No matches. Try a different search term."
-                : "No hay resultados. Intenta otra búsqueda."}
+              {t("No matches. Try a different search term.")}
             </div>
           )}
         </div>

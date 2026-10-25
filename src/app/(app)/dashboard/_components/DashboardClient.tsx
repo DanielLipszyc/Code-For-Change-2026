@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useToast } from "@/components/ui/Toast";
 import type { DashboardData } from "@/types/dashboard";
 
@@ -13,24 +14,32 @@ const toneStyles = {
 };
 
 /** The dashboard UI. Its data is loaded on the server (see ../page.tsx). */
-export default function DashboardClient({ initialData }: { initialData: DashboardData }) {
+export default function DashboardClient({
+  initialData,
+  isDemo = false,
+}: {
+  initialData: DashboardData;
+  isDemo?: boolean;
+}) {
   const toast = useToast();
+  const { t } = useLanguage();
   const [data, setData] = useState(initialData);
 
   // The next badge still to earn, shown in the milestone card
   const nextBadge = data.achievements.find((achievement) => achievement.progress < 100);
 
   const handleInviteFriend = async () => {
-    const inviteText =
-      "Join me on Swamp Spotter and help log invasive plants across Alachua County.";
+    const inviteText = t(
+      "Join me on Swamp Spotter and help log invasive plants across Alachua County.",
+    );
 
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(inviteText);
       }
-      toast.success("Invite copied to clipboard.");
+      toast.success(t("Invite copied to clipboard."));
     } catch {
-      toast.info(`Invite ready to share: ${inviteText}`);
+      toast.info(t("Invite ready to share: {inviteText}", { inviteText }));
     }
   };
 
@@ -44,6 +53,10 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
   const handleFollowToggle = async (observerId: string) => {
     const currentObserver = data.observers.find((observer) => observer.id === observerId);
     if (!currentObserver) return;
+    if (isDemo) {
+      toast.info(t("This local demo is read-only."));
+      return;
+    }
 
     const nextFollowing = !currentObserver.following;
 
@@ -78,7 +91,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
           ),
         };
       });
-      toast.success(result.following ? "Observer followed." : "Observer unfollowed.");
+      toast.success(t(result.following ? "Observer followed." : "Observer unfollowed."));
     } catch (error) {
       console.error(error);
       setData((current) => {
@@ -91,7 +104,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
           ),
         };
       });
-      toast.error("Couldn't update follow. Please try again.");
+      toast.error(t("Couldn't update follow. Please try again."));
     }
   };
 
@@ -102,14 +115,17 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Citizen Scientist Dashboard
+              {t("Citizen Scientist Dashboard")}
             </div>
             <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-              Welcome back, {data.user.name.split(" ")[0] || "Observer"}
+              {t("Welcome back, {name}", {
+                name: data.user.name.split(" ")[0] || t("Observer"),
+              })}
             </h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-              Track field activity, follow collaborators, and grow your impact across the Alachua
-              County observation network.
+              {t(
+                "Track field activity, follow collaborators, and grow your impact across the Alachua County observation network.",
+              )}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -117,23 +133,37 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               href="/submit"
               className="rounded-xl bg-[#136207] px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#0f5006] transition-colors"
             >
-              + New Observation
+              {t("+ New Observation")}
             </Link>
             <Link
               href="/log"
               className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
             >
-              View Log
+              {t("View Log")}
             </Link>
             <button
               type="button"
               onClick={handleInviteFriend}
               className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-800 shadow-sm hover:bg-emerald-100 transition-colors"
             >
-              Invite Friend
+              {t("Invite Friend")}
             </button>
           </div>
         </div>
+
+        {isDemo && (
+          <div
+            role="status"
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          >
+            <p>
+              {t("This is a read-only local demo. Sign in to save reports and follow observers.")}
+            </p>
+            <Link href="/sign-in" className="font-bold underline underline-offset-2">
+              {t("Sign In")}
+            </Link>
+          </div>
+        )}
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {data.stats.map((stat) => (
@@ -143,7 +173,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                  {stat.label}
+                  {t(stat.label)}
                 </span>
                 <span
                   className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-lg ${toneStyles[stat.tone]}`}
@@ -161,7 +191,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                 <span className="text-4xl font-black tracking-tight text-slate-900">
                   {stat.value}
                 </span>
-                <span className="text-xs font-semibold text-slate-500">{stat.detail}</span>
+                <span className="text-xs font-semibold text-slate-500">{t(stat.detail)}</span>
               </div>
             </article>
           ))}
@@ -172,13 +202,15 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-                  Community map
+                  {t("Community map")}
                 </span>
-                <h2 className="mt-2 text-2xl font-black text-slate-950">Observation activity</h2>
+                <h2 className="mt-2 text-2xl font-black text-slate-950">
+                  {t("Observation activity")}
+                </h2>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Live network
+                {t("Live network")}
               </div>
             </div>
 
@@ -187,12 +219,12 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wide text-emerald-300">
-                      Last 7 days
+                      {t("Last 7 days")}
                     </span>
                     <div className="mt-4 flex items-end gap-2">
                       <span className="text-5xl font-black">{data.summary.reportsThisWeek}</span>
                       <span className="pb-2 text-sm text-slate-300">
-                        new report{data.summary.reportsThisWeek === 1 ? "" : "s"}
+                        {t(data.summary.reportsThisWeek === 1 ? "new report" : "new reports")}
                       </span>
                     </div>
                   </div>
@@ -200,25 +232,27 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                 </div>
                 <div className="mt-6 text-xs text-slate-300">
                   {data.summary.pendingReview > 0
-                    ? `${data.summary.pendingReview} of your reports awaiting review`
-                    : "All your reports have been reviewed"}
+                    ? t("{count} of your reports awaiting review", {
+                        count: data.summary.pendingReview,
+                      })
+                    : t("All your reports have been reviewed")}
                 </div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-emerald-50 to-lime-50 p-6">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-wide text-emerald-800">
-                    Next badge
+                    {t("Next badge")}
                   </span>
                   <span className="text-3xl">{nextBadge?.icon ?? "🏆"}</span>
                 </div>
                 <div className="mt-6">
                   <div className="text-3xl font-black text-slate-900">
-                    {nextBadge ? nextBadge.title : "All badges earned"}
+                    {nextBadge ? t(nextBadge.title) : t("All badges earned")}
                   </div>
                   {nextBadge && (
                     <div className="mt-2 text-sm font-semibold text-slate-600">
-                      {nextBadge.detail}
+                      {t(nextBadge.detail)}
                     </div>
                   )}
                 </div>
@@ -233,12 +267,12 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
 
             <div className="mt-8">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-slate-900">Recent field activity</h3>
+                <h3 className="text-lg font-black text-slate-900">{t("Recent field activity")}</h3>
                 <Link
                   href="/log"
                   className="text-sm font-bold text-emerald-700 hover:text-emerald-800"
                 >
-                  View log →
+                  {t("View log")} →
                 </Link>
               </div>
               <div className="mt-4 space-y-3">
@@ -251,11 +285,13 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                       {item.type === "connection" ? "👥" : item.type === "species" ? "🌱" : "🎯"}
                     </span>
                     <div className="flex-1">
-                      <div className="font-bold text-slate-900">{item.title}</div>
-                      <div className="mt-1 text-xs font-semibold text-slate-500">{item.meta}</div>
+                      <div className="font-bold text-slate-900">{t(item.title)}</div>
+                      <div className="mt-1 text-xs font-semibold text-slate-500">
+                        {t(item.meta)}
+                      </div>
                     </div>
                     <span className="rounded-full border border-emerald-100 bg-white px-3 py-1 text-xs font-bold text-emerald-700">
-                      {item.type}
+                      {t(item.type)}
                     </span>
                   </div>
                 ))}
@@ -271,16 +307,16 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">
-                    Observers
+                    {t("Observers")}
                   </span>
-                  <h2 className="mt-2 text-2xl font-black text-slate-950">Your network</h2>
+                  <h2 className="mt-2 text-2xl font-black text-slate-950">{t("Your network")}</h2>
                 </div>
                 <button
                   type="button"
                   onClick={handleConnectNetwork}
                   className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
                 >
-                  Connect
+                  {t("Connect")}
                 </button>
               </div>
 
@@ -298,7 +334,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                         <div>
                           <div className="font-black text-slate-900">{observer.name}</div>
                           <div className="text-xs font-semibold text-slate-500">
-                            {observer.focus}
+                            {t(observer.focus)}
                           </div>
                         </div>
                         <button
@@ -306,11 +342,11 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                           onClick={() => handleFollowToggle(observer.id)}
                           className={`rounded-full px-3 py-1 text-xs font-black ${observer.following ? "bg-emerald-700 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-50"}`}
                         >
-                          {observer.following ? "Following" : "Follow"}
+                          {t(observer.following ? "Following" : "Follow")}
                         </button>
                       </div>
                       <div className="mt-2 text-xs font-semibold text-slate-500">
-                        {observer.sightings} reports
+                        {t("{count} reports", { count: observer.sightings })}
                       </div>
                     </div>
                   </div>
@@ -322,9 +358,9 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-700">
-                    Contribution path
+                    {t("Contribution path")}
                   </span>
-                  <h2 className="mt-2 text-2xl font-black text-slate-950">Impact ladder</h2>
+                  <h2 className="mt-2 text-2xl font-black text-slate-950">{t("Impact ladder")}</h2>
                 </div>
                 <span className="text-3xl">⚡</span>
               </div>
@@ -335,14 +371,14 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-sm font-black text-slate-900">
                         <span>{achievement.icon}</span>
-                        <span>{achievement.title}</span>
+                        <span>{t(achievement.title)}</span>
                       </span>
                       <span className="text-xs font-bold text-slate-500">
                         {Math.min(100, Math.round(achievement.progress))}%
                       </span>
                     </div>
                     <div className="mt-2 text-xs font-semibold text-slate-500">
-                      {achievement.detail}
+                      {t(achievement.detail)}
                     </div>
                     <div className="mt-2 h-2 rounded-full bg-slate-100">
                       <div

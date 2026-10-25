@@ -1,6 +1,6 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { isPublicRequest } from "@/lib/routeAccess";
+import { isLocalDemoDashboardRequest, isPublicRequest } from "@/lib/routeAccess";
 
 /**
  * Everything requires sign-in unless lib/routeAccess.ts lists it as public.
@@ -8,6 +8,16 @@ import { isPublicRequest } from "@/lib/routeAccess";
  * Every API handler checks the user again, so this is only the first layer.
  */
 export default clerkMiddleware(async (auth, request) => {
+  if (
+    isLocalDemoDashboardRequest(
+      request.method,
+      request.nextUrl.pathname,
+      request.nextUrl.searchParams,
+    )
+  ) {
+    return NextResponse.next();
+  }
+
   if (isPublicRequest(request.method, request.nextUrl.pathname)) return;
 
   if (request.nextUrl.pathname.startsWith("/api/")) {

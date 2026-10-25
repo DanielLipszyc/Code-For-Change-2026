@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { LatLng } from "@/lib/geo";
+import { useLanguage } from "@/components/LanguageProvider";
 
 // Leaflet only runs in the browser, and only loads if someone opens the map
 const LocationPicker = dynamic(() => import("./LocationPicker"), {
@@ -24,13 +25,21 @@ interface LocationFieldProps {
   onShowMap: (show: boolean) => void;
 }
 
-function describe(location: ReportLocation): string {
+function describe(
+  location: ReportLocation,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
   const where = `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`;
   if (location.source === "gps") {
-    return `From your GPS: ${where}${location.accuracyM ? ` (within about ${Math.round(location.accuracyM)} m)` : ""}`;
+    return t("From your GPS: {where}{accuracy}", {
+      where,
+      accuracy: location.accuracyM
+        ? t(" (within about {distance} m)", { distance: Math.round(location.accuracyM) })
+        : "",
+    });
   }
-  if (location.source === "saved") return `Saved with the draft: ${where}`;
-  return `Pin on the map: ${where}`;
+  if (location.source === "saved") return t("Saved with the draft: {where}", { where });
+  return t("Pin on the map: {where}", { where });
 }
 
 /**
@@ -45,14 +54,18 @@ export default function LocationField({
   showMap,
   onShowMap,
 }: LocationFieldProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4 rounded-2xl bg-white p-6 shadow-lg sm:p-8">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">📍 Location *</h2>
+        <h2 className="text-lg font-semibold text-gray-900">📍 {t("Location *")}</h2>
         <p className="mt-1 text-sm text-gray-600">
           {value
-            ? describe(value)
-            : "Your GPS location is added when you submit. Allow location access when your browser asks, or place a pin on the map."}
+            ? describe(value, t)
+            : t(
+                "Your GPS location is added when you submit. Allow location access when your browser asks, or place a pin on the map.",
+              )}
         </p>
       </div>
 
@@ -64,10 +77,10 @@ export default function LocationField({
           className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
           {locating
-            ? "Getting your location…"
+            ? t("Getting your location…")
             : value?.source === "gps"
-              ? "Update my location"
-              : "Use my location"}
+              ? t("Update my location")
+              : t("Use my location")}
         </button>
         <button
           type="button"
@@ -75,7 +88,7 @@ export default function LocationField({
           aria-expanded={showMap}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
-          {showMap ? "Hide the map" : "Place a pin on the map"}
+          {showMap ? t("Hide the map") : t("Place a pin on the map")}
         </button>
       </div>
 
@@ -86,8 +99,9 @@ export default function LocationField({
             onChange={(where) => onChange({ ...where, accuracyM: null, source: "map" })}
           />
           <p className="text-xs text-gray-500">
-            Tap where you saw the plant. The map needs a connection to show streets; the pin works
-            either way.
+            {t(
+              "Tap where you saw the plant. The map needs a connection to show streets; the pin works either way.",
+            )}
           </p>
         </div>
       )}

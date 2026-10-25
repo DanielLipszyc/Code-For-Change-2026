@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { plants } from "./plants";
+import { localizePlant, plants } from "./plants";
 
 describe("plant list", () => {
   it("has no duplicate common or scientific names", () => {
@@ -21,7 +21,20 @@ describe("plant list", () => {
       expect(plant.tip.trim()).not.toBe("");
       expect(plant.es.name.trim()).not.toBe("");
       expect(plant.es.tip.trim()).not.toBe("");
+      expect(plant.pt.name.trim()).not.toBe("");
+      expect(plant.pt.tip.trim()).not.toBe("");
     }
+  });
+
+  it("localizes plant names and identification tips without changing stored names", () => {
+    const airPotato = plants.find((plant) => plant.name === "Air Potato");
+    expect(airPotato).toBeDefined();
+    if (!airPotato) return;
+
+    expect(localizePlant(airPotato, "en").name).toBe("Air Potato");
+    expect(localizePlant(airPotato, "es").name).toBe("Papa del Aire");
+    expect(localizePlant(airPotato, "pt").name).toBe("Cará-do-ar");
+    expect(airPotato.name).toBe("Air Potato");
   });
 });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 import { Dialog } from "./Dialog";
 
 interface ConfirmOptions {
@@ -17,6 +18,7 @@ const ConfirmContext = createContext<Confirm | null>(null);
 
 /** Provides useConfirm(). Mounted once, in the root layout. */
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const [request, setRequest] = useState<
     (ConfirmOptions & { resolve: (confirmed: boolean) => void }) | null
   >(null);
@@ -48,7 +50,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             onClick={() => settle(false)}
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="button"
@@ -57,7 +59,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               request?.danger ? "bg-red-600 hover:bg-red-700" : "bg-[#136207] hover:bg-[#0f5006]"
             }`}
           >
-            {request?.confirmLabel ?? "Confirm"}
+            {request?.confirmLabel ?? t("Confirm")}
           </button>
         </div>
       </Dialog>

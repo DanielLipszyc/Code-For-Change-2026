@@ -20,6 +20,17 @@ export interface Plant {
   tip: string;
   /** Spanish text for the guide */
   es: { name: string; tip: string };
+  /** Portuguese text for the guide */
+  pt: { name: string; tip: string };
+}
+
+export function localizePlant(
+  plant: Plant,
+  language: "en" | "es" | "pt",
+): { name: string; tip: string } {
+  if (language === "es") return plant.es;
+  if (language === "pt") return plant.pt;
+  return { name: plant.name, tip: plant.tip };
 }
 
 export const plants: Plant[] = [
@@ -34,6 +45,10 @@ export const plants: Plant[] = [
       name: "Papa del Aire",
       tip: "Hojas puntiagudas en forma de corazón y bulbos creciendo en la enredadera.",
     },
+    pt: {
+      name: "Cará-do-ar",
+      tip: "Folhas pontudas em formato de coração e tubérculos que crescem na trepadeira.",
+    },
   },
   {
     name: "Coral Ardisia",
@@ -46,6 +61,10 @@ export const plants: Plant[] = [
       name: "Ardisia coral",
       tip: "Hojas onduladas (crenadas) y pequeñas bayas rojas.",
     },
+    pt: {
+      name: "Ardísia-coral",
+      tip: "Folhas onduladas e pequenas bagas vermelhas.",
+    },
   },
   {
     name: "Spanish Gold",
@@ -57,6 +76,10 @@ export const plants: Plant[] = [
       name: "Oro Español",
       tip: "Flores colgantes rojo-naranja. Sus vainas pueden hacer un sonido de traqueteo.",
     },
+    pt: {
+      name: "Sesbânia-vermelha",
+      tip: "Flores pendentes vermelho-alaranjadas. As vagens podem produzir um som de chocalho.",
+    },
   },
   {
     name: "Torpedo Grass",
@@ -67,6 +90,10 @@ export const plants: Plant[] = [
     es: {
       name: "Hierba Torpedo",
       tip: "Hojas verde plateadas con puntas definidas.",
+    },
+    pt: {
+      name: "Grama-torpedo",
+      tip: "Folhas verde-prateadas com pontas bem definidas.",
     },
   },
   {
@@ -80,6 +107,10 @@ export const plants: Plant[] = [
       name: "Wedelia",
       tip: "Capítulos florales parecidos a margaritas y hojas cerosas y dentadas.",
     },
+    pt: {
+      name: "Vedélia",
+      tip: "Flores parecidas com margaridas e folhas cerosas com bordas recortadas.",
+    },
   },
   {
     name: "Caesar's Weed",
@@ -90,6 +121,10 @@ export const plants: Plant[] = [
     es: {
       name: "Hierba de César",
       tip: "Flores rosa-púrpura y pequeñas espinas cubiertas de cerdas ganchudas.",
+    },
+    pt: {
+      name: "Malva-de-César",
+      tip: "Flores rosa-arroxeadas e pequenos frutos cobertos por pelos com ganchos.",
     },
   },
   {
@@ -103,6 +138,10 @@ export const plants: Plant[] = [
       name: "Tradescantia de hojas pequeñas",
       tip: "Flores blancas con tres pétalos sobre tallos verdes sin pelo.",
     },
+    pt: {
+      name: "Trapoeraba-de-folhas-pequenas",
+      tip: "Flores brancas com três pétalas em hastes verdes sem pelos.",
+    },
   },
   {
     name: "Wild Taro",
@@ -113,6 +152,10 @@ export const plants: Plant[] = [
     es: {
       name: "Taro Silvestre",
       tip: "Hojas unidas por la parte inferior en lugar de por el borde. Los tallos pueden medir varios pies.",
+    },
+    pt: {
+      name: "Taro-selvagem",
+      tip: "Folhas presas pela parte inferior, não pela borda. Os pecíolos podem atingir vários metros.",
     },
   },
   {
@@ -125,6 +168,10 @@ export const plants: Plant[] = [
       name: "Helecho trepador japonés",
       tip: "Foliolos simétricos y triangulares.",
     },
+    pt: {
+      name: "Samambaia-trepadeira-japonesa",
+      tip: "Folíolos simétricos e triangulares.",
+    },
   },
   {
     name: "Chinese Tallow",
@@ -135,6 +182,10 @@ export const plants: Plant[] = [
     es: {
       name: "Almacigo Chino",
       tip: "Hojas anchas en forma de corazón con puntas que se estrechan rápidamente.",
+    },
+    pt: {
+      name: "Árvore-do-sebo-chinesa",
+      tip: "Folhas largas em formato de coração com pontas que se afilam rapidamente.",
     },
   },
   {
@@ -148,6 +199,10 @@ export const plants: Plant[] = [
       name: "Alcanfor",
       tip: "Un olor a alcanfor distintivo de las ramitas al triturarlas.",
     },
+    pt: {
+      name: "Canforeira",
+      tip: "As folhas ou os ramos liberam um cheiro característico de cânfora quando amassados.",
+    },
   },
   {
     name: "Mimosa",
@@ -159,6 +214,10 @@ export const plants: Plant[] = [
     es: {
       name: "Mimosa",
       tip: "Árbol con flores rosadas-blancas prominentes sobre un dosel con forma de paraguas.",
+    },
+    pt: {
+      name: "Mimosa",
+      tip: "Árvore com flores rosa-esbranquiçadas vistosas e copa em formato de guarda-chuva.",
     },
   },
   {
@@ -172,6 +231,10 @@ export const plants: Plant[] = [
       name: "Lantana Arbustiva",
       tip: "Racimos de flores densamente agrupadas en rojo, naranja, rosa o blanco.",
     },
+    pt: {
+      name: "Lantana-arbustiva",
+      tip: "Inflorescências densas com flores vermelhas, laranjas, rosas ou brancas.",
+    },
   },
   {
     name: "Boston Fern",
@@ -182,6 +245,10 @@ export const plants: Plant[] = [
     es: {
       name: "Helecho de Boston",
       tip: "Crecimientos tipo patata en las raíces.",
+    },
+    pt: {
+      name: "Samambaia-de-Boston",
+      tip: "Estruturas semelhantes a pequenas batatas nas raízes.",
     },
   },
   {
@@ -195,6 +262,10 @@ export const plants: Plant[] = [
       name: "Ñame Alado",
       tip: "Crecimientos marrones rugosos a lo largo de las hojas y el tallo.",
     },
+    pt: {
+      name: "Inhame-alado",
+      tip: "Protuberâncias marrons e ásperas ao longo das folhas e do caule.",
+    },
   },
   {
     name: "Tropical Soda Apple",
@@ -205,6 +276,10 @@ export const plants: Plant[] = [
     es: {
       name: "Manzana Soda Tropical",
       tip: "Espinas a lo largo del tallo y frutos que parecen mini sandías amarillas o verdes.",
+    },
+    pt: {
+      name: "Maçã-de-sodoma-tropical",
+      tip: "Espinhos ao longo do caule e frutos parecidos com pequenas melancias amarelas ou verdes.",
     },
   },
   {
@@ -217,6 +292,10 @@ export const plants: Plant[] = [
     es: {
       name: "Hierba Cogon",
       tip: "Grandes penachos cilíndricos blancos que aparecen durante la primavera.",
+    },
+    pt: {
+      name: "Capim-cogon",
+      tip: "Grandes plumas cilíndricas brancas que surgem na primavera.",
     },
   },
 ];

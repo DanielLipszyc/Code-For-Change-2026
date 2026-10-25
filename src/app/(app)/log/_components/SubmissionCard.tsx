@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { Submission } from "@/types/submission";
 
 const FALLBACK_IMG =
@@ -33,6 +34,8 @@ interface SubmissionCardProps {
 }
 
 export default function SubmissionCard({ submission, onDelete }: SubmissionCardProps) {
+  const { language, t } = useLanguage();
+  const locale = language === "pt" ? "pt-BR" : language;
   const [src, setSrc] = useState(submission.hasPhoto ? submission.photoUrl : FALLBACK_IMG);
 
   return (
@@ -50,7 +53,7 @@ export default function SubmissionCard({ submission, onDelete }: SubmissionCardP
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusBadgeClasses(submission.status)}`}
           >
-            {submission.status === "approved" ? "✓ Approved" : "⏳ Pending"}
+            {submission.status === "approved" ? `✓ ${t("Approved")}` : `⏳ ${t("Pending")}`}
           </span>
         </div>
       </div>
@@ -65,24 +68,24 @@ export default function SubmissionCard({ submission, onDelete }: SubmissionCardP
               <p className="text-sm italic text-slate-600">{submission.scientificName}</p>
             )}
             <p className="mt-1 text-xs text-slate-500">
-              Submitted: {new Date(submission.createdAt).toLocaleDateString()}
+              {t("Submitted:")} {new Date(submission.createdAt).toLocaleDateString(locale)}
             </p>
           </div>
 
           <Link
             href={`/submit/edit/${submission.id}`}
             className="flex-grow rounded-lg bg-[#136207] px-1.5 py-1.5 text-center text-xs font-semibold text-white shadow-sm hover:bg-[#0f5006]"
-            title="Edit submission"
+            title={t("Edit submission")}
           >
-            Edit
+            {t("Edit")}
           </Link>
           <button
             type="button"
             onClick={() => onDelete(submission)}
             className="flex-grow rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-700"
-            title="Delete submission"
+            title={t("Delete submission")}
           >
-            Delete
+            {t("Delete")}
           </button>
         </div>
 

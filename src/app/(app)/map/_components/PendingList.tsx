@@ -1,6 +1,7 @@
 "use client";
 
 import { photoUrl } from "@/lib/photos";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { Submission } from "@/types/submission";
 
 interface PendingListProps {
@@ -10,6 +11,7 @@ interface PendingListProps {
 
 /** Reports waiting for review, shown to admins under the map */
 export default function PendingList({ submissions, onSelect }: PendingListProps) {
+  const { t } = useLanguage();
   if (submissions.length === 0) return null;
 
   return (
@@ -17,11 +19,11 @@ export default function PendingList({ submissions, onSelect }: PendingListProps)
       <div className="mb-4 flex items-center gap-3">
         <span className="text-2xl">⏳</span>
         <h2 className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-          Pending Submissions ({submissions.length})
+          {t("Pending Submissions ({count})", { count: submissions.length })}
         </h2>
       </div>
       <p className="mb-4 text-amber-800 dark:text-amber-200">
-        Click on any submission below to view details and approve
+        {t("Click on any submission below to view details and approve")}
       </p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {submissions.map((submission) => (
@@ -62,7 +64,7 @@ export default function PendingList({ submissions, onSelect }: PendingListProps)
                 </p>
                 {submission.createdBy && (
                   <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                    By: {submission.createdBy}
+                    {t("By:")} {submission.createdBy}
                   </p>
                 )}
               </div>

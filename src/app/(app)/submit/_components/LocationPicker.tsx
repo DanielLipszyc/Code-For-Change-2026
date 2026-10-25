@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import type * as Leaflet from "leaflet";
 import type { LatLng } from "@/lib/geo";
 import { TILE_ATTRIBUTION, TILE_URL } from "@/lib/mapTiles";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const GAINESVILLE: [number, number] = [29.6516, -82.3248];
 
@@ -22,6 +23,7 @@ interface LocationPickerProps {
  * Tiles need a connection, so offline the map is blank but the pin still works.
  */
 export default function LocationPicker({ value, onChange }: LocationPickerProps) {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const leafletRef = useRef<{ map: Leaflet.Map; marker: Leaflet.CircleMarker } | null>(null);
   const [ready, setReady] = useState(false);
@@ -82,7 +84,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
       <div
         ref={containerRef}
         className="h-full w-full"
-        aria-label="Map: tap where you saw the plant"
+        aria-label={t("Map: tap where you saw the plant")}
       />
       {!ready && <div className="absolute inset-0 animate-pulse bg-gray-200" />}
     </div>

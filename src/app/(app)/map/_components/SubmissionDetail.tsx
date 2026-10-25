@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 import { Dialog } from "@/components/ui/Dialog";
 import type { Submission } from "@/types/submission";
 
@@ -34,6 +35,7 @@ export default function SubmissionDetail({
   onDelete,
   onApprove,
 }: SubmissionDetailProps) {
+  const { t } = useLanguage();
   // The photo URL answers 404 when a submission has no photo
   const [missingPhotoId, setMissingPhotoId] = useState<string | null>(null);
 
@@ -49,7 +51,7 @@ export default function SubmissionDetail({
         type="button"
         onClick={onClose}
         className="absolute right-4 top-4 z-10 text-2xl font-bold text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-        aria-label="Close details"
+        aria-label={t("Close details")}
       >
         ✕
       </button>
@@ -78,7 +80,7 @@ export default function SubmissionDetail({
                 />
               ) : (
                 <div className="p-10 text-center text-gray-500 dark:text-gray-400">
-                  No photo provided
+                  {t("No photo provided")}
                 </div>
               )}
             </div>
@@ -86,7 +88,7 @@ export default function SubmissionDetail({
             <div className="space-y-4 p-8">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-green-700">
-                  Plant
+                  {t("Plant")}
                 </p>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {submission.plantName}
@@ -100,24 +102,24 @@ export default function SubmissionDetail({
 
               <dl className="space-y-2 text-gray-700 dark:text-gray-200">
                 <div className="flex items-start gap-2">
-                  <dt className="font-semibold">Spotted:</dt>
+                  <dt className="font-semibold">{t("Spotted:")}</dt>
                   <dd>{new Date(submission.timestamp).toLocaleString()}</dd>
                 </div>
                 <div className="flex items-start gap-2">
-                  <dt className="font-semibold">Location:</dt>
+                  <dt className="font-semibold">{t("Location:")}</dt>
                   <dd>
                     {submission.lat.toFixed(4)}, {submission.lng.toFixed(4)}
                   </dd>
                 </div>
                 {submission.notes && (
                   <div className="flex items-start gap-2">
-                    <dt className="font-semibold">Notes:</dt>
+                    <dt className="font-semibold">{t("Notes:")}</dt>
                     <dd>{submission.notes}</dd>
                   </div>
                 )}
                 {submission.createdBy && (
                   <div className="flex items-start gap-2">
-                    <dt className="font-semibold">Submitted by:</dt>
+                    <dt className="font-semibold">{t("Submitted by:")}</dt>
                     <dd>{submission.createdBy}</dd>
                   </div>
                 )}
@@ -131,7 +133,7 @@ export default function SubmissionDetail({
                       onClick={onEdit}
                       className="flex-1 rounded-md bg-[#136207] px-4 py-2 font-medium text-white transition-colors hover:bg-[#0d4705]"
                     >
-                      Edit
+                      {t("Edit")}
                     </button>
                   )}
                   {canDelete && (
@@ -140,7 +142,7 @@ export default function SubmissionDetail({
                       onClick={onDelete}
                       className="flex-1 rounded-md bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-700"
                     >
-                      Delete
+                      {t("Delete")}
                     </button>
                   )}
                   {canApprove && (
@@ -149,7 +151,7 @@ export default function SubmissionDetail({
                       onClick={onApprove}
                       className="flex-1 rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
                     >
-                      Approve
+                      {t("Approve")}
                     </button>
                   )}
                 </div>
