@@ -389,14 +389,7 @@ export default function Home() {
           </div>
 
           <footer className="border-t border-white/10 pt-8 text-sm text-white/60">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <p>© {new Date().getFullYear()} Swamp Spotter</p>
-              <div className="flex flex-wrap gap-4">
-                <Link href="/about" className="hover:text-white">
-                  {t("About")}
-                </Link>
-              </div>
-            </div>
+            <p>© {new Date().getFullYear()} Swamp Spotter</p>
           </footer>
         </div>
       </section>

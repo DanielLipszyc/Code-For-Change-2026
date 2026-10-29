@@ -6,7 +6,7 @@
 
 // /~offline is the service worker's fallback page, precached at install.
 // /manifest.json is the web app manifest (the middleware runs for .json files).
-const PUBLIC_PAGES = new Set(["/", "/about", "/guide", "/map", "/~offline", "/manifest.json"]);
+const PUBLIC_PAGES = new Set(["/", "/guide", "/map", "/~offline", "/manifest.json"]);
 const AUTH_PAGES = /^\/(sign-in|sign-up)(\/|$)/;
 
 /** /api/submissions, /api/submissions/<id> and /api/submissions/<id>/photo */

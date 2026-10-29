@@ -18,7 +18,6 @@ const navItems = [
   { href: "/drafts", label: "Drafts", signIn: true },
   { href: "/log", label: "My Log", signIn: true },
   { href: "/dashboard", label: "Dashboard", signIn: true },
-  { href: "/about", label: "About", signIn: false },
 ];
 
 function NavLink({

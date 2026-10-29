@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 
 const publicRoutes = [
   { path: "/", content: "Community-powered invasive plant observations" },
-  { path: "/about", content: "Our Mission" },
   { path: "/guide", content: "Alachua County Invasive Plant ID Guide" },
   { path: "/map", content: "Alachua County Invasive Plant Map" },
   { path: "/submit?plant=Air%20Potato", content: "Prefilled from guide" },
@@ -13,7 +12,7 @@ const publicRoutes = [
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/submissions", (route) => route.fulfill({ json: [] }));
   await page.route("**/api/users/me", (route) =>
-    route.fulfill({ json: { id: "test-user", role: "user" } })
+    route.fulfill({ json: { id: "test-user", role: "user" } }),
   );
 });
 
@@ -32,20 +31,22 @@ test("filters the plant guide and changes language", async ({ page }) => {
   await expect(languageSelector).toHaveValue("en");
 
   await page.getByPlaceholder(/Search plants/).fill("Dioscorea bulbifera");
-  await expect(page.getByRole("heading", { name: "Alachua County Invasive Plant ID Guide" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Alachua County Invasive Plant ID Guide" }),
+  ).toBeVisible();
   await expect(page.getByText("Showing 1 of 17")).toBeVisible();
   await expect(page.getByText("Air Potato", { exact: true }).first()).toBeVisible();
 
   await languageSelector.selectOption("es");
-  await expect(page.getByRole("heading", {
-    name: "Guía de identificación de plantas invasoras del condado de Alachua",
-  })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Guía de identificación de plantas invasoras del condado de Alachua",
+    }),
+  ).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "es");
 
   await page.reload();
   await expect(languageSelector).toHaveValue("es");
-  await page.goto("/about");
-  await expect(page.getByRole("heading", { name: "Acerca de Swamp Spotter" })).toBeVisible();
 });
 
 test("redirects protected log access to sign-in", async ({ page }) => {
@@ -54,11 +55,38 @@ test("redirects protected log access to sign-in", async ({ page }) => {
 });
 
 test("map filters visible reports and exports only the filtered results", async ({ page }) => {
-  await page.route("**/api/submissions", (route) => route.fulfill({ json: [
-    { _id: "air-potato", plantName: "Air Potato", scientificName: "Dioscorea bulbifera", lat: 29.65, lng: -82.32, timestamp: 1_700_000_000_000, status: "approved" },
-    { _id: "wild-taro", plantName: "Wild Taro", scientificName: "Colocasia esculenta", lat: 29.66, lng: -82.31, timestamp: 1_700_000_000_100, status: "approved" },
-    { _id: "pending", plantName: "Camphor", lat: 29.67, lng: -82.30, timestamp: 1_700_000_000_200, status: "pending" },
-  ] }));
+  await page.route("**/api/submissions", (route) =>
+    route.fulfill({
+      json: [
+        {
+          _id: "air-potato",
+          plantName: "Air Potato",
+          scientificName: "Dioscorea bulbifera",
+          lat: 29.65,
+          lng: -82.32,
+          timestamp: 1_700_000_000_000,
+          status: "approved",
+        },
+        {
+          _id: "wild-taro",
+          plantName: "Wild Taro",
+          scientificName: "Colocasia esculenta",
+          lat: 29.66,
+          lng: -82.31,
+          timestamp: 1_700_000_000_100,
+          status: "approved",
+        },
+        {
+          _id: "pending",
+          plantName: "Camphor",
+          lat: 29.67,
+          lng: -82.3,
+          timestamp: 1_700_000_000_200,
+          status: "pending",
+        },
+      ],
+    }),
+  );
 
   await page.goto("/map", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("button", { name: /Export CSV \(2 shown\)/ })).toBeEnabled();
@@ -72,7 +100,10 @@ test("map filters visible reports and exports only the filtered results", async 
   expect(download.suggestedFilename()).toMatch(/^swamp-spotter-map-export-.*\.csv$/);
 });
 
-test("submits an anonymous plant report with a photo and browser location", async ({ page, context }) => {
+test("submits an anonymous plant report with a photo and browser location", async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(["geolocation"], { origin: "http://localhost:3100" });
   await context.setGeolocation({ latitude: 29.6516, longitude: -82.3248 });
 
@@ -83,7 +114,7 @@ test("submits an anonymous plant report with a photo and browser location", asyn
         scientificName: "Dioscorea bulbifera",
         isKnownPlant: true,
       },
-    })
+    }),
   );
 
   let submittedPayload: Record<string, unknown> | undefined;

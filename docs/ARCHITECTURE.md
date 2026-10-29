@@ -38,7 +38,7 @@ The main server modules:
 Pages are grouped by purpose. Folder names in parentheses don't appear in URLs,
 so `src/app/(app)/map/page.tsx` is served at `/map`.
 
-- `(site)`: home, about, guide
+- `(site)`: home, guide
 - `(auth)`: sign-in, sign-up (Clerk)
 - `(app)`: dashboard, log, map, submit, drafts. These have a shared loading
   screen (`loading.tsx`) and error screen (`error.tsx`).
