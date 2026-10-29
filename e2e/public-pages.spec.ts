@@ -77,7 +77,6 @@ test.describe("guide", () => {
     await expect(
       page.getByRole("heading", { name: "Mapa de plantas invasoras do condado de Alachua" }),
     ).toBeVisible();
-
   });
 });
 
