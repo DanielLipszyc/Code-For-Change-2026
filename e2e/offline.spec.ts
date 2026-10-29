@@ -36,7 +36,7 @@ test("a page never opened shows the offline page", async ({ page, context }) => 
   await serviceWorkerReady(page);
 
   await context.setOffline(true);
-  await page.goto("/about");
+  await page.goto("/contact");
   await expect(page.getByRole("heading", { name: "You're offline" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Report a sighting" })).toHaveAttribute(
     "href",

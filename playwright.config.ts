@@ -32,7 +32,7 @@ export default defineConfig({
     ? undefined
     : {
         command: `npm run build && npx next start -p ${PORT}`,
-        url: `${baseURL}/about`,
+        url: baseURL,
         reuseExistingServer: true,
         timeout: 300_000,
       },

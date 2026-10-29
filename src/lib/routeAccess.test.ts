@@ -5,7 +5,7 @@ const ID = "3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e";
 
 describe("isPublicRequest", () => {
   it("lets anyone view the public pages and sign in", () => {
-    for (const path of ["/", "/about", "/guide", "/map", "/sign-in", "/sign-up/verify"]) {
+    for (const path of ["/", "/guide", "/map", "/sign-in", "/sign-up/verify"]) {
       expect(isPublicRequest("GET", path)).toBe(true);
     }
   });
@@ -22,6 +22,7 @@ describe("isPublicRequest", () => {
       "/drafts",
       "/dashboard",
       `/submit/edit/${ID}`,
+      "/about",
       "/contact",
     ]) {
       expect(isPublicRequest("GET", path)).toBe(false);

@@ -18,11 +18,6 @@ test("home page loads its images through the image optimizer", async ({ page }) 
   }
 });
 
-test("about page loads", async ({ page }) => {
-  await page.goto("/about");
-  await expect(page.getByRole("heading").first()).toBeVisible();
-});
-
 test.describe("guide", () => {
   test("lists every plant and searches them", async ({ page }) => {
     await page.goto("/guide", { waitUntil: "domcontentloaded" });
@@ -82,7 +77,6 @@ test.describe("guide", () => {
     await expect(
       page.getByRole("heading", { name: "Mapa de plantas invasoras do condado de Alachua" }),
     ).toBeVisible();
-
   });
 });
 
