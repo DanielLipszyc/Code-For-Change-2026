@@ -9,8 +9,8 @@ import {
 
 /**
  * What each API endpoint accepts. Every string stored from here is later shown
- * to other users (map, log, dashboard), so only known species names, bounded
- * notes and inline images are accepted.
+ * to other users (map, log, dashboard), so plant names are resolved against
+ * the active database catalog in the API layer; notes and inline images are bounded.
  */
 
 /** Clerk user IDs. Also what's allowed inside a PostgREST filter string. */
