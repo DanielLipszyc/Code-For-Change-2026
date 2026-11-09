@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { updateSubmissionSchema } from "@/lib/schemas";
+import { resolvePlant } from "@/server/plants";
 import { getViewer, isAdmin } from "@/server/authz";
 import { MAX_BODY_BYTES, jsonError, parseJsonBody } from "@/server/http";
 import {
@@ -48,7 +49,14 @@ export async function PUT(request: NextRequest, context: Context) {
     if (!parsed.ok) return parsed.response;
 
     // Admins' edits to their own reports skip review; everyone else's go back to pending
-    const updated = await updateOwnSubmission(id, userId, parsed.data, {
+    const changes = { ...parsed.data };
+    if (changes.plantName !== undefined) {
+      const canonicalPlant = await resolvePlant(changes.plantName);
+      if (!canonicalPlant) return jsonError(400, "Plant name must be one of the active species or Unknown");
+      changes.plantName = canonicalPlant;
+    }
+
+    const updated = await updateOwnSubmission(id, userId, changes, {
       keepApproval: await isAdmin(userId),
     });
     if (!updated) return jsonError(404, "Submission not found");
