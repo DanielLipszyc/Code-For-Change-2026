@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { getPlants } from "@/server/plants";
 import SubmitClient from "./SubmitClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
   const plants = await getPlants();
   return (
