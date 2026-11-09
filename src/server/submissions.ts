@@ -4,6 +4,7 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import { photoUrl } from "@/lib/photos";
 import { CLERK_USER_ID } from "@/lib/schemas";
 import type { CreateSubmissionInput, UpdateSubmissionInput } from "@/lib/schemas";
+import type { PlantSelection } from "@/types/plant";
 import type { MapPoint, Submission, SubmissionStatus } from "@/types/submission";
 import type { Viewer } from "@/types/auth";
 import { supabase } from "./db";
@@ -234,7 +235,7 @@ const UNIQUE_VIOLATION = "23505";
  * already exists throws DuplicateSubmissionError and changes nothing.
  */
 export async function createSubmission(
-  input: CreateSubmissionInput,
+  input: Omit<CreateSubmissionInput, "plantName"> & { plantName: PlantSelection },
   submitter: { userId: string | null; displayName: string; autoApprove: boolean },
 ): Promise<string> {
   const id = input.id ?? randomUUID();
@@ -277,7 +278,7 @@ export async function createSubmission(
 export async function updateOwnSubmission(
   id: string,
   userId: string,
-  changes: UpdateSubmissionInput,
+  changes: Omit<UpdateSubmissionInput, "plantName"> & { plantName?: PlantSelection },
   { keepApproval }: { keepApproval: boolean },
 ): Promise<boolean> {
   if (!isValidId(id)) return false;

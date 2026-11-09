@@ -1,55 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { plants } from "@/data/plants";
-import { MAX_IMAGE_DATA_LENGTH, MAX_NOTES_LENGTH, UNKNOWN_PLANT } from "./limits";
+import { MAX_IMAGE_DATA_LENGTH, MAX_NOTES_LENGTH } from "./limits";
 import {
   createSubmissionSchema,
   followSchema,
   identifyPlantSchema,
-  resolvePlant,
   updateSubmissionSchema,
 } from "./schemas";
 
 const firstError = (result: { success: boolean; error?: { issues: { message: string }[] } }) =>
   result.error?.issues[0].message;
-
-describe("resolvePlant", () => {
-  const plant = plants[0];
-
-  it("matches a listed species case-insensitively, ignoring surrounding spaces", () => {
-    expect(resolvePlant(`  ${plant.name.toUpperCase()} `)).toEqual({
-      plantName: plant.name,
-      scientificName: plant.scientificName,
-    });
-  });
-
-  it("maps the unknown aliases to Unknown Plant with no scientific name", () => {
-    for (const name of ["unknown", "Unknown Plant", "UNKNOWN"]) {
-      expect(resolvePlant(name)).toEqual({ plantName: UNKNOWN_PLANT, scientificName: null });
-    }
-  });
-
-  it("maps misspellings from earlier versions of the list to the current name", () => {
-    expect(resolvePlant("Coral Adicea")).toEqual({
-      plantName: "Coral Ardisia",
-      scientificName: "Ardisia crenata",
-    });
-    expect(resolvePlant("Caeser's Weed")).toEqual({
-      plantName: "Caesar's Weed",
-      scientificName: "Urena lobata",
-    });
-  });
-
-  it("rejects names that aren't on the list", () => {
-    expect(resolvePlant("Definitely Not A Plant")).toBeNull();
-    expect(resolvePlant("<script>alert(1)</script>")).toBeNull();
-  });
-
-  it("rejects non-string input", () => {
-    for (const value of [undefined, null, 42, {}, [plant.name]]) {
-      expect(resolvePlant(value)).toBeNull();
-    }
-  });
-});
 
 describe("createSubmissionSchema", () => {
   const jpeg = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
@@ -57,7 +16,7 @@ describe("createSubmissionSchema", () => {
 
   it("accepts a minimal submission and fills in defaults", () => {
     expect(createSubmissionSchema.parse(valid)).toEqual({
-      plantName: { plantName: "Air Potato", scientificName: "Dioscorea bulbifera" },
+      plantName: "air potato",
       lat: 29.65,
       lng: -82.32,
       locationAccuracyM: null,
@@ -73,9 +32,13 @@ describe("createSubmissionSchema", () => {
     expect(parsed).not.toHaveProperty("timestamp");
   });
 
-  it("rejects unknown plant names", () => {
-    const result = createSubmissionSchema.safeParse({ ...valid, plantName: "Kudzu?" });
-    expect(firstError(result)).toBe("Plant name must be one of the listed species or Unknown");
+  it("accepts a non-empty plant name for server-side catalog resolution", () => {
+    expect(createSubmissionSchema.parse({ ...valid, plantName: "Kudzu?" }).plantName).toBe(
+      "Kudzu?",
+    );
+    expect(firstError(createSubmissionSchema.safeParse({ ...valid, plantName: " " }))).toBe(
+      "Plant name is required",
+    );
   });
 
   it("requires a plant name and numeric coordinates", () => {
@@ -180,9 +143,9 @@ describe("updateSubmissionSchema", () => {
     expect(updateSubmissionSchema.parse({ notes: "  " })).toEqual({ notes: null });
   });
 
-  it("resolves the plant from the list", () => {
+  it("accepts a non-empty plant name for server-side catalog resolution", () => {
     expect(updateSubmissionSchema.parse({ plantName: "Unknown" })).toEqual({
-      plantName: { plantName: UNKNOWN_PLANT, scientificName: null },
+      plantName: "Unknown",
     });
   });
 

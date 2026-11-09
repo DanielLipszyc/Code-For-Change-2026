@@ -1,5 +1,5 @@
 import "server-only";
-import type { Plant } from "@/data/plants";
+import type { Plant } from "@/types/plant";
 import { env } from "@/server/env";
 import { scoreWithBioclip } from "./bioclip";
 import { matchPlant } from "./match";

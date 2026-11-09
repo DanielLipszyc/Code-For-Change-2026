@@ -5,6 +5,56 @@
 create extension if not exists "pgcrypto";
 
 -- ---------------------------------------------------------------------------
+-- plants (canonical invasive plant catalog)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.plants (
+  id uuid primary key default gen_random_uuid(),
+
+  slug text not null unique,
+  name text not null unique,
+  scientific_name text not null,
+
+  threat_level text not null
+    check (threat_level in ('Low', 'Moderate', 'Significant')),
+
+  pic_url text,
+  tip text not null,
+
+  translations jsonb not null default '{}'::jsonb,
+
+  is_active boolean not null default true,
+  sort_order integer not null default 0,
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists plants_active_sort_idx
+  on public.plants (is_active, sort_order);
+
+create index if not exists plants_scientific_name_idx
+  on public.plants (scientific_name);
+
+-- Automatically refresh updated_at whenever a plant record changes.
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_plants_updated_at on public.plants;
+
+create trigger set_plants_updated_at
+before update on public.plants
+for each row
+execute function public.set_updated_at();
+
+-- ---------------------------------------------------------------------------
 -- submissions (plant sightings submitted from /submit, shown on /map and /log)
 -- ---------------------------------------------------------------------------
 create table if not exists public.submissions (
@@ -129,6 +179,7 @@ grant execute on function public.hit_rate_limit(text, integer, integer) to servi
 -- (auth is handled by Clerk). Enabling RLS with no policies means the public
 -- anon key can't read or write anything if it ever leaks.
 -- ---------------------------------------------------------------------------
+alter table public.plants enable row level security;
 alter table public.submissions enable row level security;
 alter table public.follows     enable row level security;
 alter table public.rate_limits enable row level security;

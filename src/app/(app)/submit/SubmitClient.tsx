@@ -9,7 +9,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { getSavedReport, saveReport, type SavedReport } from "@/client/offline/reports";
 import { sendSavedReport } from "@/client/offline/send";
 import { PHOTO_MAX_SIZE, PHOTO_QUALITY, compressImage, readFileAsDataUrl } from "@/client/images";
-import { localizePlant, plants } from "@/data/plants";
+import { localizePlant, type Plant } from "@/types/plant";
 import { PLANT_ID_ENABLED } from "@/lib/features";
 import { MAX_NOTES_LENGTH } from "@/lib/limits";
 import LocationField, { type ReportLocation } from "./_components/LocationField";
@@ -49,7 +49,7 @@ function getGpsLocation(): Promise<ReportLocation> {
  * (components/SavedReportsSync). "Save as draft" keeps it to finish later,
  * e.g. to get an AI suggestion once back online. /submit?draft=<id> opens one.
  */
-export default function SubmitClient() {
+export default function SubmitClient({ plants }: { plants: Plant[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
@@ -108,7 +108,7 @@ export default function SubmitClient() {
     if (!plantParam) return;
     const value = plants.some((p) => p.name === plantParam) ? plantParam : "Unknown";
     setPlantName((current) => current || value);
-  }, [plantParam]);
+  }, [plantParam, plants]);
 
   // Open a saved report from /submit?draft=...
   useEffect(() => {
