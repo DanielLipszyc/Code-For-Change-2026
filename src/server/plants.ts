@@ -101,9 +101,7 @@ export async function resolvePlant(name: unknown): Promise<PlantSelection | null
   const key = LEGACY_NAMES[trimmed] ?? trimmed;
   const plant = (await getPlants()).find((item) => item.name.toLowerCase() === key);
 
-  return plant
-    ? { plantName: plant.name, scientificName: plant.scientificName }
-    : null;
+  return plant ? { plantName: plant.name, scientificName: plant.scientificName } : null;
 }
 
 /** Clear the cached catalog after an administrative plant change. */

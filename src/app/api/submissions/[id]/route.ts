@@ -55,7 +55,8 @@ export async function PUT(request: NextRequest, context: Context) {
     } = {};
     if (parsed.data.plantName !== undefined) {
       const canonicalPlant = await resolvePlant(parsed.data.plantName);
-      if (!canonicalPlant) return jsonError(400, "Plant name must be one of the active species or Unknown");
+      if (!canonicalPlant)
+        return jsonError(400, "Plant name must be one of the active species or Unknown");
       changes.plantName = canonicalPlant;
     }
     if (parsed.data.notes !== undefined) changes.notes = parsed.data.notes;

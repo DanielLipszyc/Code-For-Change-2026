@@ -16,10 +16,13 @@ import {
 /** Clerk user IDs. Also what's allowed inside a PostgREST filter string. */
 export const CLERK_USER_ID = /^[A-Za-z0-9_]+$/;
 
-const plantSchema = z.string({
-  error: (issue) =>
-    issue.input === undefined ? "Plant name is required" : "Plant name must be text",
-}).trim().min(1, { error: "Plant name is required" });
+const plantSchema = z
+  .string({
+    error: (issue) =>
+      issue.input === undefined ? "Plant name is required" : "Plant name must be text",
+  })
+  .trim()
+  .min(1, { error: "Plant name is required" });
 
 const notesTextSchema = z
   .string({ error: "Notes must be text" })

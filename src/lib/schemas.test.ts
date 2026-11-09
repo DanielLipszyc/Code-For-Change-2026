@@ -33,7 +33,9 @@ describe("createSubmissionSchema", () => {
   });
 
   it("accepts a non-empty plant name for server-side catalog resolution", () => {
-    expect(createSubmissionSchema.parse({ ...valid, plantName: "Kudzu?" }).plantName).toBe("Kudzu?");
+    expect(createSubmissionSchema.parse({ ...valid, plantName: "Kudzu?" }).plantName).toBe(
+      "Kudzu?",
+    );
     expect(firstError(createSubmissionSchema.safeParse({ ...valid, plantName: " " }))).toBe(
       "Plant name is required",
     );
@@ -142,7 +144,9 @@ describe("updateSubmissionSchema", () => {
   });
 
   it("accepts a non-empty plant name for server-side catalog resolution", () => {
-    expect(updateSubmissionSchema.parse({ plantName: "Unknown" })).toEqual({ plantName: "Unknown" });
+    expect(updateSubmissionSchema.parse({ plantName: "Unknown" })).toEqual({
+      plantName: "Unknown",
+    });
   });
 
   it("requires something to update", () => {

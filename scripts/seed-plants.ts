@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { plants } from "../src/data/plants";
@@ -10,9 +9,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
 if (!supabaseUrl || !supabaseSecretKey) {
-  throw new Error(
-    "Missing SUPABASE_URL or SUPABASE_SECRET_KEY. Check your .env.local file.",
-  );
+  throw new Error("Missing SUPABASE_URL or SUPABASE_SECRET_KEY. Check your .env.local file.");
 }
 
 // This script runs locally, outside the Next.js application.

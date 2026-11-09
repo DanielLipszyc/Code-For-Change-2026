@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
     }
 
     const canonicalPlant = await resolvePlant(input.plantName);
-    if (!canonicalPlant) return jsonError(400, "Plant name must be one of the active species or Unknown");
+    if (!canonicalPlant)
+      return jsonError(400, "Plant name must be one of the active species or Unknown");
 
     const id = await createSubmission({ ...input, plantName: canonicalPlant }, submitter);
     return NextResponse.json({ success: true, id });
