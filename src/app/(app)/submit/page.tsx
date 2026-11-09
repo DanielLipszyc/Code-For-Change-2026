@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { useLanguage } from "@/components/LanguageProvider";
 import { getPlants } from "@/server/plants";
 import SubmitClient from "./SubmitClient";
 
