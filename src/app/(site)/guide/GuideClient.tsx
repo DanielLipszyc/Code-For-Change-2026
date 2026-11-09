@@ -55,7 +55,7 @@ function InfoModal({
   lang: UiLanguage;
 }) {
   const { t } = useLanguage();
-  const [src, setSrc] = useState(plant.picUrl);
+  const [src, setSrc] = useState(plant.picUrl ?? FALLBACK_IMG);
   const { name, tip } = localizePlant(plant, lang);
 
   useEffect(() => {
