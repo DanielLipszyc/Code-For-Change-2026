@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { createSubmissionSchema } from "@/lib/schemas";
+import { resolvePlant } from "@/server/plants";
 import { getPublicDisplayName, getViewer, roleOf } from "@/server/authz";
 import { MAX_BODY_BYTES, jsonError, parseJsonBody } from "@/server/http";
 import { LIMITS, anonymousKey, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
@@ -65,7 +66,10 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    const id = await createSubmission(input, submitter);
+    const canonicalPlant = await resolvePlant(input.plantName);
+    if (!canonicalPlant) return jsonError(400, "Plant name must be one of the active species or Unknown");
+
+    const id = await createSubmission({ ...input, plantName: canonicalPlant }, submitter);
     return NextResponse.json({ success: true, id });
   } catch (error) {
     if (error instanceof InvalidPhotoError) {
