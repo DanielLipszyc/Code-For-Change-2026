@@ -187,7 +187,7 @@ function PlantCard({
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element -- plant photos come from many outside sites */}
         <img
-          src={src}
+          src={src ?? undefined} // TODO: Implement backup UI if image undefined
           alt={name}
           className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
           loading="lazy"
@@ -248,7 +248,7 @@ export default function GuideClient({ plants }: { plants: Plant[] }) {
         const d = (threatRank[b.threatLevel] ?? 0) - (threatRank[a.threatLevel] ?? 0);
         return d !== 0 ? d : localizePlant(a, lang).name.localeCompare(localizePlant(b, lang).name);
       });
-  }, [query, threat, sort, lang]);
+  }, [query, threat, sort, lang, plants]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-white">

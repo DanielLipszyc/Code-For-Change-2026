@@ -108,7 +108,7 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
     if (!plantParam) return;
     const value = plants.some((p) => p.name === plantParam) ? plantParam : "Unknown";
     setPlantName((current) => current || value);
-  }, [plantParam]);
+  }, [plantParam, plants]);
 
   // Open a saved report from /submit?draft=...
   useEffect(() => {
