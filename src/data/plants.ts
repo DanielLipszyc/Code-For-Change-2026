@@ -1,7 +1,9 @@
 /**
- * The invasive species Swamp Spotter tracks. This is the only copy of the list:
- * the guide, the submit and edit forms, server-side validation and plant ID all
- * read it.
+ * Seed input for the Supabase plant catalog.
+ *
+ * Runtime application consumers read active plant records from public.plants
+ * through src/server/plants.ts. Update this list only when preparing a seed
+ * or intentional catalog synchronization; do not import it in app code.
  */
 
 export type ThreatLevel = "Low" | "Moderate" | "Significant";
