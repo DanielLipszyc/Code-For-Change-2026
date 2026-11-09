@@ -1,11 +1,9 @@
 import { z } from "zod";
-import { plants } from "@/data/plants";
 import {
   MAX_CLOCK_SKEW_MS,
   MAX_IMAGE_DATA_LENGTH,
   MAX_NOTES_LENGTH,
   MAX_OBSERVATION_AGE_DAYS,
-  UNKNOWN_PLANT,
   isInAlachua,
 } from "./limits";
 
@@ -18,53 +16,10 @@ import {
 /** Clerk user IDs. Also what's allowed inside a PostgREST filter string. */
 export const CLERK_USER_ID = /^[A-Za-z0-9_]+$/;
 
-const UNKNOWN_ALIASES = new Set(["unknown", "unknown plant"]);
-
-/**
- * Misspellings used by earlier versions of the plant list, mapped to the
- * current name, so editing an older submission still works.
- */
-const LEGACY_NAMES: Record<string, string> = {
-  "coral adicea": "coral ardisia",
-  "caeser's weed": "caesar's weed",
-};
-
-/**
- * Resolve a client-supplied plant name to a species from the plant list.
- * The scientific name always comes from the list, never from the client.
- * Returns null if the name isn't a known species or "Unknown".
- */
-export function resolvePlant(
-  name: unknown,
-): { plantName: string; scientificName: string | null } | null {
-  if (typeof name !== "string") return null;
-
-  const trimmed = name.trim().toLowerCase();
-  if (UNKNOWN_ALIASES.has(trimmed)) {
-    return { plantName: UNKNOWN_PLANT, scientificName: null };
-  }
-
-  const key = LEGACY_NAMES[trimmed] ?? trimmed;
-  const plant = plants.find((p) => p.name.toLowerCase() === key);
-  return plant ? { plantName: plant.name, scientificName: plant.scientificName } : null;
-}
-
-const plantSchema = z
-  .string({
-    error: (issue) =>
-      issue.input === undefined ? "Plant name is required" : "Plant name must be text",
-  })
-  .transform((name, ctx) => {
-    const plant = resolvePlant(name);
-    if (!plant) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Plant name must be one of the listed species or Unknown",
-      });
-      return z.NEVER;
-    }
-    return plant;
-  });
+const plantSchema = z.string({
+  error: (issue) =>
+    issue.input === undefined ? "Plant name is required" : "Plant name must be text",
+}).trim().min(1, { error: "Plant name is required" });
 
 const notesTextSchema = z
   .string({ error: "Notes must be text" })
