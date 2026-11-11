@@ -101,12 +101,13 @@ function getPlantFeatureItems(plant: Plant): FeatureItem[] {
 }
 
 function PlantFeatureDetails({ plant }: { plant: Plant }) {
+  const { t } = useLanguage();
   const items = getPlantFeatureItems(plant);
   if (items.length === 0) return null;
 
   return (
-    <section className="mt-5" aria-label="Identifying characteristics">
-      <h4 className="text-base font-bold text-slate-900">Identifying characteristics</h4>
+    <section className="mt-5" aria-label={t("Identifying characteristics")}>
+      <h4 className="text-base font-bold text-slate-900">{t("Identifying characteristics")}</h4>
       <div className="mt-3 grid gap-3">
         {FEATURE_GROUPS.map(({ key, label }) => {
           const groupItems = items.filter((item) => item.group === key);
@@ -114,13 +115,13 @@ function PlantFeatureDetails({ plant }: { plant: Plant }) {
           return (
             <div key={key} className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
               <h5 className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                {label}
+                {t(label)}
               </h5>
               <dl className="mt-2 space-y-1.5">
                 {groupItems.map((item) => (
                   <div key={`${key}-${item.label}`} className="text-sm text-slate-700">
-                    <dt className="inline font-semibold text-slate-900">{item.label}: </dt>
-                    <dd className="inline">{item.value}</dd>
+                    <dt className="inline font-semibold text-slate-900">{t(item.label)}: </dt>
+                    <dd className="inline">{item.value.split(", ").map((value) => t(value)).join(", ")}</dd>
                   </div>
                 ))}
               </dl>
@@ -201,6 +202,7 @@ function FeatureLookup({
   onChange: (field: LookupFieldId, value: string) => void;
   onClear: () => void;
 }) {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   const options = useMemo(() => {
     const result = {} as Record<LookupFieldId, string[]>;
@@ -223,13 +225,13 @@ function FeatureLookup({
   return (
     <section
       className="mt-7 rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm sm:p-5"
-      aria-label="Find plants by characteristics"
+      aria-label={t("Find plants by characteristics")}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Find plants by features</h2>
+          <h2 className="text-lg font-bold text-slate-900">{t("Find plants by features")}</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Choose the characteristics you observe. All selected features must match.
+            {t("Choose the characteristics you observe. All selected features must match.")}
           </p>
         </div>
         <button
@@ -239,7 +241,7 @@ function FeatureLookup({
           aria-controls="plant-feature-filters"
           className="rounded-xl border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
-          {expanded ? "Hide feature filters" : "Browse by features"}
+          {expanded ? t("Hide feature filters") : t("Browse by features")}
           {activeCount ? ` (${activeCount})` : ""}
         </button>
       </div>
@@ -252,9 +254,9 @@ function FeatureLookup({
               type="button"
               onClick={() => onChange(fieldId(field), "")}
               className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-100"
-              aria-label={`Remove ${field.label} filter`}
+              aria-label={t("Remove {feature} filter", { feature: t(field.label) })}
             >
-              {field.label}: {filters[fieldId(field)]} ×
+              {t(field.label)}: {t(filters[fieldId(field)] ?? "")} ×
             </button>
           ))}
           <button
@@ -262,7 +264,7 @@ function FeatureLookup({
             onClick={onClear}
             className="text-sm font-semibold text-slate-600 underline hover:text-slate-900"
           >
-            Clear features
+            {t("Clear features")}
           </button>
         </div>
       )}
@@ -271,22 +273,22 @@ function FeatureLookup({
         <div id="plant-feature-filters" className="mt-5">
           {availableFields.length === 0 ? (
             <p className="text-sm text-slate-600">
-              No plant characteristics have been recorded yet.
+              {t("No plant characteristics have been recorded yet.")}
             </p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {availableFields.map((field) => (
                 <label key={fieldId(field)} className="block text-sm font-medium text-slate-700">
-                  {field.label}
+                  {t(field.label)}
                   <select
                     value={filters[fieldId(field)] ?? ""}
                     onChange={(event) => onChange(fieldId(field), event.target.value)}
                     className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   >
-                    <option value="">Any / not sure</option>
+                    <option value="">{t("Any / not sure")}</option>
                     {options[fieldId(field)].map((option) => (
                       <option key={normalizeFeature(option)} value={option}>
-                        {option}
+                        {t(option)}
                       </option>
                     ))}
                   </select>
@@ -582,7 +584,7 @@ export default function GuideClient({ plants }: { plants: Plant[] }) {
 
           {filtered.length === 0 && (
             <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-700">
-              No plants match these criteria. Try removing a feature filter or changing your search.
+              {t("No plants match these criteria. Try removing a feature filter or changing your search.")}
             </div>
           )}
         </div>
