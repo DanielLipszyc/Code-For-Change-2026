@@ -49,17 +49,23 @@ ADD COLUMN IF NOT EXISTS form jsonb
   NOT NULL DEFAULT '{}'::jsonb;
 
 -- Added GIN indexes for the new jsonb columns to improve search performance
-CREATE INDEX plants_leaf_gin_idx
+CREATE INDEX IF NOT EXISTS plants_leaf_gin_idx
 ON public.plants USING gin (leaf);
 
-CREATE INDEX plants_flower_gin_idx
+CREATE INDEX IF NOT EXISTS  plants_flower_gin_idx
 ON public.plants USING gin (flower);
 
-CREATE INDEX plants_reproductive_structure_gin_idx
+CREATE INDEX IF NOT EXISTS plants_reproductive_structure_gin_idx
 ON public.plants USING gin (reproductive_structure);
 
-CREATE INDEX plants_form_gin_idx
+CREATE INDEX IF NOT EXISTS plants_form_gin_idx
 ON public.plants USING gin (form);
+
+
+-- Adds new images column to store multiple images for each plant
+ALTER TABLE public.plants
+ADD COLUMN IF NOT EXISTS images jsonb
+NOT NULL DEFAULT '[]'::jsonb;
 
 -- Automatically refresh updated_at whenever a plant record changes.
 create or replace function public.set_updated_at()
