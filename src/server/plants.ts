@@ -127,19 +127,19 @@ function toPlant(row: PlantRow): Plant {
       row.name,
     ),
     form: parseFeature("form", row.form, row.name),
+    // A malformed gallery entry must not prevent the entire guide from loading.
     images: Array.isArray(row.images)
-      ? row.images.map((img) => {
-          if (typeof img !== "object" || img === null) {
-            throw new Error(`Plant "${row.name}" has an invalid image entry.`);
-          }
+      ? row.images.flatMap((img) => {
+          if (!img || typeof img !== "object" || Array.isArray(img)) return [];
           const { url, caption } = img as Record<string, unknown>;
-          if (typeof url !== "string") {
-            throw new Error(`Plant "${row.name}" has an image with a missing or invalid URL.`);
+          if (typeof url !== "string") return [];
+          try {
+            const parsed = new URL(url);
+            if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return [];
+          } catch {
+            return [];
           }
-          if (caption !== undefined && typeof caption !== "string") {
-            throw new Error(`Plant "${row.name}" has an image with an invalid caption.`);
-          }
-          return { url, caption };
+          return [{ url, ...(typeof caption === "string" ? { caption } : {}) }];
         })
       : [],
   };
