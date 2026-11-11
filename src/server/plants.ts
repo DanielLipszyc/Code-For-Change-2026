@@ -17,7 +17,7 @@ interface PlantRow {
   translations: unknown;
   leaf: unknown;
   flower: unknown;
-  fruit_seed: unknown;
+  reproductive_structure: unknown;
   form: unknown;
   is_active: boolean;
   sort_order: number;
@@ -71,7 +71,7 @@ const featureSchemas = {
     season: stringList.optional(),
     notes,
   }),
-  fruit_seed: z.object({
+  reproductive_structure: z.object({
     type: stringList.optional(),
     color: stringList.optional(),
     shape: stringList.optional(),
@@ -120,7 +120,7 @@ function toPlant(row: PlantRow): Plant {
     pt: translatedText(row.translations, "pt"),
     leaf: parseFeature("leaf", row.leaf, row.name),
     flower: parseFeature("flower", row.flower, row.name),
-    fruit_seed: parseFeature("fruit_seed", row.fruit_seed, row.name),
+    reproductive_structure: parseFeature("reproductive_structure", row.reproductive_structure, row.name),
     form: parseFeature("form", row.form, row.name),
   };
 }
@@ -133,7 +133,7 @@ const readPlants = unstable_cache(
     const { data, error } = await supabase
       .from("plants")
       .select(
-        "id, slug, name, scientific_name, threat_level, pic_url, tip, translations, is_active, sort_order, leaf, flower, fruit_seed, form",
+        "id, slug, name, scientific_name, threat_level, pic_url, tip, translations, is_active, sort_order, leaf, flower, reproductive_structure, form",
       )
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
