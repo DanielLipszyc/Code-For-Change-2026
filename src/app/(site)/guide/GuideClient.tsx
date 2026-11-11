@@ -121,7 +121,12 @@ function PlantFeatureDetails({ plant }: { plant: Plant }) {
                 {groupItems.map((item) => (
                   <div key={`${key}-${item.label}`} className="text-sm text-slate-700">
                     <dt className="inline font-semibold text-slate-900">{t(item.label)}: </dt>
-                    <dd className="inline">{item.value.split(", ").map((value) => t(value)).join(", ")}</dd>
+                    <dd className="inline">
+                      {item.value
+                        .split(", ")
+                        .map((value) => t(value))
+                        .join(", ")}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -373,28 +378,6 @@ function InfoModal({
             <PlantFeatureDetails plant={plant} />
 
             <div className="mt-5 grid gap-3">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {t("Why it matters")}
-                </p>
-                <p className="mt-1 text-sm text-slate-700">
-                  {t(
-                    "Invasive plants can spread quickly, outcompete native species, and impact local ecosystems. Reporting helps prioritize removals and protect habitats.",
-                  )}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {t("What to do if you find it")}
-                </p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                  <li>{t("Take a clear photo (leaves + stem/flowers/fruit if possible).")}</li>
-                  <li>{t("Note the location (trail name, nearest landmark, or address).")}</li>
-                  <li>{t("Avoid spreading seeds/fragments on shoes or tools.")}</li>
-                </ul>
-              </div>
-
               <div className="flex flex-wrap gap-2 pt-1">
                 <Link
                   href={`/submit?plant=${encodeURIComponent(plant.name)}`}
@@ -584,7 +567,9 @@ export default function GuideClient({ plants }: { plants: Plant[] }) {
 
           {filtered.length === 0 && (
             <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-700">
-              {t("No plants match these criteria. Try removing a feature filter or changing your search.")}
+              {t(
+                "No plants match these criteria. Try removing a feature filter or changing your search.",
+              )}
             </div>
           )}
         </div>
