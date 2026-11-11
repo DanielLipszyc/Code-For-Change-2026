@@ -17,7 +17,7 @@ export interface PlantFeatures {
     notes?: string;
   };
 
-  fruit_seed: {
+  reproductive_structure: {
     type?: string[];
     color?: string[];
     shape?: string[];
