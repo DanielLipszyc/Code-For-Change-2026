@@ -310,7 +310,6 @@ function InfoModal({
   lang: UiLanguage;
 }) {
   const { t } = useLanguage();
-  const [src, setSrc] = useState(plant.picUrl ?? FALLBACK_IMG);
   const { name, tip } = localizePlant(plant, lang);
 
   useEffect(() => {
@@ -349,15 +348,7 @@ function InfoModal({
 
         <div className="min-h-0 overflow-y-auto overscroll-contain sm:grid sm:grid-cols-2">
           <div className="relative bg-slate-100 sm:self-start">
-            <div className="relative aspect-[16/11]">
-              {/* eslint-disable-next-line @next/next/no-img-element -- plant photos come from many outside sites */}
-              <img
-                src={src}
-                alt={name}
-                className="h-full w-full object-cover"
-                onError={() => setSrc(FALLBACK_IMG)}
-              />
-            </div>
+            <PlantImageCarousel images={plant.images} name={name} thumbnail={plant.picUrl} />
 
             <div className="absolute left-4 top-4">
               <span
