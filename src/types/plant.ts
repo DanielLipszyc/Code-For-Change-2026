@@ -1,6 +1,7 @@
+import type { PlantFeatures } from "./plant-features";
 export type ThreatLevel = "Low" | "Moderate" | "Significant";
 
-export interface Plant {
+export interface Plant extends PlantFeatures {
   id: string;
   slug: string;
   name: string;

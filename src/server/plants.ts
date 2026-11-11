@@ -60,6 +60,37 @@ function toPlant(row: PlantRow): Plant {
     tip: row.tip,
     es: translatedText(row.translations, "es"),
     pt: translatedText(row.translations, "pt"),
+    leaf: {
+      shape: undefined,
+      margin: undefined,
+      arrangement: undefined,
+      venation: undefined,
+      texture: undefined,
+      notes: undefined,
+    },
+    flower: {
+      color: undefined,
+      shape: undefined,
+      petal_count: undefined,
+      inflorescence: undefined,
+      season: undefined,
+      notes: undefined,
+    },
+    fruit_seed: {
+      type: undefined,
+      color: undefined,
+      shape: undefined,
+      surface: undefined,
+      dispersal: undefined,
+      notes: undefined,
+    },
+    form: {
+      growth_habit: undefined,
+      height_m: undefined,
+      stem_type: undefined,
+      habitat: undefined,
+      notes: undefined,
+    },
   };
 }
 

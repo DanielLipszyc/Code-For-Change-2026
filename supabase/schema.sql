@@ -36,6 +36,31 @@ create index if not exists plants_active_sort_idx
 create index if not exists plants_scientific_name_idx
   on public.plants (scientific_name);
 
+-- Added new columns for plant identification by feature
+
+ALTER TABLE public.plants
+ADD COLUMN IF NOT EXISTS leaf jsonb
+  NOT NULL DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS flower jsonb
+  NOT NULL DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS reproductive_structure jsonb
+  NOT NULL DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS form jsonb
+  NOT NULL DEFAULT '{}'::jsonb;
+
+-- Added GIN indexes for the new jsonb columns to improve search performance
+CREATE INDEX plants_leaf_gin_idx
+ON public.plants USING gin (leaf);
+
+CREATE INDEX plants_flower_gin_idx
+ON public.plants USING gin (flower);
+
+CREATE INDEX plants_reproductive_structure_gin_idx
+ON public.plants USING gin (reproductive_structure);
+
+CREATE INDEX plants_form_gin_idx
+ON public.plants USING gin (form);
+
 -- Automatically refresh updated_at whenever a plant record changes.
 create or replace function public.set_updated_at()
 returns trigger
