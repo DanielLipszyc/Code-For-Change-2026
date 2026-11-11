@@ -21,6 +21,7 @@ interface PlantRow {
   form: unknown;
   is_active: boolean;
   sort_order: number;
+  images: unknown;
 }
 
 const PLANTS_TAG = "plants";
@@ -120,8 +121,27 @@ function toPlant(row: PlantRow): Plant {
     pt: translatedText(row.translations, "pt"),
     leaf: parseFeature("leaf", row.leaf, row.name),
     flower: parseFeature("flower", row.flower, row.name),
-    reproductive_structure: parseFeature("reproductive_structure", row.reproductive_structure, row.name),
+    reproductive_structure: parseFeature(
+      "reproductive_structure",
+      row.reproductive_structure,
+      row.name,
+    ),
     form: parseFeature("form", row.form, row.name),
+    images: Array.isArray(row.images)
+      ? row.images.map((img) => {
+          if (typeof img !== "object" || img === null) {
+            throw new Error(`Plant "${row.name}" has an invalid image entry.`);
+          }
+          const { url, caption } = img as Record<string, unknown>;
+          if (typeof url !== "string") {
+            throw new Error(`Plant "${row.name}" has an image with a missing or invalid URL.`);
+          }
+          if (caption !== undefined && typeof caption !== "string") {
+            throw new Error(`Plant "${row.name}" has an image with an invalid caption.`);
+          }
+          return { url, caption };
+        })
+      : [],
   };
 }
 
@@ -133,7 +153,7 @@ const readPlants = unstable_cache(
     const { data, error } = await supabase
       .from("plants")
       .select(
-        "id, slug, name, scientific_name, threat_level, pic_url, tip, translations, is_active, sort_order, leaf, flower, reproductive_structure, form",
+        "id, slug, name, scientific_name, threat_level, pic_url, tip, translations, is_active, sort_order, leaf, flower, reproductive_structure, form, images",
       )
       .eq("is_active", true)
       .order("sort_order", { ascending: true })

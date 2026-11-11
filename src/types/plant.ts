@@ -11,11 +11,17 @@ export interface Plant extends PlantFeatures {
   tip: string;
   es: { name: string; tip: string };
   pt: { name: string; tip: string };
+  images: PlantImage[];
 }
 
 export interface PlantSelection {
   plantName: string;
   scientificName: string | null;
+}
+
+export interface PlantImage {
+  url: string;
+  caption?: string;
 }
 
 export function localizePlant(
