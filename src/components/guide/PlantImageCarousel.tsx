@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { PlantImage } from "@/types/plant";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Props {
   images: PlantImage[];
@@ -24,6 +25,7 @@ function usableUrl(url: unknown): url is string {
 }
 
 export default function PlantImageCarousel({ images, name, thumbnail }: Props) {
+  const { t } = useLanguage();
   const validImages = images.filter((image) => usableUrl(image.url));
   // Use the original thumbnail when no additional photos have been recorded.
   const slides = validImages.length
@@ -57,19 +59,19 @@ export default function PlantImageCarousel({ images, name, thumbnail }: Props) {
         />
         {slides.length > 1 && (
           <>
-            <button type="button" onClick={() => go(-1)} aria-label="Previous photo"
+            <button type="button" onClick={() => go(-1)} aria-label={t("Previous photo")}
               className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 shadow">
               &#10094;
             </button>
-            <button type="button" onClick={() => go(1)} aria-label="Next photo"
+            <button type="button" onClick={() => go(1)} aria-label={t("Next photo")}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 shadow">
               &#10095;
             </button>
           </>
         )}
       </div>
-      {current?.caption && <p className="text-center text-sm text-slate-600">{current.caption}</p>}
-      {slides.length > 1 && <p className="text-center text-xs text-slate-500">{index + 1} / {slides.length}</p>}
+      {current?.caption && <p className="text-center text-sm text-slate-600">{t(current.caption)}</p>}
+      {slides.length > 1 && <p className="text-center text-xs text-slate-500">{t("Photo {current} of {total}", { current: index + 1, total: slides.length })}</p>}
     </div>
   );
 }
