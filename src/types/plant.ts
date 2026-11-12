@@ -1,6 +1,7 @@
+import type { PlantFeatures } from "./plant-features";
 export type ThreatLevel = "Low" | "Moderate" | "Significant";
 
-export interface Plant {
+export interface Plant extends PlantFeatures {
   id: string;
   slug: string;
   name: string;
@@ -10,11 +11,17 @@ export interface Plant {
   tip: string;
   es: { name: string; tip: string };
   pt: { name: string; tip: string };
+  images: PlantImage[];
 }
 
 export interface PlantSelection {
   plantName: string;
   scientificName: string | null;
+}
+
+export interface PlantImage {
+  url: string;
+  caption?: string;
 }
 
 export function localizePlant(

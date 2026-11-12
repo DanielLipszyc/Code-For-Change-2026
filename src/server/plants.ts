@@ -1,4 +1,6 @@
 import "server-only";
+import { z } from "zod";
+import type { PlantFeatures } from "@/types/plant-features";
 import { revalidateTag, unstable_cache } from "next/cache";
 import type { Plant, PlantSelection, ThreatLevel } from "@/types/plant";
 import { UNKNOWN_PLANT } from "@/lib/limits";
@@ -13,8 +15,13 @@ interface PlantRow {
   pic_url: string | null;
   tip: string;
   translations: unknown;
+  leaf: unknown;
+  flower: unknown;
+  reproductive_structure: unknown;
+  form: unknown;
   is_active: boolean;
   sort_order: number;
+  images: unknown;
 }
 
 const PLANTS_TAG = "plants";
@@ -45,6 +52,58 @@ function translatedText(
   return { name: translated.name, tip: translated.tip };
 }
 
+const stringList = z.array(z.string());
+const notes = z.string().optional();
+
+const featureSchemas = {
+  leaf: z.object({
+    shape: stringList.optional(),
+    margin: stringList.optional(),
+    arrangement: stringList.optional(),
+    venation: stringList.optional(),
+    texture: stringList.optional(),
+    notes,
+  }),
+  flower: z.object({
+    color: stringList.optional(),
+    shape: stringList.optional(),
+    petal_count: z.number().optional(),
+    inflorescence: stringList.optional(),
+    season: stringList.optional(),
+    notes,
+  }),
+  reproductive_structure: z.object({
+    type: stringList.optional(),
+    color: stringList.optional(),
+    shape: stringList.optional(),
+    surface: stringList.optional(),
+    dispersal: stringList.optional(),
+    notes,
+  }),
+  form: z.object({
+    growth_habit: stringList.optional(),
+    height_m: z.number().optional(),
+    stem_type: stringList.optional(),
+    habitat: stringList.optional(),
+    notes,
+  }),
+} satisfies { [K in keyof PlantFeatures]: z.ZodType<PlantFeatures[K]> };
+
+function parseFeature<K extends keyof PlantFeatures>(
+  group: K,
+  value: unknown,
+  plantName: string,
+): PlantFeatures[K] {
+  // An unpopulated JSONB column is not a negative identification.
+  const result = featureSchemas[group].safeParse(value ?? {});
+  if (!result.success) {
+    throw new Error(
+      `Plant "${plantName}" has invalid ${group} feature data: ${result.error.message}`,
+    );
+  }
+  return result.data;
+}
+
 function toPlant(row: PlantRow): Plant {
   if (!["Low", "Moderate", "Significant"].includes(row.threat_level)) {
     throw new Error(`Plant "${row.name}" has an invalid threat level.`);
@@ -60,6 +119,29 @@ function toPlant(row: PlantRow): Plant {
     tip: row.tip,
     es: translatedText(row.translations, "es"),
     pt: translatedText(row.translations, "pt"),
+    leaf: parseFeature("leaf", row.leaf, row.name),
+    flower: parseFeature("flower", row.flower, row.name),
+    reproductive_structure: parseFeature(
+      "reproductive_structure",
+      row.reproductive_structure,
+      row.name,
+    ),
+    form: parseFeature("form", row.form, row.name),
+    // A malformed gallery entry must not prevent the entire guide from loading.
+    images: Array.isArray(row.images)
+      ? row.images.flatMap((img) => {
+          if (!img || typeof img !== "object" || Array.isArray(img)) return [];
+          const { url, caption } = img as Record<string, unknown>;
+          if (typeof url !== "string") return [];
+          try {
+            const parsed = new URL(url);
+            if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return [];
+          } catch {
+            return [];
+          }
+          return [{ url, ...(typeof caption === "string" ? { caption } : {}) }];
+        })
+      : [],
   };
 }
 
@@ -71,7 +153,7 @@ const readPlants = unstable_cache(
     const { data, error } = await supabase
       .from("plants")
       .select(
-        "id, slug, name, scientific_name, threat_level, pic_url, tip, translations, is_active, sort_order",
+        "id, slug, name, scientific_name, threat_level, pic_url, tip, translations, is_active, sort_order, leaf, flower, reproductive_structure, form, images",
       )
       .eq("is_active", true)
       .order("sort_order", { ascending: true })

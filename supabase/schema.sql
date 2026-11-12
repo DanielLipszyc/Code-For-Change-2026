@@ -36,6 +36,37 @@ create index if not exists plants_active_sort_idx
 create index if not exists plants_scientific_name_idx
   on public.plants (scientific_name);
 
+-- Added new columns for plant identification by feature
+
+ALTER TABLE public.plants
+ADD COLUMN IF NOT EXISTS leaf jsonb
+  NOT NULL DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS flower jsonb
+  NOT NULL DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS reproductive_structure jsonb
+  NOT NULL DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS form jsonb
+  NOT NULL DEFAULT '{}'::jsonb;
+
+-- Added GIN indexes for the new jsonb columns to improve search performance
+CREATE INDEX IF NOT EXISTS plants_leaf_gin_idx
+ON public.plants USING gin (leaf);
+
+CREATE INDEX IF NOT EXISTS  plants_flower_gin_idx
+ON public.plants USING gin (flower);
+
+CREATE INDEX IF NOT EXISTS plants_reproductive_structure_gin_idx
+ON public.plants USING gin (reproductive_structure);
+
+CREATE INDEX IF NOT EXISTS plants_form_gin_idx
+ON public.plants USING gin (form);
+
+
+-- Adds new images column to store multiple images for each plant
+ALTER TABLE public.plants
+ADD COLUMN IF NOT EXISTS images jsonb
+NOT NULL DEFAULT '[]'::jsonb;
+
 -- Automatically refresh updated_at whenever a plant record changes.
 create or replace function public.set_updated_at()
 returns trigger
@@ -183,3 +214,76 @@ alter table public.plants enable row level security;
 alter table public.submissions enable row level security;
 alter table public.follows     enable row level security;
 alter table public.rate_limits enable row level security;
+-- ---------------------------------------------------------------------------
+-- Species proposals: suggestions stay private until reviewed by a Clerk admin.
+-- ---------------------------------------------------------------------------
+create table if not exists public.species_proposals (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  scientific_name text not null,
+  description text not null,
+  image_url text,
+  submitted_by text not null,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  submitted_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  reviewed_by text,
+  reviewed_at timestamptz,
+  plant_id uuid references public.plants(id)
+);
+create index if not exists species_proposals_status_created_idx
+  on public.species_proposals (status, created_at);
+alter table public.species_proposals enable row level security;
+
+-- This transaction is callable only with the server's Supabase service role.
+-- Clerk admin permission is checked in the API before calling it.
+create or replace function public.approve_species_proposal(
+  p_proposal_id uuid, p_reviewer text, p_threat_level text
+) returns uuid
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_proposal public.species_proposals%rowtype;
+  v_plant_id uuid;
+  v_slug text;
+begin
+  if p_threat_level not in ('Low', 'Moderate', 'Significant') then
+    raise exception 'Invalid threat level';
+  end if;
+  select * into v_proposal from public.species_proposals
+    where id = p_proposal_id and status = 'pending' for update;
+  if not found then raise exception 'Proposal not pending' using errcode = 'P0002'; end if;
+  if exists (
+    select 1 from public.plants
+    where lower(name) = lower(v_proposal.name)
+       or lower(scientific_name) = lower(v_proposal.scientific_name)
+  ) then
+    raise exception 'Species already exists' using errcode = '23505';
+  end if;
+  v_slug := trim(both '-' from regexp_replace(lower(v_proposal.scientific_name), '[^a-z0-9]+', '-', 'g'));
+  if v_slug = '' then v_slug := replace(p_proposal_id::text, '-', ''); end if;
+  insert into public.plants (
+    slug, name, scientific_name, threat_level, pic_url, tip,
+    translations, leaf, flower, reproductive_structure, form, images, is_active
+  ) values (
+    v_slug || '-' || left(p_proposal_id::text, 8),
+    v_proposal.name, v_proposal.scientific_name, p_threat_level,
+    v_proposal.image_url, v_proposal.description,
+    jsonb_build_object(
+      'es', jsonb_build_object('name', v_proposal.name, 'tip', v_proposal.description),
+      'pt', jsonb_build_object('name', v_proposal.name, 'tip', v_proposal.description)
+    ),
+    '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb,
+    case when v_proposal.image_url is null then '[]'::jsonb
+      else jsonb_build_array(jsonb_build_object('url', v_proposal.image_url)) end,
+    true
+  ) returning id into v_plant_id;
+  update public.species_proposals
+    set status = 'approved', reviewed_by = p_reviewer,
+        reviewed_at = now(), plant_id = v_plant_id
+    where id = p_proposal_id;
+  return v_plant_id;
+end;
+$$;
+revoke all on function public.approve_species_proposal(uuid, text, text) from public, anon, authenticated;
+grant execute on function public.approve_species_proposal(uuid, text, text) to service_role;
