@@ -540,8 +540,8 @@ export default function GuideClient({ plants }: { plants: Plant[] }) {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-4 text-sm font-semibold">
-          <Link href="/guide/suggest" className="text-emerald-700 underline hover:text-emerald-900">Suggest a missing species</Link>
-          <Link href="/guide/species-review" className="text-slate-600 underline hover:text-slate-900">Review species proposals (admin)</Link>
+          <Link href="/guide/suggest" className="text-emerald-700 underline hover:text-emerald-900">{t("Suggest a missing species")}</Link>
+          <Link href="/guide/species-review" className="text-slate-600 underline hover:text-slate-900">{t("Review species proposals (admin)")}</Link>
         </div>
 
         <FeatureLookup
