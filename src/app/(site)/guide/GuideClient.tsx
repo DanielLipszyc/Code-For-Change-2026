@@ -154,7 +154,6 @@ const LOOKUP_FIELDS = [
   { group: "reproductive_structure", key: "color", label: "Reproductive structure color" },
   { group: "reproductive_structure", key: "shape", label: "Reproductive structure shape" },
   { group: "reproductive_structure", key: "surface", label: "Reproductive structure surface" },
-  { group: "reproductive_structure", key: "dispersal", label: "Dispersal method" },
   { group: "form", key: "growth_habit", label: "Growth habit" },
   { group: "form", key: "stem_type", label: "Stem type" },
   { group: "form", key: "habitat", label: "Habitat" },
