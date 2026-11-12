@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { PlantImage } from "@/types/plant";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -26,52 +26,56 @@ function usableUrl(url: unknown): url is string {
 
 export default function PlantImageCarousel({ images, name, thumbnail }: Props) {
   const { t } = useLanguage();
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
   const validImages = images.filter((image) => usableUrl(image.url));
-  // Use the original thumbnail when no additional photos have been recorded.
   const slides = validImages.length
     ? validImages
     : usableUrl(thumbnail)
       ? [{ url: thumbnail, caption: "" }]
       : [];
-  const [index, setIndex] = useState(0);
-  const [failedUrls, setFailedUrls] = useState<string[]>([]);
-  useEffect(() => {
-    setIndex(0);
-    setFailedUrls([]);
-  }, [images, thumbnail]);
-
-  const current = slides[index % Math.max(slides.length, 1)];
-  const src = current && !failedUrls.includes(current.url) ? current.url : usableUrl(thumbnail) && !failedUrls.includes(thumbnail) ? thumbnail : FALLBACK_IMG;
-  const go = (delta: number) => setIndex((i) => (i + delta + slides.length) % slides.length);
+  const photos = slides.length ? slides : [{ url: FALLBACK_IMG, caption: "" }];
+  const count = photos.length;
+  const columns = count === 1 ? 1 : 2;
+  const rows = Math.ceil(count / columns);
 
   return (
-    <div className="flex h-full min-h-[320px] flex-col gap-3">
-      <div className="relative min-h-[280px] flex-1 overflow-hidden rounded-xl bg-slate-100">
-        {/* eslint-disable-next-line @next/next/no-img-element -- external plant reference images */}
-        <img
-          key={src}
-          src={src}
-          alt={current?.caption || name}
-          className="absolute inset-0 h-full w-full object-cover"
-          onError={() => {
-            if (src !== FALLBACK_IMG) setFailedUrls((previous) => previous.includes(src) ? previous : [...previous, src]);
-          }}
-        />
-        {slides.length > 1 && (
-          <>
-            <button type="button" onClick={() => go(-1)} aria-label={t("Previous photo")}
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 shadow">
-              &#10094;
-            </button>
-            <button type="button" onClick={() => go(1)} aria-label={t("Next photo")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 shadow">
-              &#10095;
-            </button>
-          </>
-        )}
-      </div>
-      {current?.caption && <p className="text-center text-sm text-slate-600">{t(current.caption)}</p>}
-      {slides.length > 1 && <p className="text-center text-xs text-slate-500">{t("Photo {current} of {total}", { current: index + 1, total: slides.length })}</p>}
+    <div
+      className="grid h-full min-h-[320px] gap-1 overflow-hidden rounded-xl bg-slate-100 sm:min-h-[420px]"
+      style={{
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${rows}, minmax(140px, 1fr))`,
+      }}
+    >
+      {photos.map((photo, index) => {
+        const src = failedUrls.includes(photo.url)
+          ? usableUrl(thumbnail) && !failedUrls.includes(thumbnail)
+            ? thumbnail
+            : FALLBACK_IMG
+          : photo.url;
+
+        return (
+          <div key={`${photo.url}-${index}`} className="relative min-h-0 overflow-hidden bg-slate-200">
+            {/* eslint-disable-next-line @next/next/no-img-element -- external plant reference images */}
+            <img
+              src={src}
+              alt={photo.caption ? t(photo.caption) : `${name} — ${index + 1}`}
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={() => {
+                if (src !== FALLBACK_IMG) {
+                  setFailedUrls((previous) =>
+                    previous.includes(src) ? previous : [...previous, src],
+                  );
+                }
+              }}
+            />
+            {photo.caption && (
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pb-2 pt-7 text-xs text-white">
+                {t(photo.caption)}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
