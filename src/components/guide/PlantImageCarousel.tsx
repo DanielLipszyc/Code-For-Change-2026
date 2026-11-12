@@ -45,14 +45,14 @@ export default function PlantImageCarousel({ images, name, thumbnail }: Props) {
   const go = (delta: number) => setIndex((i) => (i + delta + slides.length) % slides.length);
 
   return (
-    <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-xl bg-slate-100">
+    <div className="flex h-full min-h-[320px] flex-col gap-3">
+      <div className="relative min-h-[280px] flex-1 overflow-hidden rounded-xl bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element -- external plant reference images */}
         <img
           key={src}
           src={src}
           alt={current?.caption || name}
-          className="aspect-[16/10] w-full object-contain"
+          className="absolute inset-0 h-full w-full object-cover"
           onError={() => {
             if (src !== FALLBACK_IMG) setFailedUrls((previous) => previous.includes(src) ? previous : [...previous, src]);
           }}
