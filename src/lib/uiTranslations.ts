@@ -1840,6 +1840,8 @@ export type UiTranslationKey = string;
 
 const supplementalTranslations: Partial<Record<UiLanguage, Record<string, string>>> = {
   es: {
+    "Suggest a missing species": "Sugerir una especie que falta",
+    "Review species proposals (admin)": "Revisar propuestas de especies (administración)",
     "Back to guide": "Volver a la guía",
     "Suggest a new species": "Sugerir una especie nueva",
     "Can't find a plant in the guide? Suggest it for administrative review. Sign-in is required; submissions are not published automatically.": "¿No encuentras una planta en la guía? Sugiere que se incluya para su revisión administrativa. Debes iniciar sesión; las propuestas no se publican automáticamente.",
@@ -1991,6 +1993,8 @@ const supplementalTranslations: Partial<Record<UiLanguage, Record<string, string
     Pickerelweed: "Pontederia",
   },
   pt: {
+    "Suggest a missing species": "Sugerir uma espécie ausente",
+    "Review species proposals (admin)": "Analisar sugestões de espécies (administração)",
     "Back to guide": "Voltar ao guia",
     "Suggest a new species": "Sugerir uma nova espécie",
     "Can't find a plant in the guide? Suggest it for administrative review. Sign-in is required; submissions are not published automatically.": "Não encontrou uma planta no guia? Sugira sua inclusão para análise administrativa. É necessário entrar na conta; as sugestões não são publicadas automaticamente.",
