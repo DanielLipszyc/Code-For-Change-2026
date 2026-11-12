@@ -113,11 +113,12 @@ function PlantFeatureDetails({ plant }: { plant: Plant }) {
           const groupItems = items.filter((item) => item.group === key);
           if (groupItems.length === 0) return null;
           return (
-            <div key={key} className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
-              <h5 className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            <details key={key} className="group rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-emerald-800 [&::-webkit-details-marker]:hidden">
                 {t(label)}
-              </h5>
-              <dl className="mt-2 space-y-1.5">
+                <span aria-hidden="true" className="text-base transition-transform group-open:rotate-180">⌄</span>
+              </summary>
+              <dl className="mt-3 space-y-1.5 border-t border-emerald-100 pt-3">
                 {groupItems.map((item) => (
                   <div key={`${key}-${item.label}`} className="text-sm text-slate-700">
                     <dt className="inline font-semibold text-slate-900">{t(item.label)}: </dt>
@@ -130,7 +131,7 @@ function PlantFeatureDetails({ plant }: { plant: Plant }) {
                   </div>
                 ))}
               </dl>
-            </div>
+            </details>
           );
         })}
       </div>
