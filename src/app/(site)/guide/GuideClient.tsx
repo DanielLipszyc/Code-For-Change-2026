@@ -113,10 +113,18 @@ function PlantFeatureDetails({ plant }: { plant: Plant }) {
           const groupItems = items.filter((item) => item.group === key);
           if (groupItems.length === 0) return null;
           return (
-            <details key={key} className="group rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+            <details
+              key={key}
+              className="group rounded-xl border border-emerald-100 bg-emerald-50/50 p-3"
+            >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-emerald-800 [&::-webkit-details-marker]:hidden">
                 {t(label)}
-                <span aria-hidden="true" className="text-base transition-transform group-open:rotate-180">⌄</span>
+                <span
+                  aria-hidden="true"
+                  className="text-base transition-transform group-open:rotate-180"
+                >
+                  ⌄
+                </span>
               </summary>
               <dl className="mt-3 space-y-1.5 border-t border-emerald-100 pt-3">
                 {groupItems.map((item) => (
@@ -540,8 +548,15 @@ export default function GuideClient({ plants }: { plants: Plant[] }) {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-4 text-sm font-semibold">
-          <Link href="/guide/suggest" className="text-emerald-700 underline hover:text-emerald-900">{t("Suggest a missing species")}</Link>
-          <Link href="/guide/species-review" className="text-slate-600 underline hover:text-slate-900">{t("Review species proposals (admin)")}</Link>
+          <Link href="/guide/suggest" className="text-emerald-700 underline hover:text-emerald-900">
+            {t("Suggest a missing species")}
+          </Link>
+          <Link
+            href="/guide/species-review"
+            className="text-slate-600 underline hover:text-slate-900"
+          >
+            {t("Review species proposals (admin)")}
+          </Link>
         </div>
 
         <FeatureLookup
