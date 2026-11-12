@@ -354,7 +354,7 @@ function InfoModal({
         </div>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain sm:grid sm:grid-cols-2">
-          <div className="relative bg-slate-100 sm:self-start">
+          <div className="relative min-h-[320px] bg-slate-100 sm:min-h-[420px] sm:self-stretch">
             <PlantImageCarousel images={plant.images} name={name} thumbnail={plant.picUrl} />
 
             <div className="absolute left-4 top-4">
