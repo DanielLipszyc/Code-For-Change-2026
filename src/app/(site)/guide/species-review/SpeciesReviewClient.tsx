@@ -33,7 +33,7 @@ export default function SpeciesReviewClient() {
     finally { setBusy(null); }
   }
   return <main className="mx-auto max-w-3xl px-4 py-10">
-    <Link href="../" className="text-sm font-semibold text-emerald-700">← Back to guide</Link>
+    <Link href="/guide" className="text-sm font-semibold text-emerald-700">← Back to guide</Link>
     <h1 className="mt-5 text-3xl font-bold text-slate-900">Review proposed species</h1>
     <p className="mt-2 text-slate-600">Verify the identification and invasive status before approving. Approval publishes the species to the guide.</p>
     {message && <p role="status" className="mt-4 text-sm text-slate-700">{message}</p>}
