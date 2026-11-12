@@ -2100,7 +2100,6 @@ const supplementalTranslations: Partial<Record<UiLanguage, Record<string, string
     "Still no connection. It will be sent later.": "Ainda sem conexão. Será enviado mais tarde.",
     "Submit Plant": "Enviar planta",
     "Submitted:": "Enviado:",
-    "Submitting…": "Enviando…",
     "Tap to take or choose a photo": "Toque para tirar ou escolher uma foto",
     "Tap where you saw the plant. The map needs a connection to show streets; the pin works either way.":
       "Toque no local onde você viu a planta. O mapa precisa de conexão para mostrar as ruas; o marcador funciona de qualquer forma.",
