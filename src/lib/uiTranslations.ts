@@ -1850,7 +1850,7 @@ const supplementalTranslations: Partial<Record<UiLanguage, Record<string, string
     "Identification details and reason for inclusion": "Características de identificación y motivo para incluirla",
     "Describe leaves, flowers, fruit, growth habit, and where you observed it.": "Describe las hojas, flores, frutos, hábito de crecimiento y dónde la observaste.",
     "Reference image URL (optional)": "URL de imagen de referencia (opcional)",
-    "Submitting…": "Enviando…",
+
     "Submit for review": "Enviar para revisión",
     "Species suggested! An administrator will review it before it appears in the guide.": "¡Especie propuesta! Un administrador la revisará antes de que aparezca en la guía.",
     "Unable to submit": "No se pudo enviar",
@@ -1947,7 +1947,7 @@ const supplementalTranslations: Partial<Record<UiLanguage, Record<string, string
       "Sigue sin haber conexión. Se enviará más tarde.",
     "Submit Plant": "Enviar planta",
     "Submitted:": "Enviado:",
-    "Submitting…": "Enviando…",
+
     "Tap to take or choose a photo": "Toca para tomar o elegir una foto",
     "Tap where you saw the plant. The map needs a connection to show streets; the pin works either way.":
       "Toca el lugar donde viste la planta. El mapa necesita conexión para mostrar las calles; el marcador funciona de cualquier manera.",
