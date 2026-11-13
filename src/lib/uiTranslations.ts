@@ -175,6 +175,9 @@ const uiTranslations = {
     "🌿 Submit Plant": "🌿 Submit Plant",
     "photo attached": "photo attached",
     "Select Plant Species *": "Select Plant Species *",
+    "Use AI plant identification": "Use AI plant identification",
+    "Turn this off to submit photos without sending them for AI analysis.":
+      "Turn this off to submit photos without sending them for AI analysis.",
     "Select a plant...": "Select a plant...",
     "Unknown Plant": "Unknown Plant",
     "Add any observations or additional details...":
@@ -993,6 +996,9 @@ const uiTranslations = {
     "photo attached": "foto adjunta",
     "Sent for review!": "Enviado para revisión",
     "Select Plant Species *": "Selecciona la especie de planta *",
+    "Use AI plant identification": "Usar identificación de plantas con IA",
+    "Turn this off to submit photos without sending them for AI analysis.":
+      "Desactívalo para enviar fotos sin someterlas a análisis de IA.",
     "Page not found": "Página no encontrada",
     "Error loading submissions": "Error al cargar los envíos",
     "Get started": "Comenzar",
@@ -1608,6 +1614,9 @@ const uiTranslations = {
     "photo attached": "foto anexada",
     "Sent for review!": "Enviado para análise!",
     "Select Plant Species *": "Selecione a espécie da planta *",
+    "Use AI plant identification": "Usar identificação de plantas por IA",
+    "Turn this off to submit photos without sending them for AI analysis.":
+      "Desative para enviar fotos sem encaminhá-las para análise por IA.",
     "Page not found": "Página não encontrada",
     "Error loading submissions": "Erro ao carregar envios",
     "Get started": "Começar",
