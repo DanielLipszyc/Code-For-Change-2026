@@ -7,6 +7,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { downloadCsv } from "@/lib/csv";
+import type { ThreatLevel } from "@/types/plant";
 import type { MapPoint, Submission } from "@/types/submission";
 import Filters from "./Filters";
 import { NO_FILTERS, applyFilters, type MapFilters } from "./mapFilters";
@@ -39,6 +40,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 interface MapExplorerProps {
   /** Every approved sighting, built into the page on the server */
   approvedPoints: MapPoint[];
+  threatByPlant: Record<string, ThreatLevel>;
 }
 
 /**
@@ -51,7 +53,7 @@ interface MapExplorerProps {
  * when it's opened. The server checks every change again; the role here only
  * decides which buttons to show.
  */
-export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
+export default function MapExplorer({ approvedPoints, threatByPlant }: MapExplorerProps) {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
@@ -251,6 +253,7 @@ export default function MapExplorer({ approvedPoints }: MapExplorerProps) {
         <div hidden={view !== "map"}>
           <MapView
             points={displayed}
+            threatByPlant={threatByPlant}
             highlightPending={isAdmin}
             userLocation={userLocation}
             visible={view === "map"}

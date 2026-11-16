@@ -8,7 +8,7 @@ async function approvedSightings(page: Page): Promise<{ id: string; plantName: s
 }
 
 /** Sighting markers (the county outline isn't interactive, so it isn't counted) */
-const markers = (page: Page) => page.getByTestId("map").locator("path.leaflet-interactive");
+const markers = (page: Page) => page.getByTestId("map").locator("path.sighting-pin");
 
 /** The zoom level of the map tiles currently shown */
 async function tileZoom(page: Page): Promise<string> {
@@ -33,6 +33,24 @@ test("draws every approved sighting from the page itself, without waiting for lo
   await expect(page.getByText(`(${approved.length} shown)`)).toBeVisible();
   await expect(page.getByTestId("map").locator(".leaflet-tile-loaded").first()).toBeVisible();
   expect(apiCalls).toEqual([]);
+});
+
+test("colors sighting pins by threat level", async ({ page }) => {
+  const colors = {
+    Low: "#16a34a",
+    Moderate: "#f59e0b",
+    Significant: "#dc2626",
+    unknown: "#6b7280",
+  };
+  await page.goto("/map");
+  await expect(markers(page).first()).toBeVisible();
+
+  const count = await markers(page).count();
+  for (let index = 0; index < count; index += 1) {
+    const marker = markers(page).nth(index);
+    const threatLevel = (await marker.getAttribute("data-threat-level")) as keyof typeof colors;
+    await expect(marker).toHaveAttribute("fill", colors[threatLevel]);
+  }
 });
 
 // Tagged @perf: runs alone with npm run test:perf, since parallel tests slow
