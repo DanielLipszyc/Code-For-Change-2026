@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { photoUrl } from "@/lib/photos";
 import { CLERK_USER_ID } from "@/lib/schemas";
 import type { CreateSubmissionInput, UpdateSubmissionInput } from "@/lib/schemas";
@@ -42,15 +42,8 @@ interface SubmissionRow {
 const COLUMNS =
   "id, plant_name, scientific_name, lat, lng, location_accuracy_m, timestamp_ms, notes, has_photo, user_id, created_by, created_at, updated_at, status, approved_at";
 
-/**
- * Cache tag for data read from the submissions table. Every write below
- * clears it, so cached lists (and the pages built from them, like /map) are
- * rebuilt on their next request.
- */
-const SUBMISSIONS_TAG = "submissions";
-
 function submissionsChanged() {
-  revalidateTag(SUBMISSIONS_TAG);
+  revalidatePath("/map");
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -136,37 +129,29 @@ interface MapPointRow {
   status: SubmissionStatus;
 }
 
-/**
- * Every approved sighting, with only what the map draws. The same for every
- * visitor, so it's cached until a submission changes and /map can be built
- * once and served to everyone.
- */
-export const listPublicMapPoints = unstable_cache(
-  async (): Promise<MapPoint[]> => {
-    // CI builds the app without a database (see .github/workflows/ci.yml)
-    if (process.env.BUILD_WITHOUT_DATABASE === "1") return [];
+/** Every approved sighting, with only what the map draws. */
+export async function listPublicMapPoints(): Promise<MapPoint[]> {
+  // CI builds the app without a database (see .github/workflows/ci.yml)
+  if (process.env.BUILD_WITHOUT_DATABASE === "1") return [];
 
-    const { data, error } = await supabase
-      .from("submissions")
-      .select("id, plant_name, scientific_name, lat, lng, timestamp_ms, status, has_photo")
-      .eq("status", "approved")
-      .order("timestamp_ms", { ascending: false });
-    if (error) throw error;
+  const { data, error } = await supabase
+    .from("submissions")
+    .select("id, plant_name, scientific_name, lat, lng, timestamp_ms, status, has_photo")
+    .eq("status", "approved")
+    .order("timestamp_ms", { ascending: false });
+  if (error) throw error;
 
-    return (data as MapPointRow[]).map((row) => ({
-      id: row.id,
-      plantName: row.plant_name,
-      scientificName: row.scientific_name,
-      lat: row.lat,
-      lng: row.lng,
-      timestamp: Number(row.timestamp_ms),
-      status: row.status,
-      hasPhoto: row.has_photo,
-    }));
-  },
-  ["public-map-points"],
-  { tags: [SUBMISSIONS_TAG] },
-);
+  return (data as MapPointRow[]).map((row) => ({
+    id: row.id,
+    plantName: row.plant_name,
+    scientificName: row.scientific_name,
+    lat: row.lat,
+    lng: row.lng,
+    timestamp: Number(row.timestamp_ms),
+    status: row.status,
+    hasPhoto: row.has_photo,
+  }));
+}
 
 /** One submission, or null if it doesn't exist or the viewer can't see it */
 export async function getSubmission(id: string, viewer: Viewer): Promise<Submission | null> {
