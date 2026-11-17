@@ -97,12 +97,18 @@ export default function SubmitClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: await compressImage(image, 512, 0.5) }),
       });
-      if (!response.ok) return;
+      if (!response.ok) {
+        console.error("Plant identification request failed", {
+          status: response.status,
+          body: await response.text(),
+        });
+        return;
+      }
       const result: PlantIdResult = await response.json();
       if (!useAiIdentificationRef.current) return;
       setPlantId(result);
       // Pre-select the AI's match only if the user hasn't chosen a species yet
-      if (result.isKnownPlant) {
+      if (result.status === "identified" && result.isKnownPlant) {
         setPlantName((current) => (current && current !== "Unknown" ? current : result.prediction));
       }
     } catch (error) {

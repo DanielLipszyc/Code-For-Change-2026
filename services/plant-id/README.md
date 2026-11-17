@@ -11,11 +11,22 @@ only for signed-in users, with a rate limit.
 
 `app.py` loads the model once per container and precomputes a text embedding
 for each species in `species.json`. Each request sends a photo as a base64 data
-URL; the reply is a confidence score for every species, highest first:
+URL; the reply is a softmax score for every species, highest first. These
+scores are relative to the configured species list, not calibrated probabilities:
 
 ```json
 { "scores": [{ "name": "Air Potato", "scientificName": "Dioscorea bulbifera", "confidence": 0.93 }] }
 ```
+
+The Next.js server uses provisional score and top-two-gap cutoffs in
+`src/server/identify/decision.ts` to return a single match, two close candidates,
+or an uncertain result. These defaults provide a fallback UX but are not
+validated accuracy guarantees; tune them with labeled photos when available.
+
+For local troubleshooting, set `PLANT_ID_DEBUG=true` in `.env.local` and restart
+Next.js. The server terminal will show the top five BioCLIP scores and the
+decision thresholds. Failed API requests are also logged in the browser console.
+The photo and Modal credentials are never included in these debug logs.
 
 ## The species list
 

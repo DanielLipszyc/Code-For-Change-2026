@@ -782,6 +782,8 @@ const uiTranslations = {
     "Analyzing image...": "Analizando imagen...",
     "Unable to identify plant. Please select manually below.":
       "No se pudo identificar la planta. Selecciónala manualmente abajo.",
+    "It could be either {first} or {second}. Please compare and select manually below.":
+      "Podría ser {first} o {second}. Compara las opciones y selecciona una manualmente abajo.",
     "-- Select a plant --": "-- Selecciona una planta --",
     "Unknown / Other": "Desconocida / Otra",
     "Describe the habitat, water conditions, nearby plants...":
@@ -1402,6 +1404,8 @@ const uiTranslations = {
     "Analyzing image...": "Analisando imagem...",
     "Unable to identify plant. Please select manually below.":
       "Não foi possível identificar a planta. Selecione manualmente abaixo.",
+    "It could be either {first} or {second}. Please compare and select manually below.":
+      "Pode ser {first} ou {second}. Compare as opções e selecione uma manualmente abaixo.",
     "-- Select a plant --": "-- Selecione uma planta --",
     "Unknown / Other": "Desconhecida / Outra",
     "Describe the habitat, water conditions, nearby plants...":
