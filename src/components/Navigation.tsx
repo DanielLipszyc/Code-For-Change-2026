@@ -112,12 +112,8 @@ export default function Navigation() {
           <Link href="/" className="flex flex-shrink-0 items-center gap-2">
             <Image src={logo} alt="" width={40} height={40} priority />
             <span className="text-xl font-bold">
-              <span className="brand-wordmark inline-block">
-                Swamp
-              </span>
-              <span className="brand-wordmark ml-1 inline-block">
-                Spotter
-              </span>
+              <span className="brand-wordmark inline-block">Swamp</span>
+              <span className="brand-wordmark ml-1 inline-block">Spotter</span>
             </span>
           </Link>
 
