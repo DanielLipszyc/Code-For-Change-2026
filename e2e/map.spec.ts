@@ -51,6 +51,20 @@ test("colors sighting pins by threat level", async ({ page }) => {
     const threatLevel = (await marker.getAttribute("data-threat-level")) as keyof typeof colors;
     await expect(marker).toHaveAttribute("fill", colors[threatLevel]);
   }
+
+  const centers = page.getByTestId("map").locator("path.sighting-pin-center");
+  await expect(centers).toHaveCount(count);
+  for (let index = 0; index < count; index += 1) {
+    const outline = await markers(page).nth(index).getAttribute("d");
+    expect(outline?.match(/L/g)?.length).toBeGreaterThanOrEqual(32);
+
+    const center = await centers.nth(index).evaluate((path: SVGPathElement) => {
+      const { width, height } = path.getBBox();
+      return { width, height };
+    });
+    expect(center.width).toBeGreaterThanOrEqual(9);
+    expect(center.height).toBeGreaterThanOrEqual(9);
+  }
 });
 
 // Tagged @perf: runs alone with npm run test:perf, since parallel tests slow

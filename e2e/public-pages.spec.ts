@@ -18,6 +18,104 @@ test("home page loads its images through the image optimizer", async ({ page }) 
   }
 });
 
+test("home page uses a muted background video with the forest image as fallback", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const video = page.locator(".hero-background-video");
+  await expect(video).toHaveAttribute("autoplay", "");
+  await expect(video).toHaveAttribute("muted", "");
+  await expect(video).toHaveAttribute("loop", "");
+  await expect(video).toHaveAttribute("playsinline", "");
+  await expect(video).toHaveAttribute("preload", "metadata");
+  await expect(video).toHaveAttribute("poster", "/forest.jpg");
+  await expect(video.locator("source")).toHaveAttribute("src", "/depot-background.mp4");
+  const videoResponse = await page.request.get("/depot-background.mp4", {
+    headers: { Range: "bytes=0-1023" },
+  });
+  expect(videoResponse.status()).toBe(206);
+  const totalBytes = Number(videoResponse.headers()["content-range"]?.split("/").at(-1));
+  expect(Number.isFinite(totalBytes)).toBe(true);
+  expect(totalBytes).toBeLessThanOrEqual(20 * 1024 * 1024);
+});
+
+test("home page stays responsive while the background video is delayed @perf", async ({ page }) => {
+  let releaseVideoResponse = () => {};
+  const videoResponseBlocked = new Promise<void>((resolve) => {
+    releaseVideoResponse = resolve;
+  });
+  let videoRequestStarted = false;
+  let videoRequestFinished = false;
+  await page.route("**/depot-background.mp4", async (route) => {
+    videoRequestStarted = true;
+    await videoResponseBlocked;
+    await route.continue();
+    videoRequestFinished = true;
+  });
+
+  try {
+    const startedAt = Date.now();
+    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 5_000 });
+    await expect(page.getByRole("heading", { name: /Swamp Spotter/ })).toBeVisible({
+      timeout: 2_500,
+    });
+    expect(Date.now() - startedAt).toBeLessThan(2_500);
+    await expect.poll(() => videoRequestStarted).toBe(true);
+
+    await page.getByRole("button", { name: "Next slide" }).click({ timeout: 2_500 });
+    await expect(page.getByText("Capture what you find")).toBeVisible();
+    expect(videoRequestFinished).toBe(false);
+  } finally {
+    releaseVideoResponse();
+    if (videoRequestStarted) {
+      await expect.poll(() => videoRequestFinished).toBe(true);
+    }
+  }
+});
+
+test("home page keeps its background video visible with reduced motion enabled", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  await expect(page.locator(".hero-background-video")).toBeVisible();
+});
+
+test("home slideshow controls change slides and toggle pause", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Spot plants in Alachua County parks")).toBeVisible();
+  const supportsHover = await page.evaluate(() => window.matchMedia("(hover: hover)").matches);
+
+  await page.getByRole("button", { name: "Next slide" }).click();
+  await expect(page.getByText("Capture what you find")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: supportsHover ? "Resume slideshow" : "Pause slideshow" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Go to slide 3" }).click();
+  await expect(page.getByText("Power a community map")).toBeVisible();
+
+  if (!supportsHover) {
+    await page.getByRole("button", { name: "Pause slideshow" }).click();
+    await expect(page.getByRole("button", { name: "Resume slideshow" })).toBeVisible();
+  }
+  await page.getByRole("button", { name: "Resume slideshow" }).click();
+  await expect(page.getByRole("button", { name: "Pause slideshow" })).toBeVisible();
+});
+
+test("home slideshow is compact on a phone viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 384, height: 512 });
+  await page.goto("/");
+
+  const slideshow = await page.getByTestId("home-slideshow").boundingBox();
+  const image = await page.getByTestId("home-slideshow-image").boundingBox();
+  expect(slideshow?.width).toBeLessThanOrEqual(340);
+  expect(slideshow?.height).toBeLessThan(370);
+  expect(image?.height).toBe(190);
+  await expect(page.getByText("Tip: hover to pause the slideshow.")).toBeHidden();
+});
+
 test.describe("guide", () => {
   test("lists every plant and searches them", async ({ page }) => {
     await page.goto("/guide", { waitUntil: "domcontentloaded" });

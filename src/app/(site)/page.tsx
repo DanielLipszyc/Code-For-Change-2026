@@ -63,7 +63,19 @@ export default function Home() {
       {/* HERO + SLIDESHOW */}
       <section className="relative overflow-hidden text-white">
         {/* background blobs */}
-        <div className="pointer-events-none absolute inset-0 parallax">
+        <div className="pointer-events-none absolute inset-0 parallax" aria-hidden="true">
+          <video
+            className="hero-background-video absolute inset-0 h-full w-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster="/forest.jpg"
+            tabIndex={-1}
+          >
+            <source src="/depot-background.mp4" type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-black/30" />
         </div>
 
@@ -76,26 +88,10 @@ export default function Home() {
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              <span
-                className="inline-block"
-                style={{
-                  backgroundImage: "linear-gradient(90deg, #fdba74 0%, #7dd3fc 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
+              <span className="brand-wordmark brand-wordmark-hero inline-block">
                 Swamp
               </span>{" "}
-              <span
-                className="ml-1 inline-block"
-                style={{
-                  backgroundImage: "linear-gradient(90deg, #86efac 0%, #4ade80 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
+              <span className="brand-wordmark brand-wordmark-hero ml-1 inline-block">
                 Spotter
               </span>{" "}
               🌿
@@ -140,14 +136,26 @@ export default function Home() {
 
           {/* Right slideshow */}
           <div
-            className="relative"
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
+            data-testid="home-slideshow"
+            className="relative mx-auto w-full max-w-[340px] sm:max-w-[460px]"
+            onPointerEnter={(event) => {
+              if (event.pointerType === "mouse" && window.matchMedia("(hover: hover)").matches) {
+                setPaused(true);
+              }
+            }}
+            onPointerLeave={(event) => {
+              if (event.pointerType === "mouse" && window.matchMedia("(hover: hover)").matches) {
+                setPaused(false);
+              }
+            }}
           >
             <div className="absolute -inset-4 rounded-3xl bg-white/10 blur-2xl" />
             <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-2xl">
               {/* Slides */}
-              <div className="relative h-[340px] sm:h-[420px] lg:h-[520px]">
+              <div
+                data-testid="home-slideshow-image"
+                className="relative h-[190px] sm:h-[300px] lg:h-[400px]"
+              >
                 {slides.map((s, idx) => (
                   <div
                     key={s.src}
@@ -162,7 +170,7 @@ export default function Home() {
                       alt={s.alt}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 520px"
+                      sizes="(max-width: 640px) 340px, 460px"
                       priority={idx === 0}
                     />
                     {/* overlay gradient for readability */}
@@ -172,18 +180,20 @@ export default function Home() {
               </div>
 
               {/* Caption */}
-              <div className="border-t border-white/15 bg-black/20 px-5 py-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-white/70">
+              <div className="border-t border-white/15 bg-black/20 px-4 py-3 sm:px-5 sm:py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-xs">
                       {slides[active].kicker}
                     </p>
-                    <p className="mt-1 text-base font-semibold">{slides[active].headline}</p>
-                    <p className="mt-1 text-sm text-white/80">{slides[active].body}</p>
+                    <p className="mt-1 text-sm font-semibold sm:text-base">
+                      {slides[active].headline}
+                    </p>
+                    <p className="mt-1 text-xs text-white/80 sm:text-sm">{slides[active].body}</p>
                   </div>
 
                   {/* Controls */}
-                  <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end">
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -216,7 +226,7 @@ export default function Home() {
                 </div>
 
                 {/* Dots */}
-                <div className="mt-4 flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2 sm:mt-4">
                   {slides.map((_, idx) => (
                     <button
                       key={idx}
@@ -230,7 +240,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                <p className="mt-3 text-xs text-white/60">
+                <p className="mt-2 hidden text-xs text-white/60 sm:block">
                   {t("Tip: hover to pause the slideshow.")}
                 </p>
               </div>

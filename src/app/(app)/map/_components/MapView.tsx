@@ -55,19 +55,18 @@ interface MarkerEntry {
   threatLevel: ThreatLevel | undefined;
 }
 
+const PIN_HEAD_RADIUS = 11;
+const PIN_HEAD_CENTER_Y = -21;
+const PIN_HEAD_SEGMENTS = 32;
 const PIN_SHAPE: readonly [number, number][] = [
   [0, 0],
-  [-5, -7],
-  [-9, -12],
-  [-9, -19],
-  [-8, -23],
-  [-5, -26],
-  [0, -28],
-  [5, -26],
-  [8, -23],
-  [9, -19],
-  [9, -12],
-  [5, -7],
+  ...Array.from({ length: PIN_HEAD_SEGMENTS + 1 }, (_, index): [number, number] => {
+    const angle = Math.PI - (Math.PI * index) / PIN_HEAD_SEGMENTS;
+    return [
+      PIN_HEAD_RADIUS * Math.cos(angle),
+      PIN_HEAD_CENTER_Y - PIN_HEAD_RADIUS * Math.sin(angle),
+    ];
+  }),
 ];
 
 function offsetFromPoint(
@@ -147,7 +146,7 @@ export default function MapView({
       map.on("zoomend", () => {
         for (const entry of markers.values()) {
           entry.pin.setLatLngs(pinCoordinates(map, entry.point));
-          entry.center.setLatLng(offsetFromPoint(map, entry.point, [0, -19]));
+          entry.center.setLatLng(offsetFromPoint(map, entry.point, [0, -21]));
         }
       });
 
@@ -196,6 +195,7 @@ export default function MapView({
         weight: 2,
         fillColor,
         fillOpacity: 0.95,
+        smoothFactor: 0,
         className: `sighting-pin threat-${(threatLevel ?? "unknown").toLowerCase()}`,
       });
       pin.on("add", () => {
@@ -209,13 +209,14 @@ export default function MapView({
           buildPopupContent(point, pending, () => callbacksRef.current.onSelect(point)),
         )
         .on("popupopen", () => callbacksRef.current.onPreview(point));
-      const center = L.circleMarker(offsetFromPoint(leaflet.map, point, [0, -19]), {
-        radius: 3.5,
+      const center = L.circleMarker(offsetFromPoint(leaflet.map, point, [0, -21]), {
+        radius: 4.5,
         color: "#ffffff",
         weight: 1,
         fillColor: "#ffffff",
         fillOpacity: 1,
         interactive: false,
+        className: "sighting-pin-center",
       });
       const marker = L.layerGroup([pin, center]).addTo(layer);
       markers.set(point.id, { marker, pin, center, point, pending, threatLevel });
