@@ -7,6 +7,7 @@ import type { GeoJsonObject } from "geojson";
 import { useLanguage } from "@/components/LanguageProvider";
 import alachuaBoundary from "@/data/alachua-boundary.json";
 import { isInAlachua } from "@/lib/limits";
+import type { ThreatLevel } from "@/types/plant";
 import type { MapPoint } from "@/types/submission";
 import { buildPopupContent } from "./popup";
 import { TILE_ATTRIBUTION, TILE_URL } from "@/lib/mapTiles";
@@ -15,7 +16,13 @@ import { TILE_ATTRIBUTION, TILE_URL } from "@/lib/mapTiles";
 const COUNTY_CENTER: [number, number] = [29.652, -82.325];
 const ZOOM = 10;
 
-const COLORS = { approved: "#16a34a", pending: "#dc2626" };
+const THREAT_COLORS: Record<ThreatLevel, string> = {
+  Low: "#16a34a",
+  Moderate: "#f59e0b",
+  Significant: "#dc2626",
+};
+const UNKNOWN_THREAT_COLOR = "#6b7280";
+const PENDING_STROKE = "#7f1d1d";
 
 // Leaflet touches `window`, so it only loads in the browser. Starting the
 // download when this module loads, rather than in an effect, lets it run
@@ -25,6 +32,7 @@ const leafletReady: Promise<typeof Leaflet> | null =
 
 interface MapViewProps {
   points: MapPoint[];
+  threatByPlant: Record<string, ThreatLevel>;
   /** Draw pending sightings in red (for admins) */
   highlightPending: boolean;
   /** The visitor's location, once known. The map centers on it if it's in the county. */
@@ -38,10 +46,40 @@ interface MapViewProps {
 }
 
 interface MarkerEntry {
-  marker: Leaflet.CircleMarker;
+  marker: Leaflet.LayerGroup;
+  pin: Leaflet.Polygon;
+  center: Leaflet.CircleMarker;
   /** What the marker was drawn from, to tell when it needs redrawing */
   point: MapPoint;
   pending: boolean;
+  threatLevel: ThreatLevel | undefined;
+}
+
+const PIN_HEAD_RADIUS = 11;
+const PIN_HEAD_CENTER_Y = -21;
+const PIN_HEAD_SEGMENTS = 32;
+const PIN_SHAPE: readonly [number, number][] = [
+  [0, 0],
+  ...Array.from({ length: PIN_HEAD_SEGMENTS + 1 }, (_, index): [number, number] => {
+    const angle = Math.PI - (Math.PI * index) / PIN_HEAD_SEGMENTS;
+    return [
+      PIN_HEAD_RADIUS * Math.cos(angle),
+      PIN_HEAD_CENTER_Y - PIN_HEAD_RADIUS * Math.sin(angle),
+    ];
+  }),
+];
+
+function offsetFromPoint(
+  map: Leaflet.Map,
+  point: MapPoint,
+  offset: [number, number],
+): Leaflet.LatLng {
+  const pixel = map.latLngToContainerPoint([point.lat, point.lng]);
+  return map.containerPointToLatLng([pixel.x + offset[0], pixel.y + offset[1]]);
+}
+
+function pinCoordinates(map: Leaflet.Map, point: MapPoint): Leaflet.LatLng[] {
+  return PIN_SHAPE.map((offset) => offsetFromPoint(map, point, offset));
 }
 
 /**
@@ -49,12 +87,12 @@ interface MarkerEntry {
  * only the markers that changed are added or removed, so the view, the zoom
  * and any open popup stay where they are.
  *
- * Markers are circles drawn in one shared SVG layer rather than an HTML
- * element and image per pin, and each popup is built only when it opens, so
- * the map stays smooth with thousands of sightings.
+ * Pins are vector paths in Leaflet's shared SVG layer, and each popup is built
+ * only when it opens, so the map stays smooth with many sightings.
  */
 export default function MapView({
   points,
+  threatByPlant,
   highlightPending,
   userLocation,
   visible,
@@ -104,7 +142,15 @@ export default function MapView({
         userMovedRef.current = true;
       });
 
-      leafletRef.current = { L, map, markers: L.layerGroup().addTo(map) };
+      const markerLayer = L.layerGroup().addTo(map);
+      map.on("zoomend", () => {
+        for (const entry of markers.values()) {
+          entry.pin.setLatLngs(pinCoordinates(map, entry.point));
+          entry.center.setLatLng(offsetFromPoint(map, entry.point, [0, -21]));
+        }
+      });
+
+      leafletRef.current = { L, map, markers: markerLayer };
       setReady(true);
     });
 
@@ -127,7 +173,13 @@ export default function MapView({
     for (const [id, entry] of markers) {
       const point = wanted.get(id);
       const pending = highlightPending && point?.status === "pending";
-      if (!point || point !== entry.point || pending !== entry.pending) {
+      const threatLevel = point ? threatByPlant[point.plantName] : undefined;
+      if (
+        !point ||
+        point !== entry.point ||
+        pending !== entry.pending ||
+        threatLevel !== entry.threatLevel
+      ) {
         layer.removeLayer(entry.marker);
         markers.delete(id);
       }
@@ -136,22 +188,40 @@ export default function MapView({
     for (const point of points) {
       if (markers.has(point.id)) continue;
       const pending = highlightPending && point.status === "pending";
-      const marker = L.circleMarker([point.lat, point.lng], {
-        radius: 8,
-        color: "#ffffff",
+      const threatLevel = threatByPlant[point.plantName];
+      const fillColor = threatLevel ? THREAT_COLORS[threatLevel] : UNKNOWN_THREAT_COLOR;
+      const pin = L.polygon(pinCoordinates(leaflet.map, point), {
+        color: pending ? PENDING_STROKE : "#ffffff",
         weight: 2,
-        fillColor: pending ? COLORS.pending : COLORS.approved,
+        fillColor,
         fillOpacity: 0.95,
-      })
+        smoothFactor: 0,
+        className: `sighting-pin threat-${(threatLevel ?? "unknown").toLowerCase()}`,
+      });
+      pin.on("add", () => {
+        pin.getElement()?.setAttribute("data-threat-level", threatLevel ?? "unknown");
+        pin.getElement()?.setAttribute("data-plant-name", point.plantName);
+        pin.getElement()?.setAttribute("aria-label", `${point.plantName} sighting`);
+      });
+      pin
         // Built when the popup opens, not for every marker up front
         .bindPopup(() =>
           buildPopupContent(point, pending, () => callbacksRef.current.onSelect(point)),
         )
-        .on("popupopen", () => callbacksRef.current.onPreview(point))
-        .addTo(layer);
-      markers.set(point.id, { marker, point, pending });
+        .on("popupopen", () => callbacksRef.current.onPreview(point));
+      const center = L.circleMarker(offsetFromPoint(leaflet.map, point, [0, -21]), {
+        radius: 4.5,
+        color: "#ffffff",
+        weight: 1,
+        fillColor: "#ffffff",
+        fillOpacity: 1,
+        interactive: false,
+        className: "sighting-pin-center",
+      });
+      const marker = L.layerGroup([pin, center]).addTo(layer);
+      markers.set(point.id, { marker, pin, center, point, pending, threatLevel });
     }
-  }, [ready, points, highlightPending]);
+  }, [ready, points, threatByPlant, highlightPending]);
 
   // Center on the visitor if they're in the county and haven't moved the map yet
   useEffect(() => {

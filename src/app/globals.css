@@ -93,9 +93,28 @@ body {
 
 .parallax {
   background-image: url("/forest.jpg");
-  background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+}
+
+.hero-background-video {
   filter: brightness(0.7);
+}
+
+.brand-wordmark {
+  color: #064e3b;
+  -webkit-text-stroke: 1.5px #111827;
+  paint-order: stroke fill;
+}
+
+.brand-wordmark-hero {
+  -webkit-text-stroke-color: #fff;
+  -webkit-text-stroke-width: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-wordmark:not(.brand-wordmark-hero) {
+    -webkit-text-stroke-color: #f8fafc;
+  }
 }

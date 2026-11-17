@@ -112,28 +112,8 @@ export default function Navigation() {
           <Link href="/" className="flex flex-shrink-0 items-center gap-2">
             <Image src={logo} alt="" width={40} height={40} priority />
             <span className="text-xl font-bold">
-              <span
-                className="inline-block"
-                style={{
-                  backgroundImage: "linear-gradient(90deg, #f59e0b 0%, #38bdf8 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
-                Swamp
-              </span>
-              <span
-                className="ml-1 inline-block"
-                style={{
-                  backgroundImage: "linear-gradient(90deg, #22c55e 0%, #16a34a 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
-                Spotter
-              </span>
+              <span className="brand-wordmark inline-block">Swamp</span>
+              <span className="brand-wordmark ml-1 inline-block">Spotter</span>
             </span>
           </Link>
 

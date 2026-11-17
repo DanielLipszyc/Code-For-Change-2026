@@ -39,13 +39,8 @@ const photos = vi.hoisted(() => ({
 }));
 vi.mock("./photos", () => photos);
 
-// No Next.js cache in unit tests: cached functions run every time, and
-// invalidations are recorded
-const revalidateTag = vi.hoisted(() => vi.fn());
-vi.mock("next/cache", () => ({
-  revalidateTag,
-  unstable_cache: <T>(fn: T) => fn,
-}));
+const revalidatePath = vi.hoisted(() => vi.fn());
+vi.mock("next/cache", () => ({ revalidatePath }));
 
 import {
   DuplicateSubmissionError,
@@ -91,7 +86,7 @@ const respond = (data: unknown) => (state.result = { data, error: null });
 beforeEach(() => {
   state.calls = [];
   respond(null);
-  revalidateTag.mockClear();
+  revalidatePath.mockClear();
   photos.storePhoto.mockClear();
   photos.readStoredPhoto.mockClear();
   photos.deleteStoredPhotos.mockClear();
@@ -249,7 +244,7 @@ describe("createSubmission", () => {
       createSubmission({ ...input, id: ID, imageData: "data:image/jpeg;base64,/9j/" }, submitter),
     ).rejects.toEqual(new DuplicateSubmissionError(ID));
     expect(photos.deleteStoredPhotos).not.toHaveBeenCalled();
-    expect(revalidateTag).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it("auto-approves only when told to", async () => {
@@ -258,21 +253,21 @@ describe("createSubmission", () => {
   });
 });
 
-describe("cache invalidation", () => {
-  it("clears cached lists after a change", async () => {
+describe("map revalidation", () => {
+  it("revalidates the map after a submission changes", async () => {
     respond([{ id: ID }]);
     await approveSubmission(ID, "user_admin");
     await deleteSubmission(ID, admin);
     await updateOwnSubmission(ID, OWNER, { notes: "x" }, { keepApproval: false });
-    expect(revalidateTag).toHaveBeenCalledTimes(3);
-    expect(revalidateTag).toHaveBeenCalledWith("submissions");
+    expect(revalidatePath).toHaveBeenCalledTimes(3);
+    expect(revalidatePath).toHaveBeenCalledWith("/map");
   });
 
-  it("leaves them alone when nothing changed", async () => {
+  it("does not revalidate the map when nothing changes", async () => {
     respond([]);
     await approveSubmission(ID, "user_admin");
     await deleteSubmission(ID, owner);
-    expect(revalidateTag).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
 
