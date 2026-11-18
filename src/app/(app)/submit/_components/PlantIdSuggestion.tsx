@@ -6,6 +6,8 @@ export interface PlantIdResult {
   prediction: string;
   scientificName: string | null;
   isKnownPlant: boolean;
+  status: "identified" | "ambiguous" | "uncertain";
+  candidates: { name: string; scientificName: string }[];
 }
 
 interface PlantIdSuggestionProps {
@@ -41,7 +43,8 @@ export default function PlantIdSuggestion({
   onUseSuggestion,
 }: PlantIdSuggestionProps) {
   const { t } = useLanguage();
-  const matches = result && chosen.toLowerCase() === result.prediction.toLowerCase();
+  const matches =
+    result?.status === "identified" && chosen.toLowerCase() === result.prediction.toLowerCase();
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-lg sm:p-8">
@@ -54,7 +57,7 @@ export default function PlantIdSuggestion({
           <Spinner />
           <span>{t("Analyzing image...")}</span>
         </div>
-      ) : result ? (
+      ) : result?.status === "identified" ? (
         <div className="space-y-3">
           <div className="rounded-xl border border-primary-200 bg-primary-50 p-4">
             <span className="text-xs font-semibold uppercase tracking-wide text-[#136207]">
@@ -108,6 +111,35 @@ export default function PlantIdSuggestion({
             </div>
           )}
         </div>
+      ) : result?.status === "ambiguous" ? (
+        <div className="space-y-3">
+          <p className="text-gray-700">
+            {t(
+              "It could be either {first} or {second}. Please compare and select manually below.",
+              {
+                first: result.candidates[0].name,
+                second: result.candidates[1].name,
+              },
+            )}
+          </p>
+          <ul className="space-y-2">
+            {result.candidates.map((candidate) => (
+              <li key={candidate.name}>
+                <button
+                  type="button"
+                  onClick={() => onUseSuggestion(candidate.name)}
+                  className="w-full rounded-lg border border-primary-200 bg-primary-50 p-3 text-left font-medium text-[#136207] hover:bg-primary-100"
+                >
+                  {candidate.name} ({candidate.scientificName})
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : result?.status === "uncertain" ? (
+        <p className="text-gray-500">
+          {t("Unable to identify plant. Please select manually below.")}
+        </p>
       ) : online ? (
         <p className="text-gray-500">
           {t("Unable to identify plant. Please select manually below.")}

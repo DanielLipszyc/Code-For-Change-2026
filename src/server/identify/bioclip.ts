@@ -5,10 +5,22 @@ export interface SpeciesScore {
   name: string;
   scientificName?: string;
   confidence: number;
+  rawSimilarity?: number;
+}
+
+export interface BioclipDebug {
+  maxSpeciesRawSimilarity?: number;
+  topDistractorPrompt?: string;
+  topDistractorConfidence?: number;
+}
+
+export interface BioclipResult {
+  scores: SpeciesScore[];
+  debug?: BioclipDebug;
 }
 
 /** Modal cold-starts the GPU container on the first call after it idles */
-const TIMEOUT_MS = 60_000;
+const TIMEOUT_MS = 140_000;
 
 function isSpeciesScore(value: unknown): value is SpeciesScore {
   if (typeof value !== "object" || value === null) return false;
@@ -18,7 +30,8 @@ function isSpeciesScore(value: unknown): value is SpeciesScore {
     score.name.length > 0 &&
     (typeof score.scientificName === "string" || score.scientificName === undefined) &&
     typeof score.confidence === "number" &&
-    Number.isFinite(score.confidence)
+    Number.isFinite(score.confidence) &&
+    (typeof score.rawSimilarity === "number" || score.rawSimilarity === undefined)
   );
 }
 
@@ -33,10 +46,8 @@ function isSpeciesScore(value: unknown): value is SpeciesScore {
 export async function scoreWithBioclip(
   endpoint: { url: string; proxyKey?: string; proxySecret?: string },
   imageDataUrl: string,
-): Promise<SpeciesScore[]> {
+): Promise<BioclipResult> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  // Modal proxy auth: the endpoint rejects calls without these once it's
-  // deployed with requires_proxy_auth=True
   if (endpoint.proxyKey && endpoint.proxySecret) {
     headers["Modal-Key"] = endpoint.proxyKey;
     headers["Modal-Secret"] = endpoint.proxySecret;
@@ -53,9 +64,15 @@ export async function scoreWithBioclip(
   }
 
   const data: unknown = await response.json();
-  const scores = (data as { scores?: unknown } | null)?.scores;
-  if (!Array.isArray(scores)) {
+  const parsed = data as { scores?: unknown; debug?: BioclipDebug } | null;
+  if (!Array.isArray(parsed?.scores)) {
     throw new Error("Plant ID model replied without scores");
   }
-  return scores.filter(isSpeciesScore).sort((a, b) => b.confidence - a.confidence);
+
+  const scores = parsed.scores.filter(isSpeciesScore).sort((a, b) => b.confidence - a.confidence);
+
+  return {
+    scores,
+    debug: parsed.debug,
+  };
 }
