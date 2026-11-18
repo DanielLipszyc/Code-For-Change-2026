@@ -49,13 +49,7 @@ function getGpsLocation(): Promise<ReportLocation> {
  * (components/SavedReportsSync). "Save as draft" keeps it to finish later,
  * e.g. to get an AI suggestion once back online. /submit?draft=<id> opens one.
  */
-export default function SubmitClient({
-  plants,
-  isAdmin,
-}: {
-  plants: Plant[];
-  isAdmin: boolean;
-}) {
+export default function SubmitClient({ plants, isAdmin }: { plants: Plant[]; isAdmin: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
