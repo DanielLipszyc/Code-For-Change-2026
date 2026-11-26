@@ -88,12 +88,8 @@ export default function Home() {
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              <span className="brand-wordmark brand-wordmark-hero inline-block">
-                Swamp
-              </span>{" "}
-              <span className="brand-wordmark brand-wordmark-hero ml-1 inline-block">
-                Spotter
-              </span>{" "}
+              <span className="brand-wordmark brand-wordmark-hero inline-block">Swamp</span>{" "}
+              <span className="brand-wordmark brand-wordmark-hero ml-1 inline-block">Spotter</span>{" "}
               🌿
             </h1>
 
