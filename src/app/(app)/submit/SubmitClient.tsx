@@ -55,7 +55,7 @@ function getGpsLocation(): Promise<ReportLocation> {
  * (components/SavedReportsSync). "Save as draft" keeps it to finish later,
  * e.g. to get an AI suggestion once back online. /submit?draft=<id> opens one.
  */
-export default function SubmitClient({ plants }: { plants: Plant[] }) {
+export default function SubmitClient({ plants, isAdmin }: { plants: Plant[]; isAdmin: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantParam = searchParams.get("plant");
@@ -76,6 +76,7 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
   const [locating, setLocating] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [identifying, setIdentifying] = useState(false);
+  const [useAiIdentification, setUseAiIdentification] = useState(true);
   const [plantId, setPlantId] = useState<PlantIdResult | null>(null);
   const [compare, setCompare] = useState(false);
   const [saving, setSaving] = useState<"send" | "draft" | null>(null);
@@ -84,10 +85,12 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
   // The report's ID from the moment it's first saved, so saving or sending it
   // again updates the same report instead of making another
   const reportIdRef = useRef<string | null>(null);
+  const useAiIdentificationRef = useRef(true);
 
   const identifyPlant = useCallback(
     async (image: string) => {
-      if (!PLANT_ID_ENABLED || !navigator.onLine || !user) return;
+      if (!PLANT_ID_ENABLED || !useAiIdentificationRef.current || !navigator.onLine || !user)
+        return;
       setIdentifying(true);
       setPlantId(null);
       try {
@@ -96,11 +99,18 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: await compressImage(image, 512, 0.5) }),
         });
-        if (!response.ok) throw new Error(`Plant identification failed (${response.status})`);
+        if (!response.ok) {
+          console.error("Plant identification request failed", {
+            status: response.status,
+            body: await response.text(),
+          });
+          return;
+        }
         const result: PlantIdResult = await response.json();
+        if (!useAiIdentificationRef.current) return;
         setPlantId(result);
         // Pre-select the AI's match only if the user hasn't chosen a species yet
-        if (result.isKnownPlant) {
+        if (result.status === "identified" && result.isKnownPlant) {
           setPlantName((current) =>
             current && current !== "Unknown" ? current : result.prediction,
           );
@@ -113,6 +123,16 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
     },
     [user],
   );
+
+  function handleAiIdentificationChange(enabled: boolean) {
+    useAiIdentificationRef.current = enabled;
+    setUseAiIdentification(enabled);
+    if (enabled) {
+      if (photo) identifyPlant(photo);
+    } else {
+      setPlantId(null);
+    }
+  }
 
   // Prefill from /submit?plant=... (the guide's "Report this plant")
   useEffect(() => {
@@ -385,7 +405,24 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
             }}
           />
 
-          {PLANT_ID_ENABLED && photo && (
+          {isAdmin && PLANT_ID_ENABLED && (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-slate-800">
+                <input
+                  type="checkbox"
+                  checked={useAiIdentification}
+                  onChange={(event) => handleAiIdentificationChange(event.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-[#136207] focus:ring-[#136207]"
+                />
+                {t("Use AI plant identification")}
+              </label>
+              <p className="mt-1 pl-7 text-sm text-slate-600">
+                {t("Turn this off to submit photos without sending them for AI analysis.")}
+              </p>
+            </div>
+          )}
+
+          {PLANT_ID_ENABLED && photo && (!isAdmin || useAiIdentification) && (
             <PlantIdSuggestion
               online={online}
               signedIn={!!user}

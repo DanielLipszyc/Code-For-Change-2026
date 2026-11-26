@@ -215,11 +215,22 @@ test.describe("signed-out visitors", () => {
   test("submits anonymously and explains the review process", async ({ page, context }) => {
     await context.grantPermissions(["geolocation"]);
     await context.setGeolocation({ latitude: 29.65, longitude: -82.32 });
+    let identificationRequests = 0;
+    await page.route("**/api/identify-plant", async (route) => {
+      identificationRequests++;
+      await route.fulfill({ status: 401 });
+    });
     await page.route("**/api/submissions", async (route) => {
       await route.fulfill({ json: { success: true } });
     });
     await page.goto("/submit");
     await page.locator("#photo").setInputFiles("public/logo.png");
+    await expect(
+      page.getByText(
+        "Sign in for an AI suggestion, or use the guide and choose a plant or Unknown / Other below.",
+      ),
+    ).toBeVisible();
+    expect(identificationRequests).toBe(0);
     await expect(page.getByText("Choose a plant or Unknown / Other to submit.")).toBeVisible();
     await page.locator("#plantName").selectOption("Unknown");
     const request = page.waitForRequest(
