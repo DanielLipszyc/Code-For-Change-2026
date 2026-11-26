@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useToast } from "@/components/ui/Toast";
 import type { DashboardData } from "@/types/dashboard";
@@ -22,35 +23,41 @@ export default function DashboardClient({
   isDemo?: boolean;
 }) {
   const toast = useToast();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const router = useRouter();
   const [data, setData] = useState(initialData);
+  const [previousData, setPreviousData] = useState(initialData);
+  const [updating, setUpdating] = useState(false);
+  const [refreshing, startRefresh] = useTransition();
+  const [feedView, setFeedView] = useState<"community" | "following">("community");
+  const [loadingFeed, setLoadingFeed] = useState(false);
+  const [observerCount, setObserverCount] = useState(4);
+  const [feedOffset, setFeedOffset] = useState(initialData.feed.length);
+  if (previousData !== initialData) {
+    setPreviousData(initialData);
+    setData(initialData);
+    setFeedOffset(initialData.feed.length);
+  }
 
   // The next badge still to earn, shown in the milestone card
   const nextBadge = data.achievements.find((achievement) => achievement.progress < 100);
 
   const handleInviteFriend = async () => {
-    const inviteText = t(
+    const inviteText = `${t(
       "Join me on Swamp Spotter and help log invasive plants across Alachua County.",
-    );
+    )} ${window.location.origin}`;
 
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(inviteText);
-      }
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(inviteText);
       toast.success(t("Invite copied to clipboard."));
     } catch {
       toast.info(t("Invite ready to share: {inviteText}", { inviteText }));
     }
   };
 
-  const handleConnectNetwork = () => {
-    const panel = document.getElementById("observer-network");
-    if (panel) {
-      panel.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   const handleFollowToggle = async (observerId: string) => {
+    if (updating || refreshing || loadingFeed) return;
     const currentObserver = data.observers.find((observer) => observer.id === observerId);
     if (!currentObserver) return;
     if (isDemo) {
@@ -59,6 +66,7 @@ export default function DashboardClient({
     }
 
     const nextFollowing = !currentObserver.following;
+    setUpdating(true);
 
     setData((current) => {
       return {
@@ -92,6 +100,7 @@ export default function DashboardClient({
         };
       });
       toast.success(t(result.following ? "Observer followed." : "Observer unfollowed."));
+      startRefresh(() => router.refresh());
     } catch (error) {
       console.error(error);
       setData((current) => {
@@ -105,6 +114,32 @@ export default function DashboardClient({
         };
       });
       toast.error(t("Couldn't update follow. Please try again."));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const loadMoreFeed = async () => {
+    if (loadingFeed || updating || refreshing) return;
+    setLoadingFeed(true);
+    try {
+      const response = await fetch(`/api/dashboard?offset=${feedOffset}`);
+      if (!response.ok) throw new Error(`Feed request failed (${response.status})`);
+      const page: Pick<DashboardData, "feed" | "hasMoreFeed"> = await response.json();
+      setFeedOffset((offset) => offset + page.feed.length);
+      setData((current) => ({
+        ...current,
+        feed: [
+          ...current.feed,
+          ...page.feed.filter((item) => !current.feed.some((existing) => existing.id === item.id)),
+        ],
+        hasMoreFeed: page.hasMoreFeed,
+      }));
+    } catch (error) {
+      console.error("Error loading community feed:", error);
+      toast.error(t("Couldn't load more reports. Please try again."));
+    } finally {
+      setLoadingFeed(false);
     }
   };
 
@@ -269,32 +304,79 @@ export default function DashboardClient({
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black text-slate-900">{t("Recent field activity")}</h3>
                 <Link
-                  href="/log"
+                  href="/map?view=list"
                   className="text-sm font-bold text-emerald-700 hover:text-emerald-800"
                 >
                   {t("View log")} →
                 </Link>
               </div>
+              <div className="mt-4 flex gap-2" role="group" aria-label={t("Activity feed")}>
+                {(["community", "following"] as const).map((view) => (
+                  <button
+                    key={view}
+                    type="button"
+                    aria-pressed={feedView === view}
+                    onClick={() => setFeedView(view)}
+                    className={`rounded-full px-3 py-1 text-sm font-bold ${feedView === view ? "bg-emerald-700 text-white" : "border border-slate-200 text-slate-700"}`}
+                  >
+                    {t(view === "community" ? "Community" : "Following")}
+                  </button>
+                ))}
+              </div>
               <div className="mt-4 space-y-3">
-                {data.feed.map((item, index) => (
+                {(feedView === "community" ? data.feed : data.followingFeed).length === 0 && (
+                  <p className="text-sm text-slate-600">
+                    {t(
+                      feedView === "community"
+                        ? "No activity yet. Submit a sighting to get started."
+                        : "No approved reports from followed observers yet.",
+                    )}
+                  </p>
+                )}
+                {(feedView === "community" ? data.feed : data.followingFeed).map((item) => (
                   <div
-                    key={`${item.title}-${index}`}
+                    key={item.id}
                     className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4"
                   >
                     <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-sm">
                       {item.type === "connection" ? "👥" : item.type === "species" ? "🌱" : "🎯"}
                     </span>
                     <div className="flex-1">
-                      <div className="font-bold text-slate-900">{t(item.title)}</div>
+                      <div className="font-bold text-slate-900">
+                        {t("{name} logged {plant}", { name: t(item.author), plant: t(item.plant) })}
+                      </div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">
-                        {t(item.meta)}
+                        {new Date(item.createdAt).toLocaleDateString(
+                          language === "pt" ? "pt-BR" : language,
+                        )}{" "}
+                        · {t(item.status === "approved" ? "Approved" : "Pending")}
                       </div>
                     </div>
-                    <span className="rounded-full border border-emerald-100 bg-white px-3 py-1 text-xs font-bold text-emerald-700">
-                      {t(item.type)}
-                    </span>
+                    {item.type === "species" && item.plant !== "Unknown Plant" ? (
+                      <Link
+                        href={`/guide?plant=${encodeURIComponent(item.plant)}`}
+                        aria-label={t("View {plant} in the plant guide", { plant: t(item.plant) })}
+                        className="rounded-full border border-emerald-100 bg-white px-3 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700"
+                      >
+                        {t(item.type)}
+                      </Link>
+                    ) : (
+                      <span className="rounded-full border border-emerald-100 bg-white px-3 py-1 text-xs font-bold text-emerald-700">
+                        {t(item.type)}
+                      </span>
+                    )}
                   </div>
                 ))}
+                {feedView === "community" && data.hasMoreFeed && (
+                  <button
+                    type="button"
+                    onClick={loadMoreFeed}
+                    disabled={loadingFeed || updating || refreshing}
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-emerald-700 disabled:opacity-50"
+                  >
+                    {t(loadingFeed ? "Loading…" : "Load more reports")}
+                  </button>
+                )}
               </div>
             </div>
           </article>
@@ -311,17 +393,13 @@ export default function DashboardClient({
                   </span>
                   <h2 className="mt-2 text-2xl font-black text-slate-950">{t("Your network")}</h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleConnectNetwork}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
-                >
-                  {t("Connect")}
-                </button>
               </div>
 
               <div className="mt-5 space-y-4">
-                {data.observers.map((observer) => (
+                {data.observers.length === 0 && (
+                  <p className="text-sm text-slate-600">{t("No other observers yet.")}</p>
+                )}
+                {data.observers.slice(0, observerCount).map((observer) => (
                   <div
                     key={observer.id}
                     className="flex items-center gap-3 rounded-2xl border border-slate-100 p-3"
@@ -340,7 +418,12 @@ export default function DashboardClient({
                         <button
                           type="button"
                           onClick={() => handleFollowToggle(observer.id)}
-                          className={`rounded-full px-3 py-1 text-xs font-black ${observer.following ? "bg-emerald-700 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                          disabled={updating || refreshing || loadingFeed || isDemo}
+                          aria-pressed={observer.following}
+                          aria-label={t(observer.following ? "Unfollow {name}" : "Follow {name}", {
+                            name: observer.name,
+                          })}
+                          className={`rounded-full px-3 py-1 text-xs font-black disabled:opacity-50 ${observer.following ? "bg-emerald-700 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-50"}`}
                         >
                           {t(observer.following ? "Following" : "Follow")}
                         </button>
@@ -351,6 +434,15 @@ export default function DashboardClient({
                     </div>
                   </div>
                 ))}
+                {observerCount < data.observers.length && (
+                  <button
+                    type="button"
+                    onClick={() => setObserverCount((count) => count + 10)}
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-emerald-700"
+                  >
+                    {t("Show more observers")}
+                  </button>
+                )}
               </div>
             </article>
 

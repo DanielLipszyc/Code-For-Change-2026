@@ -610,6 +610,25 @@ const uiTranslations = {
     "Bamboo-like": "Bamboo-like",
   },
   es: {
+    "View {plant} in the plant guide": "Ver {plant} en la guía de plantas",
+    "This plant is not currently in the guide.": "Esta planta no está actualmente en la guía.",
+    "Show more observers": "Mostrar más observadores",
+    "Load more reports": "Cargar más informes",
+    "Couldn't load more reports. Please try again.":
+      "No se pudieron cargar más informes. Inténtalo de nuevo.",
+    "Location must be within Alachua County":
+      "La ubicación debe estar dentro del condado de Alachua.",
+    "Reports older than 30 days can't be submitted":
+      "No se pueden enviar informes de más de 30 días.",
+    "Plant name must be one of the active species or Unknown":
+      "Elige una especie de la lista actual o Desconocida / Otra.",
+    "Photo is too large": "La foto es demasiado grande. Prueba con otra foto.",
+    "Request is too large": "El informe es demasiado grande. Prueba con otra foto.",
+    "The photo couldn't be read. Try a JPEG or PNG.":
+      "No se pudo leer la foto. Prueba con un JPEG o PNG.",
+    "Too many requests. Please try again later.":
+      "Has hecho demasiadas solicitudes. Inténtalo más tarde.",
+    "Failed to create submission": "No se pudo enviar el informe. Inténtalo de nuevo más tarde.",
     Home: "Inicio",
     About: "Acerca de",
     Dashboard: "Panel",
@@ -1228,6 +1247,25 @@ const uiTranslations = {
     "Bamboo-like": "Similar al bambú",
   },
   pt: {
+    "View {plant} in the plant guide": "Ver {plant} no guia de plantas",
+    "This plant is not currently in the guide.": "Esta planta não está atualmente no guia.",
+    "Show more observers": "Mostrar mais observadores",
+    "Load more reports": "Carregar mais relatos",
+    "Couldn't load more reports. Please try again.":
+      "Não foi possível carregar mais relatos. Tente novamente.",
+    "Location must be within Alachua County":
+      "A localização deve estar dentro do condado de Alachua.",
+    "Reports older than 30 days can't be submitted":
+      "Relatos com mais de 30 dias não podem ser enviados.",
+    "Plant name must be one of the active species or Unknown":
+      "Escolha uma espécie da lista atual ou Desconhecida / Outra.",
+    "Photo is too large": "A foto é grande demais. Tente outra foto.",
+    "Request is too large": "O relato é grande demais. Tente outra foto.",
+    "The photo couldn't be read. Try a JPEG or PNG.":
+      "Não foi possível ler a foto. Tente um JPEG ou PNG.",
+    "Too many requests. Please try again later.":
+      "Você fez solicitações demais. Tente novamente mais tarde.",
+    "Failed to create submission": "Não foi possível enviar o relato. Tente novamente mais tarde.",
     Home: "Início",
     About: "Sobre",
     Dashboard: "Painel",
@@ -1849,6 +1887,32 @@ export type UiTranslationKey = string;
 
 const supplementalTranslations: Partial<Record<UiLanguage, Record<string, string>>> = {
   es: {
+    "Plant Guide": "Guía de plantas",
+    Drafts: "Borradores",
+    Community: "Comunidad",
+    "Activity feed": "Actividad",
+    "No approved reports from followed observers yet.":
+      "Aún no hay informes aprobados de los observadores que sigues.",
+    "Follow {name}": "Seguir a {name}",
+    "Unfollow {name}": "Dejar de seguir a {name}",
+    "{name} logged {plant}": "{name} registró {plant}",
+    "Field tracking": "Observación de campo",
+    "View map": "Ver mapa",
+    "Please wait for sign-in to finish loading.":
+      "Espera a que termine de cargar el inicio de sesión.",
+    "Couldn't send your report. Check Drafts for details and try again.":
+      "No se pudo enviar el informe. Consulta los detalles en Borradores y vuelve a intentarlo.",
+    "Couldn't send your report, and it could not be saved on this device. Please try again.":
+      "No se pudo enviar el informe ni guardarlo en este dispositivo. Inténtalo de nuevo.",
+    "Your report may need review before it appears on the public map.":
+      "Es posible que tu informe deba revisarse antes de aparecer en el mapa público.",
+    "Add a photo to save or submit a report.": "Añade una foto para guardar o enviar un informe.",
+    "Choose a plant or Unknown / Other to submit.":
+      "Elige una planta o Desconocida / Otra para enviar el informe.",
+    "Unable to identify the plant. Use the guide to compare photos, or choose Unknown / Other below.":
+      "No se pudo identificar la planta. Compara fotos en la guía o elige Desconocida / Otra abajo.",
+    "Sign in for an AI suggestion, or use the guide and choose a plant or Unknown / Other below.":
+      "Inicia sesión para recibir una sugerencia de IA, o usa la guía y elige una planta o Desconocida / Otra abajo.",
     "Suggest a missing species": "Sugerir una especie que falta",
     "Review species proposals (admin)": "Revisar propuestas de especies (administración)",
     "Back to guide": "Volver a la guía",
@@ -2006,6 +2070,31 @@ const supplementalTranslations: Partial<Record<UiLanguage, Record<string, string
     Pickerelweed: "Pontederia",
   },
   pt: {
+    "Plant Guide": "Guia de plantas",
+    Drafts: "Rascunhos",
+    Community: "Comunidade",
+    "Activity feed": "Atividades",
+    "No approved reports from followed observers yet.":
+      "Ainda não há relatos aprovados dos observadores que você segue.",
+    "Follow {name}": "Seguir {name}",
+    "Unfollow {name}": "Deixar de seguir {name}",
+    "{name} logged {plant}": "{name} registrou {plant}",
+    "Field tracking": "Observação em campo",
+    "View map": "Ver mapa",
+    "Please wait for sign-in to finish loading.": "Aguarde o carregamento do acesso à conta.",
+    "Couldn't send your report. Check Drafts for details and try again.":
+      "Não foi possível enviar o relato. Consulte os detalhes em Rascunhos e tente novamente.",
+    "Couldn't send your report, and it could not be saved on this device. Please try again.":
+      "Não foi possível enviar o relato nem salvá-lo neste dispositivo. Tente novamente.",
+    "Your report may need review before it appears on the public map.":
+      "Seu relato pode precisar de revisão antes de aparecer no mapa público.",
+    "Add a photo to save or submit a report.": "Adicione uma foto para salvar ou enviar um relato.",
+    "Choose a plant or Unknown / Other to submit.":
+      "Escolha uma planta ou Desconhecida / Outra para enviar.",
+    "Unable to identify the plant. Use the guide to compare photos, or choose Unknown / Other below.":
+      "Não foi possível identificar a planta. Compare fotos no guia ou escolha Desconhecida / Outra abaixo.",
+    "Sign in for an AI suggestion, or use the guide and choose a plant or Unknown / Other below.":
+      "Entre para receber uma sugestão de IA, ou use o guia e escolha uma planta ou Desconhecida / Outra abaixo.",
     "Suggest a missing species": "Sugerir uma espécie ausente",
     "Review species proposals (admin)": "Analisar sugestões de espécies (administração)",
     "Back to guide": "Voltar ao guia",

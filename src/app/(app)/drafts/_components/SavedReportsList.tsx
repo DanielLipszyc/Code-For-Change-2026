@@ -20,7 +20,7 @@ function statusOf(
     return { label: t("Draft"), detail: t("Finish it to send it."), tone: "slate" as const };
   }
   if (report.lastError && !report.lastError.retry) {
-    return { label: t("Needs changes"), detail: report.lastError.message, tone: "red" as const };
+    return { label: t("Needs changes"), detail: t(report.lastError.message), tone: "red" as const };
   }
   if (!canSendAs(report, userId)) {
     return { label: t("Waiting"), detail: t("Sign in to send it."), tone: "amber" as const };
@@ -29,7 +29,7 @@ function statusOf(
     return {
       label: t("Waiting to send"),
       detail: t("Couldn't send yet ({message}). It will try again.", {
-        message: report.lastError.message,
+        message: t(report.lastError.message),
       }),
       tone: "amber" as const,
     };
@@ -69,7 +69,7 @@ export default function SavedReportsList() {
     if (result.status === "sent") toast.success(t("Report sent."));
     else if (result.status === "offline")
       toast.error(t("Still no connection. It will be sent later."));
-    else toast.error(result.error);
+    else toast.error(t(result.error));
   }
 
   async function handleSendAll() {

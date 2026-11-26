@@ -8,9 +8,8 @@ import { CacheFirst, ExpirationPlugin, NetworkFirst, Serwist, StaleWhileRevalida
  *
  * - The app's scripts, styles and fonts are precached at install.
  * - Pages are fetched from the network first and kept, so a page opened
- *   once works offline after. /submit and /drafts require sign-in, so they
- *   can't be precached; SavedReportsSync asks for them
- *   (CACHE_SIGNED_IN_PAGES) once someone is signed in.
+ *   once works offline after. SavedReportsSync also asks to cache /submit
+ *   and /drafts (CACHE_SIGNED_IN_PAGES) once someone is signed in.
  * - A page never opened before shows /~offline.
  *
  * API responses are never cached: they depend on who's signed in. Map tiles
@@ -65,7 +64,7 @@ const serwist = new Serwist({
   },
 });
 
-/** Pages for reporting in the field. They require sign-in, so they can't be precached. */
+/** Pages for reporting in the field. */
 const SIGNED_IN_PAGES = ["/submit", "/drafts"];
 
 /** Keep the signed-in pages, fetched as the signed-in user */

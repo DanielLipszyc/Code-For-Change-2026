@@ -14,8 +14,8 @@ import logo from "../../public/logo.png";
 const navItems = [
   { href: "/map", label: "Map", signIn: false },
   { href: "/guide", label: "Plant Guide", signIn: false },
-  { href: "/submit", label: "Submit", signIn: true },
-  { href: "/drafts", label: "Drafts", signIn: true },
+  { href: "/submit", label: "Submit", signIn: false },
+  { href: "/drafts", label: "Drafts", signIn: false },
   { href: "/log", label: "My Log", signIn: true },
   { href: "/dashboard", label: "Dashboard", signIn: true },
 ];
@@ -108,21 +108,17 @@ export default function Navigation() {
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/90">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-2">
+        <div className="flex items-center justify-between gap-6 py-2">
           <Link href="/" className="flex flex-shrink-0 items-center gap-2">
             <Image src={logo} alt="" width={40} height={40} priority />
             <span className="text-xl font-bold">
-              <span className="brand-wordmark inline-block">
-                Swamp
-              </span>
-              <span className="brand-wordmark ml-1 inline-block">
-                Spotter
-              </span>
+              <span className="brand-wordmark inline-block">Swamp</span>
+              <span className="brand-wordmark ml-1 inline-block">Spotter</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-2">
+          <div className="hidden xl:flex xl:items-center xl:gap-4">
             {links(false)}
             <SignedOut>
               <Link
@@ -139,7 +135,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center xl:hidden">
             <button
               type="button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -174,7 +170,7 @@ export default function Navigation() {
       </div>
 
       {/* Mobile menu */}
-      <div id="mobile-menu" className={`md:hidden ${isMenuOpen ? "block" : "hidden"}`}>
+      <div id="mobile-menu" className={`xl:hidden ${isMenuOpen ? "block" : "hidden"}`}>
         <div className="space-y-1 border-t bg-white px-2 pb-3 pt-2 dark:border-gray-800 dark:bg-gray-900 sm:px-3">
           {links(true)}
           <div className="flex flex-wrap items-center justify-center gap-4 border-t border-gray-200 pb-2 pt-4 dark:border-gray-700">

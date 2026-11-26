@@ -456,12 +456,20 @@ function PlantCard({
   );
 }
 
-export default function GuideClient({ plants }: { plants: Plant[] }) {
+export default function GuideClient({
+  plants,
+  requestedPlant,
+}: {
+  plants: Plant[];
+  requestedPlant?: string;
+}) {
   const [query, setQuery] = useState("");
   const [threat, setThreat] = useState<"All" | ThreatLevel>("All");
   const [sort, setSort] = useState<"Threat" | "Name">("Threat");
   const [featureFilters, setFeatureFilters] = useState<FeatureFilters>({});
-  const [activePlant, setActivePlant] = useState<Plant | null>(null);
+  const [activePlant, setActivePlant] = useState<Plant | null>(
+    () => plants.find((plant) => plant.name === requestedPlant) ?? null,
+  );
   const { language: lang, t } = useLanguage();
 
   const filtered = useMemo(() => {
@@ -520,6 +528,15 @@ export default function GuideClient({ plants }: { plants: Plant[] }) {
                 ⌕
               </span>
             </div>
+
+            {requestedPlant && !plants.some((plant) => plant.name === requestedPlant) && (
+              <p
+                role="status"
+                className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900"
+              >
+                {t("This plant is not currently in the guide.")}
+              </p>
+            )}
 
             <div className="flex gap-3">
               <select

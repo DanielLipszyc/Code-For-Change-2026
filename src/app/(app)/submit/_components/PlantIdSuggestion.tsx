@@ -10,6 +10,7 @@ export interface PlantIdResult {
 
 interface PlantIdSuggestionProps {
   online: boolean;
+  signedIn: boolean;
   identifying: boolean;
   result: PlantIdResult | null;
   /** The species the user picked, compared with the suggestion once they've chosen */
@@ -34,6 +35,7 @@ function Spinner() {
 /** The plant ID model's suggestion for the photo. The user's choice is what's saved. */
 export default function PlantIdSuggestion({
   online,
+  signedIn,
   identifying,
   result,
   chosen,
@@ -69,6 +71,22 @@ export default function PlantIdSuggestion({
               )}
             </p>
           </div>
+
+          {!result.isKnownPlant && (
+            <p className="text-sm text-gray-700">
+              {t(
+                "Unable to identify the plant. Use the guide to compare photos, or choose Unknown / Other below.",
+              )}{" "}
+              <a
+                href="/guide"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-emerald-700 underline"
+              >
+                {t("Plant Guide")}
+              </a>
+            </p>
+          )}
 
           {compare && chosen && (
             <div
@@ -110,7 +128,19 @@ export default function PlantIdSuggestion({
         </div>
       ) : online ? (
         <p className="text-gray-500">
-          {t("Unable to identify plant. Please select manually below.")}
+          {t(
+            signedIn
+              ? "Unable to identify the plant. Use the guide to compare photos, or choose Unknown / Other below."
+              : "Sign in for an AI suggestion, or use the guide and choose a plant or Unknown / Other below.",
+          )}{" "}
+          <a
+            href="/guide"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-emerald-700 underline"
+          >
+            {t("Plant Guide")}
+          </a>
         </p>
       ) : (
         <p className="text-gray-500">

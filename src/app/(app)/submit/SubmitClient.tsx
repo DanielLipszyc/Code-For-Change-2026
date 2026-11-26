@@ -3,10 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useToast } from "@/components/ui/Toast";
 import { useOnline } from "@/client/offline/hooks";
 import { useLanguage } from "@/components/LanguageProvider";
-import { getSavedReport, saveReport, type SavedReport } from "@/client/offline/reports";
+import {
+  getSavedReport,
+  isVisibleTo,
+  saveReport,
+  type SavedReport,
+} from "@/client/offline/reports";
 import { sendSavedReport } from "@/client/offline/send";
 import { PHOTO_MAX_SIZE, PHOTO_QUALITY, compressImage, readFileAsDataUrl } from "@/client/images";
 import { localizePlant, type Plant } from "@/types/plant";
@@ -79,29 +85,34 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
   // again updates the same report instead of making another
   const reportIdRef = useRef<string | null>(null);
 
-  const identifyPlant = useCallback(async (image: string) => {
-    if (!PLANT_ID_ENABLED || !navigator.onLine) return;
-    setIdentifying(true);
-    setPlantId(null);
-    try {
-      const response = await fetch("/api/identify-plant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: await compressImage(image, 512, 0.5) }),
-      });
-      if (!response.ok) return;
-      const result: PlantIdResult = await response.json();
-      setPlantId(result);
-      // Pre-select the AI's match only if the user hasn't chosen a species yet
-      if (result.isKnownPlant) {
-        setPlantName((current) => (current && current !== "Unknown" ? current : result.prediction));
+  const identifyPlant = useCallback(
+    async (image: string) => {
+      if (!PLANT_ID_ENABLED || !navigator.onLine || !user) return;
+      setIdentifying(true);
+      setPlantId(null);
+      try {
+        const response = await fetch("/api/identify-plant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: await compressImage(image, 512, 0.5) }),
+        });
+        if (!response.ok) throw new Error(`Plant identification failed (${response.status})`);
+        const result: PlantIdResult = await response.json();
+        setPlantId(result);
+        // Pre-select the AI's match only if the user hasn't chosen a species yet
+        if (result.isKnownPlant) {
+          setPlantName((current) =>
+            current && current !== "Unknown" ? current : result.prediction,
+          );
+        }
+      } catch (error) {
+        console.error("Error identifying plant:", error);
+      } finally {
+        setIdentifying(false);
       }
-    } catch (error) {
-      console.error("Error identifying plant:", error);
-    } finally {
-      setIdentifying(false);
-    }
-  }, []);
+    },
+    [user],
+  );
 
   // Prefill from /submit?plant=... (the guide's "Report this plant")
   useEffect(() => {
@@ -113,11 +124,12 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
   // Open a saved report from /submit?draft=...
   useEffect(() => {
     if (!draftParam) return;
+    if (!isLoaded && navigator.onLine) return;
     let cancelled = false;
     (async () => {
       const saved = await getSavedReport(draftParam);
       if (cancelled) return;
-      if (!saved) {
+      if (!saved || !isVisibleTo(saved, { loaded: isLoaded, userId: user?.id ?? null })) {
         toast.error(t("That draft isn't saved on this device."));
         return;
       }
@@ -143,18 +155,12 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
     return () => {
       cancelled = true;
     };
-  }, [draftParam, identifyPlant, t, toast]);
+  }, [draftParam, identifyPlant, isLoaded, user?.id, t, toast]);
 
   // Signed-out visitors can only submit anonymously
   useEffect(() => {
     if (isLoaded && !user) setAnonymous(true);
   }, [isLoaded, user]);
-
-  useEffect(() => {
-    if (!showSuccess) return;
-    const timer = setTimeout(() => router.push("/map"), 2000);
-    return () => clearTimeout(timer);
-  }, [showSuccess, router]);
 
   async function handlePhoto(file: File) {
     setFileName(file.name);
@@ -190,6 +196,10 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
   }
 
   async function handleSave(mode: "send" | "draft") {
+    if (!isLoaded && navigator.onLine) {
+      toast.error(t("Please wait for sign-in to finish loading."));
+      return;
+    }
     if (!photo) {
       toast.error(t("Please add a photo of the plant."));
       return;
@@ -217,13 +227,15 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
         locationAccuracyM: where.accuracyM,
         plantName: plantName || null,
         notes,
-        anonymous,
+        anonymous: isLoaded && !user ? true : anonymous,
         lastError: null,
       };
 
+      let savedOnDevice = false;
       try {
         // Kept on the device until the server has it
         await saveReport(report);
+        savedOnDevice = true;
       } catch {
         // Storage unavailable (some private windows): a draft can't be kept,
         // but a report can still be sent directly
@@ -245,12 +257,26 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
       if (result.status === "sent") {
         setShowSuccess(true);
       } else if (result.status === "offline") {
-        toast.success(
-          t("No connection right now. Your report is saved and will be sent automatically."),
-        );
-        router.push("/drafts");
+        if (savedOnDevice) {
+          toast.success(
+            t("No connection right now. Your report is saved and will be sent automatically."),
+          );
+          router.push("/drafts");
+        } else {
+          toast.error(
+            t(
+              "Couldn't send your report, and it could not be saved on this device. Please try again.",
+            ),
+          );
+        }
       } else {
-        toast.error(result.error);
+        toast.error(
+          t(
+            savedOnDevice
+              ? "Couldn't send your report. Check Drafts for details and try again."
+              : "Couldn't send your report, and it could not be saved on this device. Please try again.",
+          ),
+        );
       }
     } catch (error) {
       console.error("Error saving report:", error);
@@ -260,22 +286,36 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
     }
   }
 
-  const busy = saving !== null;
+  const busy = saving !== null || (!isLoaded && online);
+
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-primary-50 px-4 py-12">
+        <div
+          role="status"
+          className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-lg"
+        >
+          <h1 className="text-3xl font-bold">{t("Plant submitted successfully")}</h1>
+          <p className="mt-4 text-gray-700">
+            {t("Your report may need review before it appears on the public map.")}
+          </p>
+          <div className="mt-6 flex justify-center gap-4">
+            <Link href="/map" className="font-bold text-emerald-700 underline">
+              {t("View map")}
+            </Link>
+            {user && !anonymous && (
+              <Link href="/log" className="font-bold text-emerald-700 underline">
+                {t("View Log")}
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-primary-50 px-4 py-12 sm:px-6 lg:px-8">
-      {showSuccess && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
-          <div className="animate-fade-in-out flex flex-col items-center gap-4 rounded-2xl bg-[#136207] px-12 py-8 text-white shadow-2xl">
-            <div className="text-6xl">✅</div>
-            <div className="text-center">
-              <p className="mb-2 text-3xl font-bold">{t("Success!")}</p>
-              <p className="text-lg opacity-90">{t("Plant submitted successfully")}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
           <h1 className="mb-4 text-4xl font-bold text-gray-900 sm:text-5xl">
@@ -348,6 +388,7 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
           {PLANT_ID_ENABLED && photo && (
             <PlantIdSuggestion
               online={online}
+              signedIn={!!user}
               identifying={identifying}
               result={plantId}
               chosen={plantName}
@@ -416,6 +457,21 @@ export default function SubmitClient({ plants }: { plants: Plant[] }) {
           />
 
           <div className="space-y-3">
+            {!photo && (
+              <p className="text-sm text-gray-700">
+                {t("Add a photo to save or submit a report.")}
+              </p>
+            )}
+            {photo && !plantName && (
+              <p className="text-sm text-gray-700">
+                {t("Choose a plant or Unknown / Other to submit.")}
+              </p>
+            )}
+            {!isLoaded && online && (
+              <p className="text-sm text-gray-700">
+                {t("Please wait for sign-in to finish loading.")}
+              </p>
+            )}
             <button
               type="submit"
               disabled={!photo || !plantName || busy}

@@ -78,6 +78,11 @@ sightings, nearest first when the visitor's location is known.
    `createSubmission()` in `server/submissions.ts`, which stores the photo and
    then the row.
 
+The dashboard's community feed pages through approved reports and the viewer's
+own reports via `GET /api/dashboard`; other users' pending reports remain
+private. Its observer list includes contributors with approved reports and
+followed observers, including those outside the recent activity window.
+
 **Photos are served separately.** Lists never include photo data; they say
 whether there is one (`hasPhoto`). Photos live in a private Storage bucket as
 two JPEGs, the photo and a 320 px thumbnail, made with sharp when the report is
@@ -105,8 +110,9 @@ Swamps have poor signal, so reporting works without a connection.
   last 30 days and not in the future.
 - **Service worker** (`app/sw.ts`, built with Serwist into `public/sw.js`):
   precaches the app's code; pages are fetched from the network first and kept,
-  so a page opened once opens offline after. `/submit` and `/drafts` need
-  sign-in, so they're stored once someone is signed in rather than precached.
+  so a page opened once opens offline after. `/submit` and `/drafts` are public
+  and can be opened by signed-out visitors; signed-in sessions also request
+  their copies for offline use.
   Pages never opened show `/~offline`. API responses (which depend on who's
   signed in) and map tiles (OpenStreetMap doesn't allow storing them) are never
   stored. The service worker is off in development.
@@ -122,8 +128,8 @@ Swamps have poor signal, so reporting works without a connection.
   the token refreshes (within about a minute). Approving and deleting other
   people's reports always check the role with Clerk directly.
 - **Access rules:** `lib/routeAccess.ts` lists what signed-out visitors may do:
-  view the public pages, read approved submissions and their photos, and submit
-  anonymously. Everything else requires sign-in. Every API handler checks the
+  view the public pages and device-local drafts, read approved submissions and their photos,
+  and submit anonymously. Everything else requires sign-in. Every API handler checks the
   user again, so the middleware is only the first layer.
 - **Ownership:** edit and delete queries include the owner check in the query
   itself (`server/submissions.ts`), so there's no gap between checking and

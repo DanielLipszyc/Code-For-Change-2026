@@ -193,12 +193,44 @@ test.describe("sign-in pages", () => {
 });
 
 test.describe("signed-out visitors", () => {
-  for (const path of ["/log", "/dashboard", "/submit"]) {
+  test("navigation does not show sign-in warnings", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("nav").getByText("Sign in required", { exact: true })).toHaveCount(0);
+  });
+
+  for (const path of ["/log", "/dashboard"]) {
     test(`are sent to sign in from ${path}`, async ({ page }) => {
       await page.goto(path);
       await expect(page).toHaveURL(/sign-in/);
     });
   }
+
+  test("can open the anonymous submission form", async ({ page }) => {
+    await page.goto("/submit");
+    await expect(page.getByLabel("Submit anonymously", { exact: true })).toBeChecked();
+    await expect(page.getByLabel("Submit anonymously", { exact: true })).toBeDisabled();
+    await expect(page.getByText("Add a photo to save or submit a report.")).toBeVisible();
+  });
+
+  test("submits anonymously and explains the review process", async ({ page, context }) => {
+    await context.grantPermissions(["geolocation"]);
+    await context.setGeolocation({ latitude: 29.65, longitude: -82.32 });
+    await page.route("**/api/submissions", async (route) => {
+      await route.fulfill({ json: { success: true } });
+    });
+    await page.goto("/submit");
+    await page.locator("#photo").setInputFiles("public/logo.png");
+    await expect(page.getByText("Choose a plant or Unknown / Other to submit.")).toBeVisible();
+    await page.locator("#plantName").selectOption("Unknown");
+    const request = page.waitForRequest(
+      (request) => request.url().endsWith("/api/submissions") && request.method() === "POST",
+    );
+    await page.getByRole("button", { name: "Submit Plant" }).click();
+    expect((await request).postDataJSON()).toMatchObject({ anonymous: true, plantName: "Unknown" });
+    await expect(
+      page.getByText("Your report may need review before it appears on the public map."),
+    ).toBeVisible();
+  });
 
   test("only see approved submissions, without their owners", async ({ request }) => {
     for (const url of ["/api/submissions", "/api/submissions?all=true"]) {

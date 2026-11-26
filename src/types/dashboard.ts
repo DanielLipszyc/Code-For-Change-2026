@@ -30,8 +30,11 @@ export interface Achievement {
 }
 
 export interface FeedItem {
-  title: string;
-  meta: string;
+  id: string;
+  author: string;
+  plant: string;
+  createdAt: string;
+  status: "approved" | "pending";
   type: "connection" | "species";
 }
 
@@ -43,4 +46,6 @@ export interface DashboardData {
   observers: Observer[];
   achievements: Achievement[];
   feed: FeedItem[];
+  hasMoreFeed: boolean;
+  followingFeed: FeedItem[];
 }

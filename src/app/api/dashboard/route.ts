@@ -1,14 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { followSchema } from "@/lib/schemas";
-import { toggleFollow } from "@/server/dashboard";
+import { listCommunityFeed, toggleFollow } from "@/server/dashboard";
 import { MAX_BODY_BYTES, jsonError, parseJsonBody } from "@/server/http";
 import { LIMITS, isWithinRateLimit, tooManyRequests } from "@/server/rateLimit";
 
-/**
- * POST /api/dashboard: follow or unfollow an observer.
- * (The dashboard's data is loaded by its page on the server.)
- */
+/** GET /api/dashboard?offset=...: another page of visible community reports. */
+export async function GET(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return jsonError(401, "Unauthorized");
+    const value = request.nextUrl.searchParams.get("offset") ?? "0";
+    if (
+      !/^\d+$/.test(value) ||
+      !Number.isSafeInteger(Number(value)) ||
+      Number(value) > 2_147_483_626
+    ) {
+      return jsonError(400, "Invalid offset");
+    }
+    return NextResponse.json(await listCommunityFeed(userId, Number(value)));
+  } catch (error) {
+    console.error("Error loading community feed:", error);
+    return jsonError(500, "Failed to load community feed");
+  }
+}
+
+/** POST /api/dashboard: follow or unfollow an observer. */
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
